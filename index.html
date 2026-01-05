@@ -9,204 +9,224 @@
     
     <script type="text/javascript">
         window._AMapSecurityConfig = {
-            securityJsCode: '你的安全密钥', // 【注意】如果发布后地图加载异常，请在此处填入高德控制台的安全密钥
+            securityJsCode: '你的安全密钥', // 【重要】请填写你的高德安全密钥
         }
     </script>
     <script src="https://webapi.amap.com/maps?v=2.0&key=31fdd14ad134becab8cb33119fa019d5"></script>
     
     <style>
-        /* --- 全局样式重置 --- */
+        /* --- 1. 全局基础 --- */
         * { box-sizing: border-box; }
-        body { 
-            margin: 0; 
-            padding: 0; 
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background-color: #f0f2f5; 
-            color: #333; 
-        }
-        
-        #container { width: 100%; height: 100vh; }
-        
-        /* --- 搜索控制面板 (卡片风格) --- */
-        #search-box {
-            position: absolute;
-            top: 24px;
-            left: 24px;
-            background: #fff;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); /* 柔和阴影 */
-            z-index: 100;
-            width: 340px;
-            transition: all 0.3s ease;
-        }
-        
-        #search-box h3 {
-            margin: 0 0 16px 0;
-            color: #1a1a1a;
-            font-size: 18px;
-            font-weight: 700;
         }
 
-        /* --- 搜索表单布局 --- */
+        /* --- 2. 地图容器 (初始隐藏在背景层) --- */
+        #container { 
+            width: 100%; 
+            height: 100vh; 
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 0;
+            opacity: 0; /* 初始透明，制造淡入效果 */
+            transition: opacity 1s ease;
+        }
+
+        /* --- 3. 搜索/引导容器 --- */
+        /* 这是一个覆盖层，初始状态占据全屏 */
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; /* 让点击穿透到内部元素 */
+            z-index: 100;
+            transition: background-color 0.8s ease;
+            background-color: #ffffff; /* 初始白色背景 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* 垂直居中 */
+            align-items: center;     /* 水平居中 */
+        }
+
+        /* --- 4. 搜索框卡片 --- */
+        #search-card {
+            background: #fff;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+            pointer-events: auto; /* 恢复点击 */
+            transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1); /* 平滑过渡动画 */
+            text-align: center;
+        }
+
+        /* 标题样式 */
+        #app-title {
+            margin: 0 0 25px 0;
+            color: #1a1a1a;
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            transition: all 0.5s ease;
+        }
+
+        /* 表单区域 */
         .search-form {
             display: flex;
-            gap: 8px; /* 输入框和按钮的间距 */
-            margin-bottom: 8px;
+            gap: 10px;
         }
-        
-        /* 输入框样式 */
+
         #keyword {
             flex: 1;
-            padding: 10px 14px;
+            padding: 14px 18px;
             border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 14px;
+            border-radius: 10px;
+            font-size: 16px;
             outline: none;
             transition: border-color 0.3s;
         }
-        #keyword:focus {
-            border-color: #007AFF;
-        }
+        #keyword:focus { border-color: #007AFF; }
 
-        /* 按钮样式 */
         #search-btn {
-            padding: 10px 20px;
+            padding: 14px 28px;
             background: #007AFF;
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 14px;
+            border-radius: 10px;
+            font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            white-space: nowrap;
             transition: background-color 0.2s;
+            white-space: nowrap;
         }
         #search-btn:hover { background: #0062cc; }
 
-        /* 加载提示文字 */
         #loading-tip {
-            font-size: 12px;
-            color: #888;
-            margin-top: 4px;
-            padding-left: 2px;
-        }
-
-        /* --- 自定义信息窗体样式 --- */
-        /* 移除高德默认边框和背景，完全自定义 */
-        .amap-info-content {
-            padding: 0;
-            border: none;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            overflow: hidden;
-        }
-        
-        .custom-info-window {
-            min-width: 220px;
-            background: #fff;
-        }
-        
-        .info-header {
-            background: #007AFF;
-            color: #fff;
-            padding: 12px 16px;
-        }
-        .info-header h3 {
-            margin: 0;
-            font-size: 16px;
-            font-weight: 600;
-        }
-        
-        .info-body {
-            padding: 16px;
-        }
-        
-        .info-item {
-            margin-bottom: 8px;
+            margin-top: 15px;
             font-size: 13px;
-            line-height: 1.5;
-            display: flex;
-            align-items: flex-start;
-        }
-        .info-item:last-child { margin-bottom: 0; }
-        
-        .info-label {
-            color: #666;
-            min-width: 65px; /* 标签固定宽度对齐 */
-        }
-        .info-value {
-            color: #333;
-            flex: 1;
-        }
-        .info-value.price {
-            color: #ff5722; /* 价格高亮色 */
-            font-weight: bold;
+            color: #888;
+            min-height: 20px;
         }
 
-        /* 调整关闭按钮颜色为白色 */
-        .amap-info-close {
-            color: white !important;
-            right: 10px !important;
-            top: 10px !important;
+        /* --- 5. 激活地图模式 (View Change) --- */
+        /* 当 body 加上 .map-active 类时，触发以下变化 */
+        
+        body.map-active #ui-layer {
+            background-color: transparent; /* 背景变透明 */
+            justify-content: flex-start;   /* 取消垂直居中 */
+            align-items: flex-start;       /* 取消水平居中 */
+            pointer-events: none;          /* 确保鼠标能点到地图 */
         }
+
+        body.map-active #container {
+            opacity: 1; /* 地图显现 */
+        }
+
+        body.map-active #search-card {
+            /* 移动到左上角 */
+            width: 380px;
+            margin: 24px 0 0 24px;
+            padding: 20px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        body.map-active #app-title {
+            /* 标题变小或隐藏，这里选择变小 */
+            font-size: 18px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        
+        body.map-active #keyword {
+            padding: 10px 14px;
+            font-size: 14px;
+        }
+        body.map-active #search-btn {
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+        body.map-active #loading-tip {
+            display: none; /* 搜索后隐藏加载提示，保持界面干净 */
+        }
+
+
+        /* --- 6. 信息窗体样式 (保持不变) --- */
+        .amap-info-content { padding: 0; border: none; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .custom-info-window { min-width: 240px; background: #fff; }
+        .info-header { background: #007AFF; color: #fff; padding: 12px 16px; }
+        .info-header h3 { margin: 0; font-size: 16px; }
+        .info-body { padding: 16px; }
+        .info-item { margin-bottom: 8px; font-size: 13px; display: flex; }
+        .info-label { color: #666; min-width: 60px; }
+        .info-value { color: #333; flex: 1; }
+        .info-value.price { color: #ff5722; font-weight: bold; }
+        .amap-info-close { color: white !important; right: 10px !important; top: 10px !important; }
     </style>
 </head>
 <body>
 
-<div id="container"></div>
+    <div id="container"></div>
 
-<div id="search-box">
-    <h3>写字楼查询</h3>
-    <div class="search-form">
-        <input type="text" id="keyword" placeholder="输入名称..." onkeydown="handleEnter(event)">
-        <button id="search-btn" onclick="searchBuilding()">查询</button>
+    <div id="ui-layer">
+        <div id="search-card">
+            <h1 id="app-title">🏢 公司写字楼数据地图</h1>
+            <div class="search-form">
+                <input type="text" id="keyword" placeholder="请输入写字楼名称..." onkeydown="handleEnter(event)">
+                <button id="search-btn" onclick="searchBuilding()">查询</button>
+            </div>
+            <div id="loading-tip">正在连接数据资源...</div>
+        </div>
     </div>
-    <div id="loading-tip">正在连接数据...</div>
-</div>
 
 <script>
-    // --- 1. 初始化地图 ---
-    const map = new AMap.Map('container', {
-        zoom: 11,
-        center: [116.397428, 39.90923], // 默认北京中心
-        viewMode: '2D', // 使用2D模式更轻量稳定
-    });
-
+    // --- 全局变量 ---
+    let map;
     let markers = []; 
     let buildings = []; 
-    
-    // 初始化信息窗体
-    const infoWindow = new AMap.InfoWindow({
-        isCustom: false, // 使用高德外壳以便有关闭按钮
-        offset: new AMap.Pixel(0, -35), // 窗体位置向上偏移，避开图标
-        autoMove: true
-    });
+    let infoWindow;
+    let isMapActive = false; // 标记当前是否已经切换到地图模式
 
-    // --- 2. 读取 Excel 文件 ---
+    // --- 1. 初始化地图 ---
+    function initMap() {
+        map = new AMap.Map('container', {
+            zoom: 11,
+            center: [116.397428, 39.90923], // 默认北京中心
+            viewMode: '2D',
+        });
+
+        // 初始化信息窗体
+        infoWindow = new AMap.InfoWindow({
+            isCustom: false,
+            offset: new AMap.Pixel(0, -35),
+            autoMove: true
+        });
+
+        // 立即开始加载数据
+        loadExcel();
+    }
+
+    // --- 2. 读取 Excel (只读取一次) ---
     async function loadExcel() {
         const tip = document.getElementById('loading-tip');
         try {
-            // 注意：data.xlsx 必须和 index.html 在同一级目录
             const response = await fetch('./data.xlsx');
-            
-            if (!response.ok) {
-                throw new Error(`无法读取文件 (Status: ${response.status})`);
-            }
+            if (!response.ok) throw new Error("Status: " + response.status);
             
             const arrayBuffer = await response.arrayBuffer();
             const workbook = XLSX.read(arrayBuffer);
-            const sheetName = workbook.SheetNames[0]; 
-            const worksheet = workbook.Sheets[sheetName];
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
             const rawData = XLSX.utils.sheet_to_json(worksheet);
             
-            // 数据清洗
+            // 数据清洗：手动解析 Excel 里的 "116.xxx,39.xxx"
             buildings = rawData.map(item => {
                 const posStr = String(item.position || "").trim();
                 const posArray = posStr.split(',').map(Number);
                 
                 return {
                     name: item.name || "未知写字楼",
+                    // 只有当坐标是两个有效数字时才采用，否则为 [0,0]
                     position: (posArray.length === 2 && !isNaN(posArray[0])) ? posArray : [0,0],
                     address: item.address || '暂无地址',
                     price: item.price, 
@@ -214,20 +234,20 @@
                 };
             });
 
-            initMarkers(); // 渲染地图标记
+            // 预先在地图上画点
+            initMarkers();
             
-            // 更新提示信息
-            tip.innerHTML = `✅ 成功加载 ${buildings.length} 条数据`;
+            tip.innerHTML = `✅ 数据就绪：共收录 <b>${buildings.length}</b> 个写字楼`;
             tip.style.color = "#28a745";
             
         } catch (error) {
-            console.error("加载失败:", error);
+            console.error(error);
             tip.innerHTML = `❌ 数据加载失败，请检查 data.xlsx`;
             tip.style.color = "#dc3545";
         }
     }
 
-    // --- 3. 渲染标记 ---
+    // --- 3. 渲染标记 (后台静默执行) ---
     function initMarkers() {
         map.clearMap();
         markers = [];
@@ -239,94 +259,85 @@
                 position: item.position,
                 title: item.name,
                 map: map,
-                // 设置图标锚点为底部中心，让针尖对准坐标
-                anchor: 'bottom-center', 
-                // 使用高德默认蓝色图标
+                anchor: 'bottom-center',
                 icon: new AMap.Icon({
                     size: new AMap.Size(25, 34),
                     image: '//a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-default.png',
                     imageSize: new AMap.Size(25, 34)
                 })
             });
-            
-            // 处理显示逻辑
-            const priceHtml = item.price ? `<span class="info-value price">${item.price}</span>` : `<span class="info-value">暂无</span>`;
-            
-            // 处理百分比显示 (假设Excel里是小数 0.15 -> 15%)
-            let vacancyHtml = '<span class="info-value">暂无</span>';
-            if (item.vacancy !== undefined && item.vacancy !== '') {
-                // 如果是小数，转换成百分比；如果是字符串含%，直接显示
+
+            // 构建弹窗内容
+            const priceHtml = item.price ? `<span class="info-value price">${item.price}</span>` : `<span>暂无</span>`;
+            let vacancyHtml = '<span>暂无</span>';
+            if (item.vacancy !== undefined) {
                 const val = parseFloat(item.vacancy);
-                if (!isNaN(val) && val < 1) { 
-                    vacancyHtml = `<span class="info-value">${(val * 100).toFixed(1)}%</span>`;
-                } else {
-                    vacancyHtml = `<span class="info-value">${item.vacancy}</span>`;
-                }
+                if (!isNaN(val) && val < 1) vacancyHtml = `<span>${(val * 100).toFixed(1)}%</span>`;
+                else vacancyHtml = `<span>${item.vacancy}</span>`;
             }
 
-            // 点击事件
             marker.on('click', () => {
                 const content = `
                     <div class="custom-info-window">
-                        <div class="info-header">
-                            <h3>${item.name}</h3>
-                        </div>
+                        <div class="info-header"><h3>${item.name}</h3></div>
                         <div class="info-body">
-                            <div class="info-item">
-                                <span class="info-label">地址：</span>
-                                <span class="info-value">${item.address}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">租金：</span>
-                                ${priceHtml}
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">空置率：</span>
-                                ${vacancyHtml}
-                            </div>
+                            <div class="info-item"><span class="info-label">地址：</span><span class="info-value">${item.address}</span></div>
+                            <div class="info-item"><span class="info-label">租金：</span>${priceHtml}</div>
+                            <div class="info-item"><span class="info-label">空置率：</span>${vacancyHtml}</div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
                 infoWindow.setContent(content);
                 infoWindow.open(map, item.position);
             });
+            
             markers.push({ data: item, marker: marker });
         });
     }
 
-    // --- 4. 搜索功能 ---
+    // --- 4. 核心交互：搜索并切换视图 ---
     function searchBuilding() {
-        // 收起手机软键盘
-        document.getElementById('keyword').blur();
-        
+        document.getElementById('keyword').blur(); // 收起键盘
         const keyword = document.getElementById('keyword').value.trim();
+        
         if (!keyword) {
-            alert("请输入写字楼名称");
+            alert("请输入搜索关键词");
             return;
         }
 
+        // 查找逻辑
         const result = markers.find(m => m.data.name.includes(keyword));
         
         if (result) {
-            // 放大并移动地图到目标位置
+            // 🎯 核心改变：如果找到了，才切换界面
+            if (!isMapActive) {
+                switchToMapView();
+            }
+
+            // 地图定位逻辑
             map.setZoomAndCenter(16, result.data.position);
-            // 延时触发点击，展示信息窗体
             setTimeout(() => {
                  result.marker.emit('click', {target: result.marker});
-            }, 300);
+            }, 500); // 稍微延时等待动画过渡
+            
         } else {
-            alert("未找到该写字楼，请尝试其他名称。");
+            // 没找到，不切换界面，只提示
+            alert("未找到该写字楼，请检查名称是否正确。");
         }
+    }
+
+    // --- 5. 切换到地图模式的动画逻辑 ---
+    function switchToMapView() {
+        isMapActive = true;
+        // 给 body 添加类名，CSS 会处理剩下的动画
+        document.body.classList.add('map-active');
     }
 
     function handleEnter(event) {
-        if (event.key === "Enter") {
-            searchBuilding();
-        }
+        if (event.key === "Enter") searchBuilding();
     }
 
-    // --- 5. 执行加载 ---
-    loadExcel();
+    // 启动
+    initMap();
 </script>
 
 </body>
