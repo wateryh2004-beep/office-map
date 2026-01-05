@@ -21,7 +21,7 @@
         
         /* 左侧边栏 */
         #sidebar {
-            width: 340px;
+            width: 350px;
             background: #fff;
             border-right: 1px solid #e0e0e0;
             display: flex;
@@ -31,61 +31,96 @@
         }
         
         .brand-header {
-            padding: 24px 20px;
-            background: linear-gradient(135deg, #004080 0%, #0059b3 100%);
+            padding: 20px;
+            background: #004080; /* Colliers Blue */
             color: white;
         }
         .brand-header h2 { margin: 0; font-size: 20px; font-weight: 700; }
-        .brand-header p { margin: 6px 0 0; opacity: 0.85; font-size: 12px; }
+        .brand-header p { margin: 5px 0 0; opacity: 0.8; font-size: 12px; }
 
+        /* 统计卡片区 */
         .stat-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            padding: 16px;
+            gap: 10px;
+            padding: 15px;
             background: #f8f9fa;
             border-bottom: 1px solid #eee;
         }
         .stat-card { 
-            background: #fff; padding: 12px; border-radius: 8px; text-align: center; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.03); border: 1px solid #eee;
+            background: #fff; padding: 10px; border-radius: 6px; text-align: center; 
+            border: 1px solid #eee;
         }
-        .stat-value { font-size: 18px; font-weight: 800; color: #004080; margin-bottom: 4px; }
-        .stat-label { font-size: 11px; color: #888; text-transform: uppercase; }
+        .stat-value { font-size: 16px; font-weight: 800; color: #004080; margin-bottom: 2px; }
+        .stat-label { font-size: 11px; color: #888; }
 
-        .controls { flex: 1; padding: 20px; overflow-y: auto; }
-        .control-group { margin-bottom: 25px; }
-        .control-title { font-weight: bold; font-size: 13px; margin-bottom: 12px; display: block; color: #333; }
+        /* 控制区 */
+        .controls { flex: 1; padding: 15px; overflow-y: auto; }
+        .control-group { margin-bottom: 20px; }
+        .control-title { font-weight: bold; font-size: 13px; margin-bottom: 8px; display: block; color: #333; }
         
+        /* 搜索组合框 */
+        .search-box { display: flex; gap: 5px; margin-bottom: 20px; }
         #search-input {
-            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 20px;
-            font-size: 14px; outline: none; transition: border-color 0.2s;
+            flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px;
+            font-size: 14px; outline: none;
         }
-        #search-input:focus { border-color: #004080; }
+        #search-btn {
+            padding: 0 15px; background: #004080; color: white; border: none; border-radius: 4px;
+            cursor: pointer; font-weight: bold; font-size: 13px;
+        }
+        #search-btn:hover { background: #003366; }
 
+        /* 复选框 */
         .checkbox-group label {
-            display: flex; align-items: center; margin-bottom: 10px; font-size: 13px; color: #555; cursor: pointer;
-            padding: 4px 0;
+            display: flex; align-items: center; margin-bottom: 8px; font-size: 13px; color: #555; cursor: pointer;
         }
-        .checkbox-group input { margin-right: 10px; transform: scale(1.1); }
+        .checkbox-group input { margin-right: 8px; }
 
-        .actions { padding: 16px; border-top: 1px solid #eee; background: white; }
+        /* 底部模式切换 */
+        .actions { padding: 15px; border-top: 1px solid #eee; background: white; }
         .btn-mode {
-            width: 100%; padding: 12px; margin-bottom: 8px;
+            width: 100%; padding: 10px; margin-bottom: 5px;
             border: 1px solid #e0e0e0; background: white; color: #555;
-            border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px;
-            transition: all 0.2s; text-align: left; display: flex; justify-content: space-between;
+            border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px;
+            transition: all 0.2s; text-align: left;
         }
-        .btn-mode:hover { background: #f5f5f5; }
         .btn-mode.active { background: #e6f0fa; color: #004080; border-color: #004080; }
 
+        /* 地图区 */
         #map-container { flex: 1; position: relative; }
         
+        /* 状态条 */
         #status-bar {
             position: absolute; top: 10px; right: 10px; z-index: 1000;
-            background: rgba(0,0,0,0.7); color: white; padding: 8px 15px;
-            border-radius: 20px; font-size: 12px; display: none;
+            background: rgba(0,0,0,0.8); color: white; padding: 10px 20px;
+            border-radius: 30px; font-size: 13px; display: none;
         }
 
-        .info-window-card { width: 340px; font-family: -apple-system, sans-serif; }
-        .chart-container { height: 200px; width: 100%; margin-top: 15
+        /* 弹窗样式 */
+        .info-window-card { width: 340px; font-family: sans-serif; }
+        .chart-container { height: 200px; width: 100%; margin-top: 15px; }
+        .trend-tag { padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-left: 6px; font-weight: bold; }
+        .trend-up { background: #ffebee; color: #c62828; }
+        .trend-down { background: #e8f5e9; color: #2e7d32; } 
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <div class="brand-header">
+            <h2>COLLIERS DATA</h2>
+            <p>办公楼市场监测系统 v2.2</p>
+        </div>
+
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-count">-</div>
+                <div class="stat-label">监测项目</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-price">-</div>
+                <div class="stat-label">平均租金</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id
