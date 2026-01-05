@@ -1,319 +1,282 @@
 <!DOCTYPE html>
-
 <html>
-
 <head>
-
     <meta charset="utf-8">
-
-    <title>公司写字楼数据地图</title>
-
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colliers Office 3D Map</title>
     
-
+    <script src="./xlsx.full.min.js"></script>
+    
     <script type="text/javascript">
-
         window._AMapSecurityConfig = {
-
-            securityJsCode: '你的安全密钥', // 如果地图显示异常或发布上线，建议去高德控制台获取并填写
-
+            securityJsCode: '', // 如果有安全密钥填这里，没有就留空
         }
-
     </script>
-
     <script src="https://webapi.amap.com/maps?v=2.0&key=31fdd14ad134becab8cb33119fa019d5"></script>
-
     
-
     <style>
+        /* --- UI 美化部分 (保留了 Apple 风格) --- */
+        html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        
+        #container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        body { margin: 0; padding: 0; font-family: '微软雅黑', sans-serif; }
-
-        #container { width: 100%; height: 100vh; }
-
-        #search-box {
-
+        /* 搜索面板容器 */
+        #search-panel {
             position: absolute;
-
             top: 20px;
-
             left: 20px;
-
-            background: white;
-
-            padding: 15px;
-
-            border-radius: 5px;
-
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-
+            width: 340px;
             z-index: 100;
-
-            width: 300px;
-
+            pointer-events: none; /* 让面板透明区域不挡鼠标 */
         }
 
-        input { width: 65%; padding: 8px; margin-right: 5px; }
+        /* 搜索框主体 */
+        .input-group {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            pointer-events: auto; /* 恢复点击 */
+            transition: all 0.3s;
+        }
 
-        button { padding: 8px 15px; background: #007AFF; color: white; border: none; cursor: pointer; }
+        .input-group h3 { margin: 0 0 15px 0; font-size: 18px; color: #1d1d1f; font-weight: 700; letter-spacing: -0.5px; }
 
-        button:hover { background: #0056b3; }
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d2d2d7;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            box-sizing: border-box;
+            background: #f5f5f7;
+            transition: all 0.2s;
+        }
+        input:focus { background: #fff; border-color: #007AFF; box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
 
-        .info-window { padding: 10px; min-width: 200px; }
+        /* 联想下拉列表 */
+        #suggestion-list {
+            background: white;
+            border-radius: 12px;
+            margin-top: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+            pointer-events: auto;
+        }
 
-        .info-window h3 { margin: 0 0 10px 0; color: #333; }
+        .suggestion-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            flex-direction: column;
+        }
+        .suggestion-item:last-child { border-bottom: none; }
+        .suggestion-item:hover { background-color: #f5f5f7; }
+        .item-name { font-weight: 600; color: #333; margin-bottom: 2px; }
+        .item-addr { font-size: 12px; color: #86868b; }
 
-        #loading-tip { font-size: 12px; color: #666; margin-top: 5px; }
+        /* 加载提示 */
+        #loading-tip { font-size: 12px; color: #86868b; margin-top: 10px; text-align: right; }
 
+        /* 地图信息窗体 */
+        .info-window-content { padding: 5px; min-width: 220px; }
+        .info-title { font-size: 16px; font-weight: bold; border-bottom: 2px solid #007AFF; padding-bottom: 8px; margin-bottom: 8px; color: #1d1d1f; }
+        .info-row { margin: 6px 0; font-size: 13px; color: #555; display: flex; justify-content: space-between; }
+        .price-tag { color: #ff3b30; font-weight: 700; font-size: 14px; }
     </style>
-
 </head>
-
 <body>
 
-
-
-<div id="search-box">
-
-    <h3>写字楼查询系统</h3>
-
-    <input type="text" id="keyword" placeholder="输入写字楼名称..." onkeydown="handleEnter(event)">
-
-    <button onclick="searchBuilding()">查询</button>
-
-    <div id="loading-tip">正在连接数据...</div>
-
+<div id="search-panel">
+    <div class="input-group">
+        <h3>Colliers 写字楼分布</h3>
+        <input type="text" id="keyword" placeholder="输入写字楼名称 (Enter搜索)..." oninput="handleInput(this.value)" onkeydown="handleEnter(event)">
+        
+        <div id="suggestion-list"></div>
+        
+        <div id="loading-tip">正在初始化系统...</div>
+    </div>
 </div>
-
-
 
 <div id="container"></div>
 
-
-
 <script>
-
-    // 初始化地图
-
+    // 1. 初始化地图 (3D配置)
     const map = new AMap.Map('container', {
-
+        viewMode: '3D',    // 开启3D
+        pitch: 60,         // 倾斜角度
+        rotation: 0,
         zoom: 11,
-
-        center: [116.397428, 39.90923] // 默认北京中心
-
+        center: [116.397428, 39.90923], // 北京中心
+        mapStyle: 'amap://styles/fresh', // 极夜蓝: darkblue, 清新: fresh
+        showBuildingBlock: true // 显示3D楼块
     });
 
-
+    // 添加缩放和罗盘控件
+    map.plugin(['AMap.ControlBar', 'AMap.Scale'], function(){
+        map.addControl(new AMap.ControlBar({ position: { right: '10px', bottom: '10px' } }));
+        map.addControl(new AMap.Scale());
+    });
 
     let markers = []; 
+    let buildings = []; // 存储所有数据
+    const infoWindow = new AMap.InfoWindow({offset: new AMap.Pixel(0, -30), closeWhenClickMap: true});
 
-    let buildings = []; // 等待 Excel 数据填入
-
-    const infoWindow = new AMap.InfoWindow({offset: new AMap.Pixel(0, -30)});
-
-
-
-    // --- 核心功能：读取 Excel 文件 ---
-
+    // 2. 读取 Excel (使用本地 ./xlsx.full.min.js)
     async function loadExcel() {
-
         const tip = document.getElementById('loading-tip');
+        
+        // 检查插件是否加载
+        if (typeof XLSX === 'undefined') {
+            tip.innerText = "错误：插件未加载";
+            tip.style.color = "red";
+            alert("错误：网页找不到 xlsx.full.min.js。\n请检查该文件是否已上传到 GitHub 的同一级目录。");
+            return;
+        }
 
         try {
-
-            // 请求同目录下的 data.xlsx
-
+            tip.innerText = "正在读取 data.xlsx ...";
+            // 这一步和你的 2D 版本完全一致
             const response = await fetch('./data.xlsx');
-
+            if (!response.ok) throw new Error("404 Not Found");
             
-
-            if (!response.ok) {
-
-                throw new Error("找不到 data.xlsx 文件");
-
-            }
-
-            
-
             const arrayBuffer = await response.arrayBuffer();
-
             const workbook = XLSX.read(arrayBuffer);
-
             const sheetName = workbook.SheetNames[0]; 
-
-            const worksheet = workbook.Sheets[sheetName];
-
-            const rawData = XLSX.utils.sheet_to_json(worksheet);
-
+            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
             
-
-            // 数据清洗：把 "116.xx,39.xx" 这种字符串转为数组 [116.xx, 39.xx]
-
+            // 数据清洗
             buildings = rawData.map(item => {
-
                 const posStr = String(item.position || "").trim();
-
                 const posArray = posStr.split(',').map(Number);
-
-                
-
                 return {
-
                     name: item.name,
-
                     position: (posArray.length === 2 && !isNaN(posArray[0])) ? posArray : [0,0],
-
-                    address: item.address,
-
-                    price: item.price,
-
-                    vacancy: item.vacancy
-
+                    address: item.address || '',
+                    price: item.price || '',
+                    vacancy: item.vacancy || ''
                 };
-
             });
 
-
-
-            initMarkers(); // 数据准备好后，渲染标记
-
-            tip.innerText = `数据加载成功：共 ${buildings.length} 个写字楼`;
-
-            tip.style.color = "green";
-
+            initMarkers(); // 上地图
+            tip.innerText = `数据加载完成：${buildings.length} 个项目`;
+            tip.style.color = "#007AFF";
             
-
         } catch (error) {
-
             console.error(error);
-
-            tip.innerText = "数据加载失败！请确保 data.xlsx 已上传且名称正确。";
-
+            tip.innerText = "读取 data.xlsx 失败";
             tip.style.color = "red";
-
         }
-
     }
 
-
-
-    // --- 渲染标记 ---
-
+    // 3. 渲染 3D 标记
     function initMarkers() {
-
         map.clearMap();
-
-        markers = [];
-
-        
-
         buildings.forEach(item => {
-
-            if (item.position[0] === 0) return; // 跳过无效坐标
-
-
+            if (item.position[0] === 0) return;
 
             const marker = new AMap.Marker({
-
                 position: item.position,
-
                 title: item.name,
-
-                map: map
-
+                map: map,
+                anchor: 'bottom-center', // 3D模式下，锚点设在底部更自然
             });
-
             
-
             marker.on('click', () => {
-
-                const content = `
-
-                    <div class="info-window">
-
-                        <h3>${item.name}</h3>
-
-                        <p><b>地址：</b>${item.address || '-'}</p>
-
-                        <p><b>参考租金：</b>${item.price || '-'}</p>
-
-                        <p><b>空置面积：</b>${item.vacancy || '-'}</p>
-
-                    </div>
-
-                `;
-
-                infoWindow.setContent(content);
-
-                infoWindow.open(map, item.position);
-
+                showInfo(item);
+                flyToBuilding(item.position);
             });
-
-            markers.push({ data: item, marker: marker });
-
         });
-
     }
 
+    // 显示详情窗体
+    function showInfo(item) {
+        const content = `
+            <div class="info-window-content">
+                <div class="info-title">${item.name}</div>
+                <div class="info-row"><span>地址：</span><span>${item.address}</span></div>
+                <div class="info-row"><span>租金：</span><span class="price-tag">${item.price}</span></div>
+                <div class="info-row"><span>空置：</span><span>${item.vacancy}</span></div>
+            </div>
+        `;
+        infoWindow.setContent(content);
+        infoWindow.open(map, item.position);
+    }
 
-
-    // --- 搜索功能 ---
-
-    function searchBuilding() {
-
-        const keyword = document.getElementById('keyword').value.trim();
-
-        if (!keyword) {
-
-            alert("请输入写字楼名称");
-
-            return;
-
-        }
-
-
-
-        const result = markers.find(m => m.data.name.includes(keyword));
-
+    // 4. 搜索联想 (UI 核心)
+    function handleInput(val) {
+        const list = document.getElementById('suggestion-list');
+        list.innerHTML = ''; 
+        if (!val.trim()) { list.style.display = 'none'; return; }
         
-
-        if (result) {
-
-            map.setZoomAndCenter(16, result.data.position);
-
-            result.marker.emit('click', {target: result.marker});
-
-        } else {
-
-            alert("未找到该写字楼，请检查名称。");
-
-        }
-
+        const matches = buildings.filter(b => b.name && b.name.includes(val));
+        
+        if (matches.length > 0) {
+            list.style.display = 'block';
+            matches.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.innerHTML = `
+                    <span class="item-name">${item.name}</span>
+                    <span class="item-addr">${item.address.substring(0,10)}...</span>
+                `;
+                div.onclick = () => { selectBuilding(item); };
+                list.appendChild(div);
+            });
+        } else { list.style.display = 'none'; }
     }
 
-
-
-    // --- 回车键处理 ---
-
-    function handleEnter(event) {
-
-        if (event.key === "Enter") {
-
-            searchBuilding();
-
+    // 5. 回车键搜索 (功能核心)
+    function handleEnter(e) {
+        if (e.key === "Enter") {
+            const val = document.getElementById('keyword').value.trim();
+            if (!val) return;
+            // 模糊匹配第一个
+            const matches = buildings.filter(b => b.name && b.name.includes(val));
+            if (matches.length > 0) {
+                selectBuilding(matches[0]);
+            } else {
+                alert("未找到相关写字楼");
+            }
         }
-
     }
 
+    // 统一选中逻辑
+    function selectBuilding(item) {
+        document.getElementById('keyword').value = item.name;
+        document.getElementById('suggestion-list').style.display = 'none';
+        document.getElementById('keyword').blur(); // 收起键盘
+        flyToBuilding(item.position);
+        showInfo(item);
+    }
 
+    // 飞行特效
+    function flyToBuilding(position) {
+        map.setCamera({
+            center: position,
+            zoom: 17.5,
+            pitch: 65,
+            rotation: 30,
+            duration: 1000 // 1秒飞过去
+        });
+    }
 
-    // 页面加载后执行
+    // 点击空白处关闭联想列表
+    document.addEventListener('click', (e) => {
+        const panel = document.getElementById('search-panel');
+        if (!panel.contains(e.target)) {
+            document.getElementById('suggestion-list').style.display = 'none';
+        }
+    });
 
+    // 启动
     loadExcel();
-
 </script>
-
 </body>
-
 </html>
