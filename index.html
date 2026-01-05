@@ -1,319 +1,215 @@
 <!DOCTYPE html>
-
 <html>
-
 <head>
-
     <meta charset="utf-8">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>公司写字楼数据地图</title>
-
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-
     
-
     <script type="text/javascript">
-
         window._AMapSecurityConfig = {
-
-            securityJsCode: '你的安全密钥', // 如果地图显示异常或发布上线，建议去高德控制台获取并填写
-
+            securityJsCode: '你的安全密钥', // 【重要】请填写你的高德地图安全密钥
         }
-
     </script>
-
     <script src="https://webapi.amap.com/maps?v=2.0&key=31fdd14ad134becab8cb33119fa019d5"></script>
-
     
-
     <style>
-
-        body { margin: 0; padding: 0; font-family: '微软雅黑', sans-serif; }
-
+        /* --- 全局基础样式 --- */
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; background-color: #f0f2f5; color: #333; }
         #container { width: 100%; height: 100vh; }
-
+        
+        /* --- 搜索控制面板 (卡片风格) --- */
         #search-box {
-
             position: absolute;
-
-            top: 20px;
-
-            left: 20px;
-
-            background: white;
-
-            padding: 15px;
-
-            border-radius: 5px;
-
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-
+            top: 24px;
+            left: 24px;
+            background: #fff;
+            padding: 24px;
+            border-radius: 12px;
+            /* 更柔和、现代的阴影 */
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
             z-index: 100;
-
-            width: 300px;
-
+            width: 360px; /* 稍微加宽 */
+            transition: all 0.3s ease;
+        }
+        #search-box h3 {
+            margin: 0 0 20px 0;
+            color: #1a1a1a;
+            font-size: 20px;
+            font-weight: 600;
         }
 
-        input { width: 65%; padding: 8px; margin-right: 5px; }
+        /* --- 搜索表单区域 (Flex布局) --- */
+        .search-form {
+            display: flex;
+            gap: 10px; /* 输入框和按钮之间的间距 */
+            margin-bottom: 10px;
+        }
+        
+        /* 输入框美化 */
+        #keyword {
+            flex: 1; /* 占据剩余空间 */
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        #keyword:focus {
+            border-color: #007AFF;
+        }
 
-        button { padding: 8px 15px; background: #007AFF; color: white; border: none; cursor: pointer; }
+        /* 按钮美化 */
+        #search-btn {
+            padding: 12px 24px;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            white-space: nowrap; /* 防止文字换行 */
+        }
+        #search-btn:hover { background: #0062cc; }
+        #search-btn:active { transform: scale(0.98); background: #0056b3; }
 
-        button:hover { background: #0056b3; }
+        /* 加载提示 */
+        #loading-tip {
+            font-size: 13px;
+            color: #999;
+            padding-left: 4px;
+        }
 
-        .info-window { padding: 10px; min-width: 200px; }
+        /* --- 地图信息窗体美化 (覆盖高德默认样式) --- */
+        .amap-info-content {
+            border-radius: 10px;
+            padding: 0; /* 移除默认内边距，由内部元素控制 */
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            border: none;
+        }
+        .custom-info-window { overflow: hidden; border-radius: 10px; }
+        .info-header {
+            background: #007AFF; /* 标题栏背景色 */
+            color: #fff;
+            padding: 15px 20px;
+            margin: 0;
+        }
+        .info-header h3 { margin: 0; font-size: 18px; font-weight: 600; }
+        .info-body { padding: 20px; background: #fff; }
+        .info-item {
+            margin-bottom: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+            display: flex;
+            align-items: flex-start;
+        }
+        .info-item:last-child { margin-bottom: 0; }
+        .info-label { color: #666; font-weight: 500; min-width: 70px; }
+        .info-value { color: #1a1a1a; flex: 1; }
+        .info-value.highlight { color: #FF5722; font-weight: 600; } /* 高亮价格等 */
 
-        .info-window h3 { margin: 0 0 10px 0; color: #333; }
-
-        #loading-tip { font-size: 12px; color: #666; margin-top: 5px; }
-
+        /* 关闭按钮微调 */
+        .amap-info-close { top: 15px; right: 15px; color: #fff; opacity: 0.8; font-size: 20px; }
+        .amap-info-close:hover { opacity: 1; }
     </style>
-
 </head>
-
 <body>
-
-
-
-<div id="search-box">
-
-    <h3>写字楼查询系统</h3>
-
-    <input type="text" id="keyword" placeholder="输入写字楼名称..." onkeydown="handleEnter(event)">
-
-    <button onclick="searchBuilding()">查询</button>
-
-    <div id="loading-tip">正在连接数据...</div>
-
-</div>
-
-
 
 <div id="container"></div>
 
-
+<div id="search-box">
+    <h3>写字楼查询</h3>
+    <div class="search-form">
+        <input type="text" id="keyword" placeholder="输入写字楼名称，例如：国贸" onkeydown="handleEnter(event)">
+        <button id="search-btn" onclick="searchBuilding()">查询</button>
+    </div>
+    <div id="loading-tip">正在连接数据...</div>
+</div>
 
 <script>
-
     // 初始化地图
-
     const map = new AMap.Map('container', {
-
         zoom: 11,
-
-        center: [116.397428, 39.90923] // 默认北京中心
-
+        center: [116.397428, 39.90923], // 默认北京中心
+        viewMode: '2D', // 明确指定2D模式，运行更稳定
+        mapStyle: 'amap://styles/normal' // 设置地图样式，normal为标准样式，可选如 dark, light 等
     });
 
-
-
     let markers = []; 
-
-    let buildings = []; // 等待 Excel 数据填入
-
-    const infoWindow = new AMap.InfoWindow({offset: new AMap.Pixel(0, -30)});
-
-
+    let buildings = []; 
+    // 初始化 InfoWindow，移除默认偏移，由 CSS 控制视觉
+    const infoWindow = new AMap.InfoWindow({
+        isCustom: false, // 使用高德默认外壳，但通过 CSS 覆盖样式
+        offset: new AMap.Pixel(0, -35), // 调整弹窗位置在标记上方
+        autoMove: true // 自动平移地图以显示弹窗
+    });
 
     // --- 核心功能：读取 Excel 文件 ---
-
     async function loadExcel() {
-
         const tip = document.getElementById('loading-tip');
-
         try {
-
-            // 请求同目录下的 data.xlsx
-
             const response = await fetch('./data.xlsx');
-
+            if (!response.ok) throw new Error("找不到 data.xlsx 文件");
             
-
-            if (!response.ok) {
-
-                throw new Error("找不到 data.xlsx 文件");
-
-            }
-
-            
-
             const arrayBuffer = await response.arrayBuffer();
-
             const workbook = XLSX.read(arrayBuffer);
-
             const sheetName = workbook.SheetNames[0]; 
-
             const worksheet = workbook.Sheets[sheetName];
-
             const rawData = XLSX.utils.sheet_to_json(worksheet);
-
             
-
-            // 数据清洗：把 "116.xx,39.xx" 这种字符串转为数组 [116.xx, 39.xx]
-
             buildings = rawData.map(item => {
-
                 const posStr = String(item.position || "").trim();
-
                 const posArray = posStr.split(',').map(Number);
-
                 
-
                 return {
-
-                    name: item.name,
-
-                    position: (posArray.length === 2 && !isNaN(posArray[0])) ? posArray : [0,0],
-
-                    address: item.address,
-
-                    price: item.price,
-
+                    name: item.name || "未知名称", // 增加默认值
+                    position: (posArray.length === 2 && !isNaN(posArray[0]) && !isNaN(posArray[1])) ? posArray : [0,0],
+                    address: item.address || '暂无数据',
+                    price: item.price, // 价格和空置率允许为空，在模板中处理
                     vacancy: item.vacancy
-
                 };
-
             });
 
-
-
-            initMarkers(); // 数据准备好后，渲染标记
-
-            tip.innerText = `数据加载成功：共 ${buildings.length} 个写字楼`;
-
-            tip.style.color = "green";
-
+            initMarkers(); 
+            tip.innerHTML = `已加载 <b>${buildings.length}</b> 个写字楼数据`;
+            tip.style.color = "#28a745"; // 绿色
             
-
         } catch (error) {
-
             console.error(error);
-
-            tip.innerText = "数据加载失败！请确保 data.xlsx 已上传且名称正确。";
-
-            tip.style.color = "red";
-
+            tip.innerHTML = `<span style="color: #dc3545;">数据加载失败：${error.message}</span>`;
         }
-
     }
-
-
 
     // --- 渲染标记 ---
-
     function initMarkers() {
-
         map.clearMap();
-
         markers = [];
-
         
-
         buildings.forEach(item => {
-
-            if (item.position[0] === 0) return; // 跳过无效坐标
-
-
+            if (item.position[0] === 0) return; 
 
             const marker = new AMap.Marker({
-
                 position: item.position,
-
                 title: item.name,
-
-                map: map
-
+                map: map,
+                // 可以选用更好看的默认图标样式
+                icon: new AMap.Icon({            
+                    size: new AMap.Size(25, 34),
+                    image: '//a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-default.png',
+                    imageSize: new AMap.Size(25, 34)
+                }),
+                anchor: 'bottom-center' // 图标锚点设置在底部中心
             });
-
             
+            // 处理租金显示逻辑
+            const priceDisplay = item.price ? `<span class="info-value highlight">${item.price}</span> 元/㎡/天` : '<span class="info-value">暂无数据</span>';
+            // 处理空置率显示逻辑
+            const vacancyDisplay = item.vacancy ? `<span class="info-value">${(item.vacancy * 100).toFixed(1)}%</span>` : '<span class="info-value">暂无数据</span>';
 
             marker.on('click', () => {
-
-                const content = `
-
-                    <div class="info-window">
-
-                        <h3>${item.name}</h3>
-
-                        <p><b>地址：</b>${item.address || '-'}</p>
-
-                        <p><b>参考租金：</b>${item.price || '-'}</p>
-
-                        <p><b>空置面积：</b>${item.vacancy || '-'}</p>
-
-                    </div>
-
-                `;
-
-                infoWindow.setContent(content);
-
-                infoWindow.open(map, item.position);
-
-            });
-
-            markers.push({ data: item, marker: marker });
-
-        });
-
-    }
-
-
-
-    // --- 搜索功能 ---
-
-    function searchBuilding() {
-
-        const keyword = document.getElementById('keyword').value.trim();
-
-        if (!keyword) {
-
-            alert("请输入写字楼名称");
-
-            return;
-
-        }
-
-
-
-        const result = markers.find(m => m.data.name.includes(keyword));
-
-        
-
-        if (result) {
-
-            map.setZoomAndCenter(16, result.data.position);
-
-            result.marker.emit('click', {target: result.marker});
-
-        } else {
-
-            alert("未找到该写字楼，请检查名称。");
-
-        }
-
-    }
-
-
-
-    // --- 回车键处理 ---
-
-    function handleEnter(event) {
-
-        if (event.key === "Enter") {
-
-            searchBuilding();
-
-        }
-
-    }
-
-
-
-    // 页面加载后执行
-
-    loadExcel();
-
-</script>
-
-</body>
-
-</html>
+                // --- 美化后的 InfoWindow 内容模板 ---
+                const content
