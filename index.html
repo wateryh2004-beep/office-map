@@ -2,343 +2,445 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>公司写字楼数据地图</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高力国际 | 办公楼数据驾驶舱</title>
     
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <script type="text/javascript">
         window._AMapSecurityConfig = {
-            securityJsCode: '你的安全密钥', // 【重要】请填写你的高德安全密钥
+            securityJsCode: '你的安全密钥', // 【请替换你的安全密钥】
         }
     </script>
     <script src="https://webapi.amap.com/maps?v=2.0&key=31fdd14ad134becab8cb33119fa019d5"></script>
     
     <style>
-        /* --- 1. 全局基础 --- */
-        * { box-sizing: border-box; }
-        body, html { 
-            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f0f2f5; 
-        }
-
-        /* --- 2. 地图容器 (初始隐藏在背景层) --- */
-        #container { 
-            width: 100%; 
-            height: 100vh; 
-            position: absolute;
-            top: 0; left: 0;
-            z-index: 0;
-            opacity: 0; /* 初始透明，制造淡入效果 */
-            transition: opacity 1s ease;
-        }
-
-        /* --- 3. 搜索/引导容器 --- */
-        /* 这是一个覆盖层，初始状态占据全屏 */
-        #ui-layer {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; /* 让点击穿透到内部元素 */
-            z-index: 100;
-            transition: background-color 0.8s ease;
-            background-color: #ffffff; /* 初始白色背景 */
+        /* --- 布局样式 --- */
+        body { margin: 0; padding: 0; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; overflow: hidden; display: flex; height: 100vh; }
+        
+        /* 左侧边栏 (Dashboard) */
+        #sidebar {
+            width: 320px;
+            background: #f8f9fa;
+            border-right: 1px solid #e0e0e0;
             display: flex;
             flex-direction: column;
-            justify-content: center; /* 垂直居中 */
-            align-items: center;     /* 水平居中 */
+            z-index: 200;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
         }
-
-        /* --- 4. 搜索框卡片 --- */
-        #search-card {
-            background: #fff;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 500px;
-            pointer-events: auto; /* 恢复点击 */
-            transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1); /* 平滑过渡动画 */
-            text-align: center;
-        }
-
-        /* 标题样式 */
-        #app-title {
-            margin: 0 0 25px 0;
-            color: #1a1a1a;
-            font-size: 28px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            transition: all 0.5s ease;
-        }
-
-        /* 表单区域 */
-        .search-form {
-            display: flex;
-            gap: 10px;
-        }
-
-        #keyword {
-            flex: 1;
-            padding: 14px 18px;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            font-size: 16px;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-        #keyword:focus { border-color: #007AFF; }
-
-        #search-btn {
-            padding: 14px 28px;
-            background: #007AFF;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            white-space: nowrap;
-        }
-        #search-btn:hover { background: #0062cc; }
-
-        #loading-tip {
-            margin-top: 15px;
-            font-size: 13px;
-            color: #888;
-            min-height: 20px;
-        }
-
-        /* --- 5. 激活地图模式 (View Change) --- */
-        /* 当 body 加上 .map-active 类时，触发以下变化 */
         
-        body.map-active #ui-layer {
-            background-color: transparent; /* 背景变透明 */
-            justify-content: flex-start;   /* 取消垂直居中 */
-            align-items: flex-start;       /* 取消水平居中 */
-            pointer-events: none;          /* 确保鼠标能点到地图 */
-        }
-
-        body.map-active #container {
-            opacity: 1; /* 地图显现 */
-        }
-
-        body.map-active #search-card {
-            /* 移动到左上角 */
-            width: 380px;
-            margin: 24px 0 0 24px;
+        /* 顶部品牌区 */
+        .brand-header {
             padding: 20px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            background: #004080; /* Colliers Blue */
+            color: white;
         }
+        .brand-header h2 { margin: 0; font-size: 18px; letter-spacing: 1px; }
+        .brand-header p { margin: 5px 0 0; opacity: 0.8; font-size: 12px; }
 
-        body.map-active #app-title {
-            /* 标题变小或隐藏，这里选择变小 */
-            font-size: 18px;
-            margin-bottom: 15px;
-            text-align: left;
+        /* 统计卡片区 */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 15px;
+            background: white;
+            border-bottom: 1px solid #eee;
         }
+        .stat-card { text-align: center; }
+        .stat-value { font-size: 20px; font-weight: bold; color: #004080; }
+        .stat-label { font-size: 12px; color: #666; }
+
+        /* 筛选控制区 */
+        .controls { flex: 1; padding: 20px; overflow-y: auto; }
+        .control-group { margin-bottom: 25px; }
+        .control-title { font-weight: bold; font-size: 14px; margin-bottom: 10px; display: block; color: #333; }
         
-        body.map-active #keyword {
-            padding: 10px 14px;
-            font-size: 14px;
+        /* 复选框样式 */
+        .checkbox-group label {
+            display: flex; align-items: center; margin-bottom: 8px; font-size: 13px; color: #555; cursor: pointer;
         }
-        body.map-active #search-btn {
-            padding: 10px 20px;
-            font-size: 14px;
-        }
-        body.map-active #loading-tip {
-            display: none; /* 搜索后隐藏加载提示，保持界面干净 */
+        .checkbox-group input { margin-right: 8px; }
+
+        /* 搜索框 (嵌入侧边栏) */
+        #search-input {
+            width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 20px;
         }
 
+        /* 底部操作区 */
+        .actions { padding: 15px; border-top: 1px solid #eee; background: white; }
+        .btn-mode {
+            width: 100%; padding: 10px; margin-bottom: 10px;
+            border: 1px solid #004080; background: white; color: #004080;
+            border-radius: 4px; cursor: pointer; font-weight: bold;
+            transition: all 0.2s;
+        }
+        .btn-mode.active { background: #004080; color: white; }
 
-        /* --- 6. 信息窗体样式 (保持不变) --- */
-        .amap-info-content { padding: 0; border: none; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        .custom-info-window { min-width: 240px; background: #fff; }
-        .info-header { background: #007AFF; color: #fff; padding: 12px 16px; }
-        .info-header h3 { margin: 0; font-size: 16px; }
-        .info-body { padding: 16px; }
-        .info-item { margin-bottom: 8px; font-size: 13px; display: flex; }
-        .info-label { color: #666; min-width: 60px; }
-        .info-value { color: #333; flex: 1; }
-        .info-value.price { color: #ff5722; font-weight: bold; }
-        .amap-info-close { color: white !important; right: 10px !important; top: 10px !important; }
+        /* 右侧地图容器 */
+        #map-container { flex: 1; position: relative; }
+        
+        /* 弹窗样式优化 */
+        .info-window-card { width: 320px; padding: 0; }
+        .chart-container { height: 180px; width: 100%; margin-top: 10px; }
+        .trend-tag { 
+            display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-left: 5px; 
+        }
+        .trend-up { background: #ffebee; color: #c62828; } /* 涨红 */
+        .trend-down { background: #e8f5e9; color: #2e7d32; } /* 跌绿 */
+
     </style>
 </head>
 <body>
 
-    <div id="container"></div>
+    <div id="sidebar">
+        <div class="brand-header">
+            <h2>COLLIERS DATA</h2>
+            <p>办公楼市场监测系统 v2.0</p>
+        </div>
 
-    <div id="ui-layer">
-        <div id="search-card">
-            <h1 id="app-title">🏢 公司写字楼数据地图</h1>
-            <div class="search-form">
-                <input type="text" id="keyword" placeholder="请输入写字楼名称..." onkeydown="handleEnter(event)">
-                <button id="search-btn" onclick="searchBuilding()">查询</button>
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-count">-</div>
+                <div class="stat-label">监测项目 (个)</div>
             </div>
-            <div id="loading-tip">正在连接数据资源...</div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-price">-</div>
+                <div class="stat-label">平均租金 (元)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-vacancy">-</div>
+                <div class="stat-label">平均空置 (%)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-qoq">-</div>
+                <div class="stat-label">环比涨幅</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="search-input" placeholder="输入楼宇名称快速定位..." onkeyup="handleSearch()">
+            
+            <div class="control-group">
+                <span class="control-title">商圈筛选</span>
+                <div class="checkbox-group" id="district-filters">
+                    <label><input type="checkbox" checked disabled> 加载中...</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <span class="control-title" style="margin-bottom:10px; display:block">着色模式</span>
+            <button class="btn-mode active" onclick="setMode('price')">💰 按租金热力着色</button>
+            <button class="btn-mode" onclick="setMode('vacancy')">🏢 按空置率着色</button>
         </div>
     </div>
 
-<script>
-    // --- 全局变量 ---
-    let map;
-    let markers = []; 
-    let buildings = []; 
-    let infoWindow;
-    let isMapActive = false; // 标记当前是否已经切换到地图模式
+    <div id="map-container"></div>
 
-    // --- 1. 初始化地图 ---
-    function initMap() {
-        map = new AMap.Map('container', {
-            zoom: 11,
-            center: [116.397428, 39.90923], // 默认北京中心
+<script>
+    // --- 配置与全局变量 ---
+    // 定义时间轴 (对应 Excel 列名: price_2023_Q1, etc.)
+    const QUARTERS = ['2023_Q1', '2023_Q2', '2023_Q3', '2023_Q4', '2024_Q1', '2024_Q2'];
+    const LATEST_Q = '2024_Q2';
+    const PREV_Q = '2024_Q1';
+
+    let map;
+    let rawData = []; // 原始数据
+    let markers = []; // 地图标记对象
+    let infoWindow;
+    let chartInstance = null; // 图表实例
+    let currentMode = 'price'; // 当前模式: 'price' 或 'vacancy'
+    let activeDistricts = new Set(); // 当前选中的商圈
+
+    // --- 1. 初始化 ---
+    function init() {
+        map = new AMap.Map('map-container', {
+            zoom: 12,
+            center: [116.460787, 39.905477], // 北京CBD
             viewMode: '2D',
+            mapStyle: 'amap://styles/whitesmoke' // 使用浅色地图突显数据点
         });
 
-        // 初始化信息窗体
         infoWindow = new AMap.InfoWindow({
             isCustom: false,
             offset: new AMap.Pixel(0, -35),
             autoMove: true
         });
 
-        // 立即开始加载数据
+        // 监听弹窗关闭，销毁图表防止内存泄漏
+        infoWindow.on('close', () => {
+            if(chartInstance) { chartInstance.destroy(); chartInstance = null; }
+        });
+
         loadExcel();
     }
 
-    // --- 2. 读取 Excel (只读取一次) ---
+    // --- 2. 加载与处理数据 ---
     async function loadExcel() {
-        const tip = document.getElementById('loading-tip');
         try {
-            const response = await fetch('./data.xlsx');
-            if (!response.ok) throw new Error("Status: " + response.status);
-            
-            const arrayBuffer = await response.arrayBuffer();
-            const workbook = XLSX.read(arrayBuffer);
-            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-            const rawData = XLSX.utils.sheet_to_json(worksheet);
-            
-            // 数据清洗：手动解析 Excel 里的 "116.xxx,39.xxx"
-            buildings = rawData.map(item => {
-                const posStr = String(item.position || "").trim();
-                const posArray = posStr.split(',').map(Number);
-                
-                return {
-                    name: item.name || "未知写字楼",
-                    // 只有当坐标是两个有效数字时才采用，否则为 [0,0]
-                    position: (posArray.length === 2 && !isNaN(posArray[0])) ? posArray : [0,0],
-                    address: item.address || '暂无地址',
-                    price: item.price, 
-                    vacancy: item.vacancy
-                };
-            });
+            const response = await fetch('./data.xlsx'); // 请确保文件名匹配
+            const buffer = await response.arrayBuffer();
+            const workbook = XLSX.read(buffer);
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(sheet);
 
-            // 预先在地图上画点
-            initMarkers();
-            
-            tip.innerHTML = `✅ 数据就绪：共收录 <b>${buildings.length}</b> 个写字楼`;
-            tip.style.color = "#28a745";
-            
-        } catch (error) {
-            console.error(error);
-            tip.innerHTML = `❌ 数据加载失败，请检查 data.xlsx`;
-            tip.style.color = "#dc3545";
+            // 数据清洗与增强
+            rawData = json.map(item => {
+                const posStr = String(item.position || "").trim();
+                const pos = posStr.split(',').map(Number);
+                
+                // 计算环比 (QoQ)
+                const pCurrent = item[`price_${LATEST_Q}`] || 0;
+                const pPrev = item[`price_${PREV_Q}`] || 0;
+                const qoq = pPrev > 0 ? ((pCurrent - pPrev) / pPrev) : 0;
+
+                return {
+                    ...item,
+                    lat: pos[1],
+                    lng: pos[0],
+                    isValid: (pos.length === 2 && !isNaN(pos[0])),
+                    qoq: qoq,
+                    // 提取历史数组用于画图
+                    priceHistory: QUARTERS.map(q => item[`price_${q}`] || 0),
+                    vacancyHistory: QUARTERS.map(q => item[`vacancy_${q}`] || 0)
+                };
+            }).filter(d => d.isValid);
+
+            initFilters();
+            renderMap();
+            updateDashboard();
+
+        } catch (err) {
+            alert("数据加载失败，请检查 data.xlsx 是否存在且格式正确。");
+            console.error(err);
         }
     }
 
-    // --- 3. 渲染标记 (后台静默执行) ---
-    function initMarkers() {
+    // --- 3. 过滤器初始化 ---
+    function initFilters() {
+        // 提取所有唯一商圈
+        const districts = [...new Set(rawData.map(d => d.district))].filter(Boolean);
+        districts.forEach(d => activeDistricts.add(d)); // 默认全选
+
+        const container = document.getElementById('district-filters');
+        container.innerHTML = districts.map(d => `
+            <label>
+                <input type="checkbox" value="${d}" checked onchange="toggleDistrict('${d}')">
+                ${d}
+            </label>
+        `).join('');
+    }
+
+    function toggleDistrict(d) {
+        if (activeDistricts.has(d)) activeDistricts.delete(d);
+        else activeDistricts.add(d);
+        renderMap(); // 重绘地图
+        updateDashboard(); // 更新统计
+    }
+
+    function handleSearch() {
+        const keyword = document.getElementById('search-input').value.toLowerCase();
+        // 简单实现：只显示搜索匹配的，或者高亮。这里我们配合筛选逻辑。
+        // 为了简单，我们只在点击回车或输入时过滤显示的 Marker
+        renderMap(keyword);
+    }
+
+    // --- 4. 渲染地图点 (核心逻辑) ---
+    function renderMap(searchKeyword = "") {
         map.clearMap();
         markers = [];
-        
-        buildings.forEach(item => {
-            if (item.position[0] === 0) return; // 跳过无效坐标
 
-            const marker = new AMap.Marker({
-                position: item.position,
-                title: item.name,
-                map: map,
-                anchor: 'bottom-center',
-                icon: new AMap.Icon({
-                    size: new AMap.Size(25, 34),
-                    image: '//a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-default.png',
-                    imageSize: new AMap.Size(25, 34)
-                })
-            });
+        // 1. 过滤数据
+        const visibleData = rawData.filter(item => {
+            const matchDistrict = activeDistricts.has(item.district);
+            const matchSearch = item.name.toLowerCase().includes(searchKeyword);
+            return matchDistrict && matchSearch;
+        });
 
-            // 构建弹窗内容
-            const priceHtml = item.price ? `<span class="info-value price">${item.price}</span>` : `<span>暂无</span>`;
-            let vacancyHtml = '<span>暂无</span>';
-            if (item.vacancy !== undefined) {
-                const val = parseFloat(item.vacancy);
-                if (!isNaN(val) && val < 1) vacancyHtml = `<span>${(val * 100).toFixed(1)}%</span>`;
-                else vacancyHtml = `<span>${item.vacancy}</span>`;
+        // 2. 计算当前视图数据的最大最小值（用于颜色映射）
+        const prices = visibleData.map(d => d[`price_${LATEST_Q}`]);
+        const maxPrice = Math.max(...prices, 15); // 设个保底值防止报错
+        const minPrice = Math.min(...prices, 5);
+
+        visibleData.forEach(item => {
+            // 根据模式决定颜色
+            let color = '#007AFF'; // 默认蓝
+            let scale = 1.0;
+            
+            if (currentMode === 'price') {
+                const val = item[`price_${LATEST_Q}`];
+                // 价格越高越红，越低越绿 (简单插值)
+                // 使用 HSL: 0(红) -> 120(绿)。价格高(max) -> 0, 价格低(min) -> 120
+                const ratio = (val - minPrice) / (maxPrice - minPrice + 0.1);
+                const hue = (1 - ratio) * 120; // 这里的逻辑反了，通常红色代表贵(Hot)
+                // 修正：Red(0) is Hot/Expensive, Green(120) is Cheap. 
+                // ratio 0(cheap) -> hue 120. ratio 1(expensive) -> hue 0.
+                color = `hsl(${120 - (ratio * 120)}, 70%, 50%)`;
+            } else {
+                // 空置率模式：高空置(红色警报), 低空置(绿色)
+                const vac = item[`vacancy_${LATEST_Q}`];
+                // 假设 0% 是绿，30% 是红
+                const ratio = Math.min(vac / 0.3, 1); 
+                color = `hsl(${120 - (ratio * 120)}, 70%, 50%)`;
             }
 
-            marker.on('click', () => {
-                const content = `
-                    <div class="custom-info-window">
-                        <div class="info-header"><h3>${item.name}</h3></div>
-                        <div class="info-body">
-                            <div class="info-item"><span class="info-label">地址：</span><span class="info-value">${item.address}</span></div>
-                            <div class="info-item"><span class="info-label">租金：</span>${priceHtml}</div>
-                            <div class="info-item"><span class="info-label">空置率：</span>${vacancyHtml}</div>
-                        </div>
-                    </div>`;
-                infoWindow.setContent(content);
-                infoWindow.open(map, item.position);
+            // 创建圆点标记 (比图标更适合数据可视化)
+            const markerContent = `
+                <div style="
+                    width: 24px; height: 24px; 
+                    background-color: ${color}; 
+                    border: 2px solid white; 
+                    border-radius: 50%; 
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                    display: flex; justify-content: center; align-items: center;
+                    color: white; font-size: 10px; font-weight: bold;">
+                    ${currentMode === 'price' ? '￥' : '%'}
+                </div>
+            `;
+
+            const marker = new AMap.Marker({
+                position: [item.lng, item.lat],
+                content: markerContent,
+                offset: new AMap.Pixel(-12, -12),
+                map: map,
+                extData: item // 存入数据以便后续使用
             });
-            
-            markers.push({ data: item, marker: marker });
+
+            marker.on('click', () => showDetail(item));
+            markers.push(marker);
+        });
+        
+        // 更新统计
+        updateDashboard(visibleData);
+    }
+
+    // --- 5. 详情弹窗与图表 ---
+    function showDetail(item) {
+        const currentPrice = item[`price_${LATEST_Q}`].toFixed(1);
+        const currentVac = (item[`vacancy_${LATEST_Q}`] * 100).toFixed(1);
+        const qoqPct = (item.qoq * 100).toFixed(1);
+        const trendClass = item.qoq >= 0 ? 'trend-up' : 'trend-down';
+        const trendIcon = item.qoq >= 0 ? '📈' : '📉';
+
+        const content = `
+            <div class="info-window-card" style="padding:10px;">
+                <h3 style="margin:0 0 10px 0; border-bottom:1px solid #eee; padding-bottom:10px;">
+                    ${item.name} <span style="font-size:12px; color:#999; font-weight:normal">(${item.built_year}年)</span>
+                </h3>
+                <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:10px;">
+                    <div>
+                        <div style="color:#666">最新租金</div>
+                        <div style="font-size:18px; font-weight:bold; color:#333">
+                            ¥${currentPrice} 
+                            <span class="trend-tag ${trendClass}">${trendIcon} ${qoqPct}%</span>
+                        </div>
+                    </div>
+                    <div style="text-align:right">
+                        <div style="color:#666">空置率</div>
+                        <div style="font-size:18px; font-weight:bold; color:#333">${currentVac}%</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        `;
+        
+        infoWindow.setContent(content);
+        infoWindow.open(map, [item.lng, item.lat]);
+
+        // 等待DOM渲染后绘制图表
+        setTimeout(() => {
+            renderChart(item);
+        }, 100);
+    }
+
+    function renderChart(item) {
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        
+        // 销毁旧图表
+        if(chartInstance) chartInstance.destroy();
+
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['23Q1', '23Q2', '23Q3', '23Q4', '24Q1', '24Q2'],
+                datasets: [
+                    {
+                        label: '租金走势 (元/㎡/天)',
+                        data: item.priceHistory,
+                        borderColor: '#004080',
+                        backgroundColor: 'rgba(0, 64, 128, 0.1)',
+                        fill: true,
+                        tension: 0.4, // 平滑曲线
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: '空置率 (%)',
+                        data: item.vacancyHistory.map(v => v * 100),
+                        borderColor: '#dc3545',
+                        borderDash: [5, 5],
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { legend: { position: 'bottom', labels:{boxWidth:10} } },
+                scales: {
+                    y: { 
+                        type: 'linear', display: true, position: 'left',
+                        title: {display: true, text: '租金'} 
+                    },
+                    y1: { 
+                        type: 'linear', display: true, position: 'right',
+                        grid: { drawOnChartArea: false }, // 不显示右侧网格线
+                        title: {display: true, text: '空置%'}
+                    }
+                }
+            }
         });
     }
 
-    // --- 4. 核心交互：搜索并切换视图 ---
-    function searchBuilding() {
-        document.getElementById('keyword').blur(); // 收起键盘
-        const keyword = document.getElementById('keyword').value.trim();
+    // --- 6. 仪表盘更新 ---
+    function updateDashboard(data) {
+        if (!data) return; // 初始加载跳过
         
-        if (!keyword) {
-            alert("请输入搜索关键词");
-            return;
-        }
-
-        // 查找逻辑
-        const result = markers.find(m => m.data.name.includes(keyword));
+        // 计算均值
+        const count = data.length;
+        const totalPrice = data.reduce((acc, cur) => acc + cur[`price_${LATEST_Q}`], 0);
+        const totalVac = data.reduce((acc, cur) => acc + cur[`vacancy_${LATEST_Q}`], 0);
         
-        if (result) {
-            // 🎯 核心改变：如果找到了，才切换界面
-            if (!isMapActive) {
-                switchToMapView();
-            }
+        // 计算整体环比
+        const totalQoQ = data.reduce((acc, cur) => acc + cur.qoq, 0);
 
-            // 地图定位逻辑
-            map.setZoomAndCenter(16, result.data.position);
-            setTimeout(() => {
-                 result.marker.emit('click', {target: result.marker});
-            }, 500); // 稍微延时等待动画过渡
-            
-        } else {
-            // 没找到，不切换界面，只提示
-            alert("未找到该写字楼，请检查名称是否正确。");
-        }
+        document.getElementById('stat-count').innerText = count;
+        document.getElementById('stat-price').innerText = count ? (totalPrice / count).toFixed(2) : '-';
+        document.getElementById('stat-vacancy').innerText = count ? ((totalVac / count) * 100).toFixed(1) + '%' : '-';
+        
+        const avgQoQ = count ? (totalQoQ / count * 100) : 0;
+        const qoqEl = document.getElementById('stat-qoq');
+        qoqEl.innerText = (avgQoQ > 0 ? '+' : '') + avgQoQ.toFixed(2) + '%';
+        qoqEl.style.color = avgQoQ >= 0 ? '#c62828' : '#2e7d32';
     }
 
-    // --- 5. 切换到地图模式的动画逻辑 ---
-    function switchToMapView() {
-        isMapActive = true;
-        // 给 body 添加类名，CSS 会处理剩下的动画
-        document.body.classList.add('map-active');
-    }
-
-    function handleEnter(event) {
-        if (event.key === "Enter") searchBuilding();
+    // --- 7. 模式切换 ---
+    function setMode(mode) {
+        currentMode = mode;
+        document.querySelectorAll('.btn-mode').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        renderMap(); // 重新着色
     }
 
     // 启动
-    initMap();
-</script>
+    init();
 
+</script>
 </body>
 </html>
