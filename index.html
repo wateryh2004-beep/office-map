@@ -58,7 +58,7 @@
     <div id="sidebar">
         <div class="brand-header">
             <h2>COLLIERS DATA</h2>
-            <p>办公楼市场监测系统 v4.1 (Stable)</p>
+            <p>办公楼市场监测系统 v4.2 (Fixed Layout)</p>
         </div>
         <div class="stat-grid">
             <div class="stat-card"><div class="stat-value" id="stat-count">-</div><div class="stat-label">当前视野项目</div></div>
@@ -89,7 +89,6 @@
     </div>
 
 <script>
-    // --- 全局变量配置 ---
     const QUARTERS = ['2023_Q1', '2023_Q2', '2023_Q3', '2023_Q4', '2024_Q1', '2024_Q2'];
     const LATEST_Q = '2024_Q2';
     const PREV_Q = '2024_Q1';
@@ -102,7 +101,7 @@
 
     function init() {
         map = new AMap.Map('map-container', { zoom: 11, center: [116.460787, 39.905477], viewMode: '2D', mapStyle: 'amap://styles/whitesmoke' });
-        infoWindow = new AMap.InfoWindow({ isCustom: false, offset: new AMap.Pixel(0, -35), autoMove: true }); // autoMove: true 会自动平移地图
+        infoWindow = new AMap.InfoWindow({ isCustom: false, offset: new AMap.Pixel(0, -35), autoMove: true }); 
         
         infoWindow.on('close', () => {
             if(chartInstance) { chartInstance.destroy(); chartInstance = null; }
@@ -111,7 +110,6 @@
         loadExcel();
     }
 
-    // --- 1. 数据加载 ---
     async function loadExcel() {
         showStatus("📥 正在读取数据...");
         try {
@@ -126,7 +124,7 @@
                 throw new Error("Local file not found");
             }
         } catch (err) {
-            console.warn("Excel读取失败，使用备用逻辑");
+            console.warn("Excel读取失败");
             showStatus("❌ 需上传 data.xlsx 文件");
         }
     }
@@ -158,7 +156,6 @@
         setTimeout(() => document.getElementById('status-bar').style.display = 'none', 3000);
     }
 
-    // --- 2. 交互逻辑 ---
     function initFilters() {
         const districts = [...new Set(rawData.map(d => d.district))].sort();
         districts.forEach(d => activeDistricts.add(d));
@@ -172,7 +169,6 @@
         if (!isCompareMode) renderMap(rawData.filter(item => activeDistricts.has(item.district)));
     }
 
-    // 处理回车键
     function handleEnter(event) {
         if (event.key === "Enter") {
             executeSearch();
@@ -185,38 +181,42 @@
 
         const keyword = document.getElementById('search-input').value.trim();
         if (!keyword) {
-            // 如果关键词为空，恢复全览
             renderMap(rawData.filter(item => activeDistricts.has(item.district)));
-            map.setFitView();
+            // 恢复全览时也要避让左侧
+            map.setFitView(null, false, [50, 50, 50, 400]); 
             return;
         }
 
         const results = rawData.filter(item => item.name.includes(keyword));
         if (results.length === 0) { showStatus("⚠️ 未找到项目"); return; }
         
-        // 先渲染结果
         renderMap(results);
 
-        // 如果结果唯一，强制放大并定位
         if (results.length === 1) {
             const target = results[0];
             showStatus(`🔍 定位到: ${target.name}`);
             
-            // ★ 修复点：增加 100毫秒 延时，确保地图渲染完点标记后，再移动镜头
-            // 否则地图引擎可能因为同时处理 render 和 zoom 而卡住
-            setTimeout(() => {
-                map.setZoomAndCenter(17, [target.lng, target.lat]);
-                showDetail(target);
-            }, 100); 
+            // 查找对应的 Marker 实例
+            // 注意：我们刚才在 renderMap 里把 extData 存进去了，现在通过 extData 来匹配
+            const targetMarker = markers.find(m => m.getExtData().name === target.name);
+
+            if (targetMarker) {
+                // ★★★ 终极解决方案：使用 setFitView 代替 setZoomAndCenter ★★★
+                // 解释：setFitView(markerArray, immediate, [top, right, bottom, left], maxZoom)
+                // [60, 60, 60, 420] -> 关键是最后一个 420，它代表左侧留出 420px 的空白
+                // 这样地图会自动把点推到右侧区域的中心！
+                map.setFitView([targetMarker], false, [60, 60, 60, 420], 16);
+                
+                // 延迟一点点弹窗，体验更丝滑
+                setTimeout(() => showDetail(target), 300);
+            }
 
         } else {
-            // 多个结果，自动缩放显示全部
             showStatus(`🔍 找到 ${results.length} 个项目`);
-            map.setFitView(null, false, [50, 50, 50, 360]);
+            map.setFitView(null, false, [50, 50, 50, 400]);
         }
     }
 
-    // --- 3. 渲染逻辑 ---
     function renderMap(dataToRender) {
         map.clearMap();
         if (circleOverlay) { map.remove(circleOverlay); circleOverlay = null; }
@@ -237,8 +237,9 @@
 
             const content = `<div style="width:26px;height:26px;background:${color};border:2px solid white;border-radius:50%;box-shadow:0 3px 6px rgba(0,0,0,0.3);color:white;display:flex;justify-content:center;align-items:center;font-size:11px;font-weight:bold;">${currentMode==='price'?'¥':'%'}</div>`;
             
+            // ★ 注意：这里存入 extData，为了搜索时能反向找到 Marker
             const marker = new AMap.Marker({
-                position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-13, -13), map: map, zIndex: 100
+                position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-13, -13), map: map, zIndex: 100, extData: item 
             });
             marker.on('click', () => showDetail(item));
             marker.on('mouseover', function(){ this.setzIndex(200); });
@@ -248,7 +249,6 @@
         updateDashboard(dataToRender);
     }
 
-    // --- 4. 竞品对比 (Plan B) ---
     function findPlanB(targetItem) {
         isCompareMode = true;
         map.clearMap(); markers = [];
@@ -262,28 +262,26 @@
             return targetLngLat.distance(itemLngLat) <= RADIUS && item.pCurrent < targetItem.pCurrent;
         });
 
-        // 目标点
         const targetMarker = new AMap.Marker({
             position: targetLngLat,
             content: `<div style="width:34px;height:34px;background:#FFD700;border:3px solid #fff;border-radius:50%;box-shadow:0 0 15px rgba(255,215,0,0.6);display:flex;justify-content:center;align-items:center;font-size:20px;">⭐️</div>`,
-            offset: new AMap.Pixel(-17, -17), map: map, zIndex: 999
+            offset: new AMap.Pixel(-17, -17), map: map, zIndex: 999, extData: targetItem
         });
         targetMarker.on('click', () => showDetail(targetItem));
 
-        // 竞品点
         competitors.forEach(item => {
             const priceDiff = (targetItem.pCurrent - item.pCurrent).toFixed(1);
             const content = `<div style="min-width:40px;padding:0 5px;height:24px;background:#2ecc71;border:2px solid white;border-radius:12px;box-shadow:0 3px 6px rgba(0,0,0,0.2);color:white;display:flex;justify-content:center;align-items:center;font-size:11px;font-weight:bold;">📉${priceDiff}</div>`;
-            const marker = new AMap.Marker({ position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-20, -12), map: map, zIndex: 500 });
+            const marker = new AMap.Marker({ position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-20, -12), map: map, zIndex: 500, extData: item });
             marker.on('click', () => showDetail(item));
             markers.push(marker);
         });
 
-        // 圈选范围
         circleOverlay = new AMap.Circle({ center: targetLngLat, radius: RADIUS, borderWeight: 1, strokeColor: "#007AFF", strokeOpacity: 0.5, strokeWeight: 1, fillOpacity: 0.1, strokeStyle: 'dashed', strokeDasharray: [10, 10], fillColor: '#1791fc', zIndex: 50 });
         circleOverlay.setMap(map);
 
-        map.setFitView(null, false, [50, 50, 50, 360]);
+        // Plan B 模式下也要避让左侧
+        map.setFitView(null, false, [50, 50, 50, 420]);
         document.getElementById('reset-map-btn').style.display = 'block';
         showStatus(`🎯 发现 ${competitors.length} 个更便宜的项目`);
         updateDashboard(competitors);
@@ -294,14 +292,13 @@
         document.getElementById('reset-map-btn').style.display = 'none';
         const filtered = rawData.filter(item => activeDistricts.has(item.district));
         renderMap(filtered);
-        map.setFitView();
+        // 恢复后同样避让左侧
+        map.setFitView(null, false, [50, 50, 50, 400]);
         showStatus("🔄 全览模式");
     }
 
-    // --- 5. 详情页 ---
     function showDetail(item) {
         const arrow = item.qoq>=0?'📈':'📉';
-        // 动态绑定事件
         setTimeout(() => {
             const btn = document.getElementById('btn-plan-b');
             if(btn) btn.onclick = () => findPlanB(item);
@@ -369,7 +366,11 @@
         currentMode = mode;
         document.querySelectorAll('.btn-mode').forEach(btn => btn.classList.remove('active'));
         event.currentTarget.classList.add('active');
-        if(!isCompareMode) renderMap(rawData.filter(item => activeDistricts.has(item.district)));
+        if(!isCompareMode) {
+            const keyword = document.getElementById('search-input').value.trim();
+            if(keyword) executeSearch(); // 保持当前搜索状态
+            else renderMap(rawData.filter(item => activeDistricts.has(item.district)));
+        }
     }
 
     init();
