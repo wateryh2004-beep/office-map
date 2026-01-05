@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Colliers Office Map 3D</title>
     
-    <script src="https://cdn.staticfile.org/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="./xlsx.full.min.js"></script>
     
     <script type="text/javascript">
-        // 2. 高德地图安全配置
-        // 如果你有安全密钥，请替换下面的 '你的安全密钥'；如果没有，可以暂时保留空字符串或注释掉
-        // 注意：在 Vercel 等公网环境，没有密钥可能会导致地图加载受限
+        // 建议填写安全密钥，避免地图偶发性拦截
         window._AMapSecurityConfig = {
             securityJsCode: '', 
         }
@@ -19,71 +17,20 @@
     <script src="https://webapi.amap.com/maps?v=2.0&key=31fdd14ad134becab8cb33119fa019d5"></script>
     
     <style>
-        /* 强制铺满屏幕，防止白屏 */
+        /* 样式保持不变 */
         html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-        
         #container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
-
-        /* 搜索框美化 */
-        #search-panel {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            width: 320px;
-            z-index: 100; /* 保证在地图上面 */
-            pointer-events: none; /* 让面板下的地图也能被点击，子元素恢复点击 */
-        }
-
-        .input-group {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-            pointer-events: auto; /* 恢复点击 */
-        }
-        
+        #search-panel { position: absolute; top: 20px; left: 20px; width: 320px; z-index: 100; pointer-events: none; }
+        .input-group { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 15px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); pointer-events: auto; }
         .input-group h3 { margin: 0 0 10px 0; font-size: 16px; color: #1d1d1f; font-weight: 700; }
-
-        input {
-            width: 100%;
-            padding: 12px 10px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            outline: none;
-            box-sizing: border-box; /* 防止边框撑大 */
-            background: #f5f5f7;
-        }
+        input { width: 100%; padding: 12px 10px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; outline: none; box-sizing: border-box; background: #f5f5f7; }
         input:focus { background: #fff; border-color: #007AFF; }
-
-        /* 联想列表 */
-        #suggestion-list {
-            background: white;
-            border-radius: 12px;
-            margin-top: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            max-height: 300px;
-            overflow-y: auto;
-            display: none;
-            pointer-events: auto;
-        }
-
-        .suggestion-item {
-            padding: 10px 15px;
-            cursor: pointer;
-            font-size: 14px;
-            border-bottom: 1px solid #f0f0f0;
-            display: flex;
-            justify-content: space-between;
-        }
+        #suggestion-list { background: white; border-radius: 12px; margin-top: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-height: 300px; overflow-y: auto; display: none; pointer-events: auto; }
+        .suggestion-item { padding: 10px 15px; cursor: pointer; font-size: 14px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; }
         .suggestion-item:hover { background-color: #f0f7ff; color: #007AFF; }
         .suggestion-sub { font-size: 12px; color: #999; }
-
         #loading-tip { font-size: 12px; color: #86868b; margin-top: 8px; text-align: right; }
-
-        /* 信息窗体 */
         .info-window-content { padding: 5px; min-width: 200px; }
         .info-title { font-size: 16px; font-weight: bold; border-bottom: 2px solid #007AFF; padding-bottom: 5px; margin-bottom: 5px; }
         .info-row { margin: 5px 0; font-size: 13px; color: #555; }
@@ -104,14 +51,13 @@
 <div id="container"></div>
 
 <script>
-    // 错误捕捉：如果地图加载失败，直接弹窗提示
+    // 错误检查
     if (typeof AMap === 'undefined') {
-        alert("错误：高德地图未能加载！\n可能是Key失效或网络拦截。\n请尝试刷新或检查网络。");
+        alert("错误：高德地图未能加载！请检查网络连接。");
     }
 
     let map;
     try {
-        // 1. 初始化地图
         map = new AMap.Map('container', {
             viewMode: '3D',
             pitch: 50,
@@ -120,44 +66,38 @@
             mapStyle: 'amap://styles/fresh',
             showBuildingBlock: true
         });
-
-        // 3D 控件
         map.plugin(['AMap.ControlBar', 'AMap.Scale'], function(){
             map.addControl(new AMap.ControlBar({ position: { right: '10px', bottom: '10px' } }));
             map.addControl(new AMap.Scale());
         });
     } catch (e) {
         console.error(e);
-        document.getElementById('loading-tip').innerText = "地图加载出错";
-        document.getElementById('loading-tip').style.color = "red";
     }
 
     let buildings = []; 
     const infoWindow = new AMap.InfoWindow({offset: new AMap.Pixel(0, -30), closeWhenClickMap: true});
 
-    // --- 读取 Excel ---
     async function loadExcel() {
         const tip = document.getElementById('loading-tip');
         
-        // 检查 XLSX 库是否加载
+        // 再次检查插件是否加载成功
         if (typeof XLSX === 'undefined') {
-            tip.innerText = "错误：Excel插件未加载";
+            tip.innerText = "错误：本地插件未加载";
             tip.style.color = "red";
-            alert("错误：Excel读取插件加载失败，请检查网络。");
+            alert("错误：找不到 xlsx.full.min.js 文件。\n请确保该文件已上传到 GitHub 并且和 index.html 在同一级目录。");
             return;
         }
 
         try {
-            tip.innerText = "正在读取 data.xlsx ...";
+            tip.innerText = "读取数据中...";
             const response = await fetch('./data.xlsx');
-            if (!response.ok) throw new Error("找不到 data.xlsx 文件 (404)");
+            if (!response.ok) throw new Error("找不到 data.xlsx");
             
             const arrayBuffer = await response.arrayBuffer();
             const workbook = XLSX.read(arrayBuffer);
             const sheetName = workbook.SheetNames[0]; 
             const buildingsData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
             
-            // 数据清洗
             buildings = buildingsData.map(item => {
                 const posStr = String(item.position || "").trim();
                 const posArray = posStr.split(',').map(Number);
@@ -171,30 +111,25 @@
             });
 
             initMarkers(); 
-            tip.innerText = `已加载 ${buildings.length} 个项目`;
+            tip.innerText = `已就绪 (${buildings.length})`;
             tip.style.color = "green";
             
         } catch (error) {
-            console.error("Excel Error:", error);
-            tip.innerText = "读取数据失败";
-            tip.style.color = "red";
-            alert("读取数据失败：\n" + error.message + "\n请确认 data.xlsx 是否已上传到 GitHub。");
+            console.error(error);
+            tip.innerText = "读取失败";
+            alert("数据读取失败，请检查 data.xlsx 是否存在。");
         }
     }
 
-    // --- 渲染标记 ---
     function initMarkers() {
         map.clearMap();
-        
         buildings.forEach(item => {
             if (item.position[0] === 0) return;
-
             const marker = new AMap.Marker({
                 position: item.position,
                 title: item.name,
                 map: map,
             });
-            
             marker.on('click', () => {
                 showInfo(item);
                 flyToBuilding(item.position);
@@ -202,7 +137,6 @@
         });
     }
 
-    // --- 显示详情 ---
     function showInfo(item) {
         const content = `
             <div class="info-window-content">
@@ -216,18 +150,11 @@
         infoWindow.open(map, item.position);
     }
 
-    // --- 联想搜索 ---
     function handleInput(val) {
         const list = document.getElementById('suggestion-list');
         list.innerHTML = ''; 
-        
-        if (!val.trim()) {
-            list.style.display = 'none';
-            return;
-        }
-
+        if (!val.trim()) { list.style.display = 'none'; return; }
         const matches = buildings.filter(b => b.name && b.name.includes(val));
-
         if (matches.length > 0) {
             list.style.display = 'block';
             matches.forEach(item => {
@@ -242,30 +169,19 @@
                 };
                 list.appendChild(div);
             });
-        } else {
-            list.style.display = 'none';
-        }
+        } else { list.style.display = 'none'; }
     }
 
-    // --- 飞行特效 ---
     function flyToBuilding(position) {
-        map.setCamera({
-            center: position,
-            zoom: 17,
-            pitch: 60,
-            rotation: 20,
-            duration: 1000
-        });
+        map.setCamera({ center: position, zoom: 17, pitch: 60, rotation: 20, duration: 1000 });
     }
     
-    // 点击空白关闭联想
     document.addEventListener('click', (e) => {
         if (!document.getElementById('search-panel').contains(e.target)) {
             document.getElementById('suggestion-list').style.display = 'none';
         }
     });
 
-    // 启动
     loadExcel();
 </script>
 </body>
