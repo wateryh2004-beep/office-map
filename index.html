@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Colliers Office 3D Map</title>
     
-    <script src="./xlsx.full.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
     <script type="text/javascript">
         window._AMapSecurityConfig = {
@@ -15,38 +15,46 @@
     <script src="https://webapi.amap.com/maps?v=2.0&key=31fdd14ad134becab8cb33119fa019d5"></script>
     
     <style>
-        html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: "Microsoft YaHei", sans-serif; }
+        /* 样式重置 */
+        body { margin: 0; padding: 0; font-family: '微软雅黑', sans-serif; overflow: hidden; }
         
-        #container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
+        /* 地图容器 */
+        #container { width: 100%; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        /* 修复核心：Z-Index 设为 9999，背景设为白色确保可见 */
-        #search-panel {
+        /* 搜索框容器 - 强制置顶 (Z-Index 9999) */
+        #search-box {
             position: absolute;
             top: 20px;
             left: 20px;
             width: 340px;
-            z-index: 9999; /* 强制置顶，压倒地图 */
-            background: white;
+            background: rgba(255, 255, 255, 0.95); /* 微透明背景 */
+            backdrop-filter: blur(5px);
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 9999; /* 关键：确保在地图上面 */
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        h3 { margin: 0 0 15px 0; color: #333; }
+        h3 { margin: 0 0 5px 0; color: #333; font-size: 18px; }
 
-        .search-row { display: flex; gap: 10px; }
+        /* 输入区域布局 */
+        .input-row { display: flex; gap: 8px; }
 
         input {
             flex: 1;
             padding: 10px;
-            border: 1px solid #ccc;
+            border: 1px solid #ddd;
             border-radius: 4px;
             outline: none;
         }
+        input:focus { border-color: #007AFF; }
 
-        /* 按钮加了 cursor: pointer 确保鼠标变成手型 */
+        /* 按钮样式 */
         button {
-            padding: 10px 20px;
+            padding: 0 20px;
             background-color: #007AFF;
             color: white;
             border: none;
@@ -55,96 +63,102 @@
             font-weight: bold;
         }
         button:hover { background-color: #0056b3; }
-        /* 点击时的反馈效果 */
-        button:active { background-color: #003366; transform: translateY(2px); }
+        /* 点击反馈 */
+        button:active { transform: scale(0.95); }
 
-        #suggestion-list {
-            margin-top: 10px;
-            border: 1px solid #eee;
-            max-height: 200px;
-            overflow-y: auto;
-            display: none;
-        }
-        .suggestion-item { padding: 10px; border-bottom: 1px solid #f9f9f9; cursor: pointer; }
-        .suggestion-item:hover { background: #f0f7ff; color: #007AFF; }
-        
-        #loading-tip { font-size: 12px; color: #666; margin-top: 8px; text-align: right; }
+        /* 状态提示文字 */
+        #loading-tip { font-size: 12px; color: #666; text-align: right; }
+
+        /* 信息窗体样式 */
+        .info-window-content { padding: 5px; min-width: 200px; }
+        .info-title { font-weight: bold; font-size: 15px; border-bottom: 2px solid #007AFF; margin-bottom: 5px; padding-bottom: 5px; }
+        .info-row { margin: 5px 0; font-size: 13px; color: #555; }
+        .price { color: #ff3b30; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="search-panel">
-    <h3>Colliers 写字楼地图</h3>
-    <div class="search-row">
-        <input type="text" id="keyword" placeholder="输入名称..." oninput="handleInput(this.value)" onkeydown="handleEnter(event)">
-        <button id="btn-search" onclick="manualSearch()">搜索</button>
+<div id="search-box">
+    <h3>Colliers 写字楼地图 (3D)</h3>
+    <div class="input-row">
+        <input type="text" id="keyword" placeholder="输入名称..." onkeydown="handleEnter(event)">
+        <button onclick="searchBuilding()">查询</button>
     </div>
-    <div id="suggestion-list"></div>
     <div id="loading-tip">正在初始化...</div>
 </div>
 
 <div id="container"></div>
 
 <script>
-    // 调试弹窗：如果打开网页没有这个弹窗，说明 JS 彻底没运行
-    console.log("System Starting...");
-
-    // 1. 地图初始化
+    // 1. 初始化地图 (开启 3D)
     const map = new AMap.Map('container', {
-        viewMode: '3D',
-        pitch: 60,
+        viewMode: '3D',    // 开启3D视图
+        pitch: 60,         // 倾斜60度
+        rotation: 0,
         zoom: 11,
         center: [116.397428, 39.90923],
         mapStyle: 'amap://styles/fresh',
         showBuildingBlock: true
     });
 
-    // 2. 变量与数据
-    let buildings = [];
+    // 添加 3D 控件
+    map.plugin(['AMap.ControlBar', 'AMap.Scale'], function(){
+        map.addControl(new AMap.ControlBar({ position: { right: '10px', bottom: '10px' } }));
+        map.addControl(new AMap.Scale());
+    });
+
+    let markers = []; 
+    let buildings = []; // 存 Excel 数据
     const infoWindow = new AMap.InfoWindow({offset: new AMap.Pixel(0, -30)});
 
-    // 3. 读取 Excel
+    // 2. 读取 Excel (逻辑和你提供的2D版完全一致)
     async function loadExcel() {
         const tip = document.getElementById('loading-tip');
         
+        // 检查插件是否加载成功
         if (typeof XLSX === 'undefined') {
-            tip.innerText = "错误：xlsx.full.min.js 未加载";
+            tip.innerText = "错误：Excel插件未加载 (请检查网络)";
             tip.style.color = "red";
             return;
         }
 
         try {
-            tip.innerText = "读取 data.xlsx...";
+            tip.innerText = "正在读取 data.xlsx ...";
+            
+            // 请求同级目录下的 data.xlsx
             const response = await fetch('./data.xlsx');
-            if (!response.ok) throw new Error("文件不存在");
+            if (!response.ok) throw new Error("找不到 data.xlsx");
             
-            const buffer = await response.arrayBuffer();
-            const workbook = XLSX.read(buffer);
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            const json = XLSX.utils.sheet_to_json(sheet);
+            const arrayBuffer = await response.arrayBuffer();
+            const workbook = XLSX.read(arrayBuffer);
+            const sheetName = workbook.SheetNames[0]; 
+            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
             
-            buildings = json.map(item => {
-                const pos = (item.position || "0,0").split(',').map(Number);
+            // 数据处理
+            buildings = rawData.map(item => {
+                const posStr = String(item.position || "").trim();
+                const posArray = posStr.split(',').map(Number);
                 return {
                     name: item.name,
-                    position: pos.length===2 ? pos : [0,0],
+                    position: (posArray.length === 2 && !isNaN(posArray[0])) ? posArray : [0,0],
                     address: item.address || '',
                     price: item.price || '',
                     vacancy: item.vacancy || ''
                 };
             });
 
-            initMarkers();
-            tip.innerText = `加载成功：${buildings.length} 条`;
+            initMarkers(); // 上地图
+            tip.innerText = `数据加载成功：共 ${buildings.length} 条`;
             tip.style.color = "green";
-        } catch (e) {
-            console.error(e);
-            tip.innerText = "读取失败 (检查data.xlsx)";
+            
+        } catch (error) {
+            console.error(error);
+            tip.innerText = "读取失败 (请确保已上传 data.xlsx)";
             tip.style.color = "red";
         }
     }
 
-    // 4. 撒点
+    // 3. 撒点 (3D模式)
     function initMarkers() {
         map.clearMap();
         buildings.forEach(item => {
@@ -152,77 +166,79 @@
             const marker = new AMap.Marker({
                 position: item.position,
                 title: item.name,
-                map: map
+                map: map,
+                anchor: 'bottom-center', // 3D模式锚点设在底部
             });
-            marker.on('click', () => { showInfo(item); flyTo(item.position); });
+            marker.on('click', () => {
+                showInfo(item);
+                flyTo(item.position);
+            });
         });
     }
 
+    // 显示详情
     function showInfo(item) {
-        const html = `
-            <div style="padding:5px">
-                <h4>${item.name}</h4>
-                <p>地址：${item.address}</p>
-                <p>租金：<b style="color:red">${item.price}</b></p>
-                <p>空置：${item.vacancy}</p>
-            </div>`;
-        infoWindow.setContent(html);
+        const content = `
+            <div class="info-window-content">
+                <div class="info-title">${item.name}</div>
+                <div class="info-row">地址：${item.address}</div>
+                <div class="info-row">租金：<span class="price">${item.price}</span></div>
+                <div class="info-row">空置：${item.vacancy}</div>
+            </div>
+        `;
+        infoWindow.setContent(content);
         infoWindow.open(map, item.position);
     }
 
-    // 5. 搜索功能 (核心修复)
-    function handleInput(val) {
-        const list = document.getElementById('suggestion-list');
-        list.innerHTML = '';
-        if(!val) { list.style.display='none'; return; }
-
-        const matches = buildings.filter(b => b.name && b.name.includes(val));
-        if(matches.length > 0) {
-            list.style.display = 'block';
-            matches.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'suggestion-item';
-                div.innerText = item.name;
-                div.onclick = () => { selectBuilding(item); };
-                list.appendChild(div);
-            });
-        } else {
-            list.style.display = 'none';
-        }
-    }
-
-    function handleEnter(e) {
-        if(e.key === "Enter") manualSearch();
-    }
-
-    function manualSearch() {
-        // 测试点击是否有反应
-        console.log("Button Clicked!"); 
-
-        const val = document.getElementById('keyword').value;
-        if(!val) { alert("请输入内容"); return; }
+    // 4. 搜索功能 (核心修复)
+    function searchBuilding() {
+        const keyword = document.getElementById('keyword').value.trim();
         
-        if(buildings.length === 0) { alert("数据尚未加载完成"); return; }
+        // 调试：如果点击没反应，这个弹窗会证明函数没被调用
+        // alert("正在搜索：" + keyword); 
 
-        const match = buildings.find(b => b.name.includes(val));
-        if(match) {
-            selectBuilding(match);
+        if (!keyword) {
+            alert("请输入写字楼名称");
+            return;
+        }
+        
+        if (buildings.length === 0) {
+            alert("数据尚未加载完成，请稍等...");
+            return;
+        }
+
+        // 模糊搜索
+        const result = buildings.find(b => b.name.includes(keyword));
+        
+        if (result) {
+            // 找到后飞过去
+            flyTo(result.position);
+            showInfo(result);
+            // 地图会自动弹窗，无需手动 emit click
         } else {
-            alert("未找到: " + val);
+            alert("未找到该写字楼，请检查名称。");
         }
     }
 
-    function selectBuilding(item) {
-        document.getElementById('keyword').value = item.name;
-        document.getElementById('suggestion-list').style.display = 'none';
-        flyTo(item.position);
-        showInfo(item);
+    // 回车键监听
+    function handleEnter(event) {
+        if (event.key === "Enter") {
+            searchBuilding();
+        }
     }
 
-    function flyTo(pos) {
-        map.setCamera({ center: pos, zoom: 17, pitch: 60, rotation: 30, duration: 1000 });
+    // 飞行特效
+    function flyTo(position) {
+        map.setCamera({
+            center: position,
+            zoom: 17,
+            pitch: 65,
+            rotation: 30,
+            duration: 1000
+        });
     }
 
+    // 启动
     loadExcel();
 </script>
 </body>
