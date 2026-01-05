@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>公司写字楼数据地图</title>
+    <script type="text/javascript">
+        window._AMapSecurityConfig = {
+            securityJsCode: '你的安全密钥', // 如果是生产环境需要配置这个，简单测试可暂时忽略或按高德文档配置
+        }
+    </script>
+    <script src="https://webapi.amap.com/maps?v=2.0&key=31fdd14ad134becab8cb33119fa019d5"></script>
+    <style>
+        body { margin: 0; padding: 0; font-family: '微软雅黑', sans-serif; }
+        #container { width: 100%; height: 100vh; }
+        #search-box {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            z-index: 100;
+            width: 300px;
+        }
+        input { width: 70%; padding: 8px; margin-right: 5px; }
+        button { padding: 8px 15px; background: #007AFF; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .info-window { padding: 10px; min-width: 200px; }
+        .info-window h3 { margin: 0 0 10px 0; color: #333; }
+    </style>
+</head>
+<body>
+
+<div id="search-box">
+    <h3>写字楼查询系统</h3>
+    <input type="text" id="keyword" placeholder="输入写字楼名称...">
+    <button onclick="searchBuilding()">查询</button>
+</div>
+
+<div id="container"></div>
+
+<script>
+    // 1. 数据源 (实际项目中可以将此部分单独存为json文件读取)
+    const buildings = [
+      { "name": "国贸三期", "position": [116.460787, 39.905477], "address": "北京市朝阳区建国门外大街1号", "price": "15元/㎡/天", "vacancy": "500㎡" },
+      { "name": "中国尊 (中信大厦)", "position": [116.464673, 39.909404], "address": "北京市朝阳区光华路Z15地块", "price": "18元/㎡/天", "vacancy": "1200㎡" },
+      { "name": "银泰中心", "position": [116.456637, 39.903496], "address": "北京市朝阳区建国门外大街2号", "price": "12元/㎡/天", "vacancy": "300㎡" },
+      { "name": "华贸中心", "position": [116.478982, 39.907992], "address": "北京市朝阳区建国路89号", "price": "11元/㎡/天", "vacancy": "0㎡" },
+      { "name": "嘉里中心", "position": [116.459747, 39.913217], "address": "北京市朝阳区光华路1号", "price": "13元/㎡/天", "vacancy": "800㎡" },
+      { "name": "望京SOHO", "position": [116.480983, 39.999458], "address": "北京市朝阳区望京街10号", "price": "8元/㎡/天", "vacancy": "2000㎡" },
+      { "name": "环球金融中心", "position": [116.462319, 39.909192], "address": "北京市朝阳区东三环中路1号", "price": "14元/㎡/天", "vacancy": "600㎡" },
+      { "name": "远洋大厦", "position": [116.363935, 39.906666], "address": "北京市西城区复兴门内大街158号", "price": "10元/㎡/天", "vacancy": "450㎡" },
+      { "name": "金融街中心", "position": [116.366578, 39.916892], "address": "北京市西城区金融大街9号", "price": "16元/㎡/天", "vacancy": "150㎡" },
+      { "name": "来福士广场", "position": [116.434057, 39.940507], "address": "北京市东城区东直门南大街1号", "price": "9元/㎡/天", "vacancy": "700㎡" }
+    ];
+
+    // 2. 初始化地图
+    const map = new AMap.Map('container', {
+        zoom: 11,
+        center: [116.397428, 39.90923] // 默认北京中心
+    });
+
+    const markers = []; // 存储所有标记以便管理
+    const infoWindow = new AMap.InfoWindow({offset: new AMap.Pixel(0, -30)});
+
+    // 3. 在地图上批量添加标记
+    function initMarkers() {
+        buildings.forEach(item => {
+            const marker = new AMap.Marker({
+                position: item.position,
+                title: item.name,
+                map: map
+            });
+            
+            // 点击事件：显示详情
+            marker.on('click', () => {
+                const content = `
+                    <div class="info-window">
+                        <h3>${item.name}</h3>
+                        <p><b>地址：</b>${item.address}</p>
+                        <p><b>参考租金：</b>${item.price}</p>
+                        <p><b>空置面积：</b>${item.vacancy}</p>
+                    </div>
+                `;
+                infoWindow.setContent(content);
+                infoWindow.open(map, item.position);
+            });
+            markers.push({ data: item, marker: marker });
+        });
+    }
+
+    // 4. 搜索功能
+    function searchBuilding() {
+        const keyword = document.getElementById('keyword').value.trim();
+        if (!keyword) {
+            alert("请输入写字楼名称");
+            return;
+        }
+
+        const result = markers.find(m => m.data.name.includes(keyword));
+        
+        if (result) {
+            // 找到对应的标记，地图中心移动过去，放大，并触发点击显示详情
+            map.setZoomAndCenter(16, result.data.position);
+            result.marker.emit('click', {target: result.marker});
+        } else {
+            alert("未找到该写字楼，请检查名称。");
+        }
+    }
+
+    initMarkers(); // 页面加载时执行
+</script>
+</body>
+</html>
