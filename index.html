@@ -8,7 +8,6 @@
     <script src="./xlsx.full.min.js"></script>
     
     <script type="text/javascript">
-        // 建议填写安全密钥，避免地图偶发性拦截
         window._AMapSecurityConfig = {
             securityJsCode: '', 
         }
@@ -42,7 +41,7 @@
 <div id="search-panel">
     <div class="input-group">
         <h3>Colliers 写字楼分布</h3>
-        <input type="text" id="keyword" placeholder="输入名称..." oninput="handleInput(this.value)">
+        <input type="text" id="keyword" placeholder="输入名称后回车..." oninput="handleInput(this.value)" onkeydown="handleEnter(event)">
         <div id="suggestion-list"></div>
         <div id="loading-tip">正在初始化...</div>
     </div>
@@ -51,10 +50,8 @@
 <div id="container"></div>
 
 <script>
-    // 错误检查
-    if (typeof AMap === 'undefined') {
-        alert("错误：高德地图未能加载！请检查网络连接。");
-    }
+    // 基础检查
+    if (typeof AMap === 'undefined') { alert("错误：高德地图未能加载！请检查网络。"); }
 
     let map;
     try {
@@ -70,119 +67,18 @@
             map.addControl(new AMap.ControlBar({ position: { right: '10px', bottom: '10px' } }));
             map.addControl(new AMap.Scale());
         });
-    } catch (e) {
-        console.error(e);
-    }
+    } catch (e) { console.error(e); }
 
     let buildings = []; 
     const infoWindow = new AMap.InfoWindow({offset: new AMap.Pixel(0, -30), closeWhenClickMap: true});
 
     async function loadExcel() {
         const tip = document.getElementById('loading-tip');
-        
-        // 再次检查插件是否加载成功
         if (typeof XLSX === 'undefined') {
-            tip.innerText = "错误：本地插件未加载";
+            tip.innerText = "插件缺失";
             tip.style.color = "red";
-            alert("错误：找不到 xlsx.full.min.js 文件。\n请确保该文件已上传到 GitHub 并且和 index.html 在同一级目录。");
             return;
         }
 
         try {
-            tip.innerText = "读取数据中...";
-            const response = await fetch('./data.xlsx');
-            if (!response.ok) throw new Error("找不到 data.xlsx");
-            
-            const arrayBuffer = await response.arrayBuffer();
-            const workbook = XLSX.read(arrayBuffer);
-            const sheetName = workbook.SheetNames[0]; 
-            const buildingsData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-            
-            buildings = buildingsData.map(item => {
-                const posStr = String(item.position || "").trim();
-                const posArray = posStr.split(',').map(Number);
-                return {
-                    name: item.name,
-                    position: (posArray.length === 2 && !isNaN(posArray[0])) ? posArray : [0,0],
-                    address: item.address || '',
-                    price: item.price || '',
-                    vacancy: item.vacancy || ''
-                };
-            });
-
-            initMarkers(); 
-            tip.innerText = `已就绪 (${buildings.length})`;
-            tip.style.color = "green";
-            
-        } catch (error) {
-            console.error(error);
-            tip.innerText = "读取失败";
-            alert("数据读取失败，请检查 data.xlsx 是否存在。");
-        }
-    }
-
-    function initMarkers() {
-        map.clearMap();
-        buildings.forEach(item => {
-            if (item.position[0] === 0) return;
-            const marker = new AMap.Marker({
-                position: item.position,
-                title: item.name,
-                map: map,
-            });
-            marker.on('click', () => {
-                showInfo(item);
-                flyToBuilding(item.position);
-            });
-        });
-    }
-
-    function showInfo(item) {
-        const content = `
-            <div class="info-window-content">
-                <div class="info-title">${item.name}</div>
-                <div class="info-row">地址：${item.address}</div>
-                <div class="info-row">租金：<span class="price-tag">${item.price}</span></div>
-                <div class="info-row">空置：${item.vacancy}</div>
-            </div>
-        `;
-        infoWindow.setContent(content);
-        infoWindow.open(map, item.position);
-    }
-
-    function handleInput(val) {
-        const list = document.getElementById('suggestion-list');
-        list.innerHTML = ''; 
-        if (!val.trim()) { list.style.display = 'none'; return; }
-        const matches = buildings.filter(b => b.name && b.name.includes(val));
-        if (matches.length > 0) {
-            list.style.display = 'block';
-            matches.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'suggestion-item';
-                div.innerHTML = `<span>${item.name}</span> <span class="suggestion-sub">${item.address.substring(0,6)}...</span>`;
-                div.onclick = () => {
-                    document.getElementById('keyword').value = item.name;
-                    list.style.display = 'none';
-                    flyToBuilding(item.position);
-                    showInfo(item);
-                };
-                list.appendChild(div);
-            });
-        } else { list.style.display = 'none'; }
-    }
-
-    function flyToBuilding(position) {
-        map.setCamera({ center: position, zoom: 17, pitch: 60, rotation: 20, duration: 1000 });
-    }
-    
-    document.addEventListener('click', (e) => {
-        if (!document.getElementById('search-panel').contains(e.target)) {
-            document.getElementById('suggestion-list').style.display = 'none';
-        }
-    });
-
-    loadExcel();
-</script>
-</body>
-</html>
+            tip.innerText = "读取
