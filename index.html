@@ -10,41 +10,33 @@
     
     <script type="text/javascript">
         window._AMapSecurityConfig = {
-            securityJsCode: '你的安全密钥', // 【请确保此处填写正确】
+            securityJsCode: '你的安全密钥', // 【请在此处填入你的高德安全密钥】
         }
     </script>
     <script src="https://webapi.amap.com/maps?v=2.0&key=31fdd14ad134becab8cb33119fa019d5"></script>
     
     <style>
-        /* --- 样式保持现代简洁 --- */
+        /* --- 样式区 --- */
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; overflow: hidden; display: flex; height: 100vh; background: #f0f2f5; }
-        
         #sidebar { width: 350px; background: #fff; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; z-index: 200; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
-        
         .brand-header { padding: 20px; background: #004080; color: white; }
         .brand-header h2 { margin: 0; font-size: 20px; font-weight: 700; }
         .brand-header p { margin: 5px 0 0; opacity: 0.8; font-size: 12px; }
-
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; }
         .stat-card { background: #fff; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #eee; }
         .stat-value { font-size: 16px; font-weight: 800; color: #004080; margin-bottom: 2px; }
         .stat-label { font-size: 11px; color: #888; }
-
         .controls { flex: 1; padding: 15px; overflow-y: auto; }
         .control-group { margin-bottom: 20px; }
         .control-title { font-weight: bold; font-size: 13px; margin-bottom: 8px; display: block; color: #333; }
-        
         .search-box { display: flex; gap: 5px; margin-bottom: 20px; }
         #search-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; outline: none; }
         #search-btn { padding: 0 15px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
-        
         .checkbox-group label { display: flex; align-items: center; margin-bottom: 8px; font-size: 13px; color: #555; cursor: pointer; }
         .checkbox-group input { margin-right: 8px; }
-
         .actions { padding: 15px; border-top: 1px solid #eee; background: white; }
         .btn-mode { width: 100%; padding: 10px; margin-bottom: 5px; border: 1px solid #e0e0e0; background: white; color: #555; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s; text-align: left; }
         .btn-mode.active { background: #e6f0fa; color: #004080; border-color: #004080; }
-
         #map-container { flex: 1; position: relative; }
         #status-bar { position: absolute; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px; display: none; }
         
@@ -54,33 +46,11 @@
         .trend-tag { padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-left: 6px; font-weight: bold; }
         .trend-up { background: #ffebee; color: #c62828; }
         .trend-down { background: #e8f5e9; color: #2e7d32; }
-
-        /* 新增：平替按钮样式 */
-        .btn-plan-b {
-            width: 100%;
-            margin-top: 10px;
-            padding: 8px;
-            background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
-            border: none;
-            border-radius: 6px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            box-shadow: 0 4px 10px rgba(56, 239, 125, 0.3);
-            transition: transform 0.1s;
-        }
+        
+        /* Plan B 按钮 */
+        .btn-plan-b { width: 100%; margin-top: 10px; padding: 8px; background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%); border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 4px 10px rgba(56, 239, 125, 0.3); transition: transform 0.1s; }
         .btn-plan-b:active { transform: scale(0.98); }
-        .btn-reset {
-            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-            background: white; padding: 10px 20px; border-radius: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-weight: bold; cursor: pointer;
-            z-index: 999; display: none; border: 1px solid #ccc;
-        }
+        .btn-reset { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: white; padding: 10px 20px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-weight: bold; cursor: pointer; z-index: 999; display: none; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
@@ -88,7 +58,7 @@
     <div id="sidebar">
         <div class="brand-header">
             <h2>COLLIERS DATA</h2>
-            <p>办公楼市场监测系统 v4.0 (Compare Mode)</p>
+            <p>办公楼市场监测系统 v4.1 (Stable)</p>
         </div>
         <div class="stat-grid">
             <div class="stat-card"><div class="stat-value" id="stat-count">-</div><div class="stat-label">当前视野项目</div></div>
@@ -98,7 +68,7 @@
         </div>
         <div class="controls">
             <div class="search-box">
-                <input type="text" id="search-input" placeholder="🔍 输入楼宇名称..." onkeydown="if(event.key==='Enter') executeSearch()">
+                <input type="text" id="search-input" placeholder="🔍 输入楼宇名称..." onkeydown="handleEnter(event)">
                 <button id="search-btn" onclick="executeSearch()">查询</button>
             </div>
             <div class="control-group">
@@ -119,24 +89,20 @@
     </div>
 
 <script>
-    // --- 内置数据 (作为兜底，如果 data.xlsx 存在则优先用 Excel) ---
-    // 为了防止你复制粘贴出错，我保留了这个内置数据结构，代码会自动判断
-    let rawData = [];
-    
-    // 全局配置
+    // --- 全局变量配置 ---
     const QUARTERS = ['2023_Q1', '2023_Q2', '2023_Q3', '2023_Q4', '2024_Q1', '2024_Q2'];
     const LATEST_Q = '2024_Q2';
     const PREV_Q = '2024_Q1';
     
     let map, infoWindow, chartInstance;
-    let markers = [], circleOverlay = null;
+    let rawData = [], markers = [], circleOverlay = null;
     let activeDistricts = new Set();
     let currentMode = 'price';
-    let isCompareMode = false; // 标记当前是否处于对比模式
+    let isCompareMode = false;
 
     function init() {
         map = new AMap.Map('map-container', { zoom: 11, center: [116.460787, 39.905477], viewMode: '2D', mapStyle: 'amap://styles/whitesmoke' });
-        infoWindow = new AMap.InfoWindow({ isCustom: false, offset: new AMap.Pixel(0, -35), autoMove: true });
+        infoWindow = new AMap.InfoWindow({ isCustom: false, offset: new AMap.Pixel(0, -35), autoMove: true }); // autoMove: true 会自动平移地图
         
         infoWindow.on('close', () => {
             if(chartInstance) { chartInstance.destroy(); chartInstance = null; }
@@ -160,10 +126,8 @@
                 throw new Error("Local file not found");
             }
         } catch (err) {
-            console.warn("Excel读取失败，请确保 data.xlsx 上传至仓库。这里使用内置数据演示逻辑。");
-            // 这里可以放一个内置数据的Fallback，如果需要
-            // processData(YOUR_BUILT_IN_JSON); 
-            showStatus("❌ 数据加载失败，请检查 data.xlsx");
+            console.warn("Excel读取失败，使用备用逻辑");
+            showStatus("❌ 需上传 data.xlsx 文件");
         }
     }
 
@@ -171,7 +135,6 @@
         rawData = json.map(item => {
             const posStr = String(item.position || "").replace('，', ',').replace(/\s/g, '');
             const pos = posStr.split(',').map(Number);
-            
             const pCurrent = parseFloat(item[`price_${LATEST_Q}`]) || 0;
             const pPrev = parseFloat(item[`price_${PREV_Q}`]) || 0;
             const vCurrent = parseFloat(item[`vacancy_${LATEST_Q}`]) || 0;
@@ -195,7 +158,7 @@
         setTimeout(() => document.getElementById('status-bar').style.display = 'none', 3000);
     }
 
-    // --- 2. 基础渲染与筛选 ---
+    // --- 2. 交互逻辑 ---
     function initFilters() {
         const districts = [...new Set(rawData.map(d => d.district))].sort();
         districts.forEach(d => activeDistricts.add(d));
@@ -209,29 +172,51 @@
         if (!isCompareMode) renderMap(rawData.filter(item => activeDistricts.has(item.district)));
     }
 
+    // 处理回车键
+    function handleEnter(event) {
+        if (event.key === "Enter") {
+            executeSearch();
+        }
+    }
+
+    // ★★★ 核心修复：搜索与定位 ★★★
     function executeSearch() {
-        if(isCompareMode) resetMapState(); // 如果在对比模式，先退出
+        if(isCompareMode) resetMapState();
 
         const keyword = document.getElementById('search-input').value.trim();
         if (!keyword) {
+            // 如果关键词为空，恢复全览
             renderMap(rawData.filter(item => activeDistricts.has(item.district)));
             map.setFitView();
             return;
         }
+
         const results = rawData.filter(item => item.name.includes(keyword));
-        if (results.length === 0) { showStatus("⚠️ 未找到"); return; }
+        if (results.length === 0) { showStatus("⚠️ 未找到项目"); return; }
         
+        // 先渲染结果
         renderMap(results);
+
+        // 如果结果唯一，强制放大并定位
         if (results.length === 1) {
-            const t = results[0];
-            map.setZoomAndCenter(17, [t.lng, t.lat]);
-            showDetail(t);
+            const target = results[0];
+            showStatus(`🔍 定位到: ${target.name}`);
+            
+            // ★ 修复点：增加 100毫秒 延时，确保地图渲染完点标记后，再移动镜头
+            // 否则地图引擎可能因为同时处理 render 和 zoom 而卡住
+            setTimeout(() => {
+                map.setZoomAndCenter(17, [target.lng, target.lat]);
+                showDetail(target);
+            }, 100); 
+
         } else {
+            // 多个结果，自动缩放显示全部
+            showStatus(`🔍 找到 ${results.length} 个项目`);
             map.setFitView(null, false, [50, 50, 50, 360]);
         }
     }
 
-    // --- 3. 核心：常规地图渲染 ---
+    // --- 3. 渲染逻辑 ---
     function renderMap(dataToRender) {
         map.clearMap();
         if (circleOverlay) { map.remove(circleOverlay); circleOverlay = null; }
@@ -263,89 +248,60 @@
         updateDashboard(dataToRender);
     }
 
-    // --- 4. 核心：竞品对比 (Plan B) ---
+    // --- 4. 竞品对比 (Plan B) ---
     function findPlanB(targetItem) {
         isCompareMode = true;
-        map.clearMap(); // 清空地图
-        markers = [];
+        map.clearMap(); markers = [];
         
         const targetLngLat = new AMap.LngLat(targetItem.lng, targetItem.lat);
-        const RADIUS = 1500; // 1.5公里
+        const RADIUS = 1500; 
         
-        // 筛选逻辑：距离 < 1.5km 且 价格 < 当前租金 且 不是自己
         const competitors = rawData.filter(item => {
             if (item.name === targetItem.name) return false;
             const itemLngLat = new AMap.LngLat(item.lng, item.lat);
-            const distance = targetLngLat.distance(itemLngLat); // 米
-            
-            return distance <= RADIUS && item.pCurrent < targetItem.pCurrent;
+            return targetLngLat.distance(itemLngLat) <= RADIUS && item.pCurrent < targetItem.pCurrent;
         });
 
-        // 1. 绘制目标项目 (金色)
+        // 目标点
         const targetMarker = new AMap.Marker({
             position: targetLngLat,
             content: `<div style="width:34px;height:34px;background:#FFD700;border:3px solid #fff;border-radius:50%;box-shadow:0 0 15px rgba(255,215,0,0.6);display:flex;justify-content:center;align-items:center;font-size:20px;">⭐️</div>`,
-            offset: new AMap.Pixel(-17, -17),
-            map: map,
-            zIndex: 999
+            offset: new AMap.Pixel(-17, -17), map: map, zIndex: 999
         });
         targetMarker.on('click', () => showDetail(targetItem));
 
-        // 2. 绘制平替项目 (绿色)
+        // 竞品点
         competitors.forEach(item => {
             const priceDiff = (targetItem.pCurrent - item.pCurrent).toFixed(1);
             const content = `<div style="min-width:40px;padding:0 5px;height:24px;background:#2ecc71;border:2px solid white;border-radius:12px;box-shadow:0 3px 6px rgba(0,0,0,0.2);color:white;display:flex;justify-content:center;align-items:center;font-size:11px;font-weight:bold;">📉${priceDiff}</div>`;
-            
-            const marker = new AMap.Marker({
-                position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-20, -12), map: map, zIndex: 500
-            });
+            const marker = new AMap.Marker({ position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-20, -12), map: map, zIndex: 500 });
             marker.on('click', () => showDetail(item));
             markers.push(marker);
         });
 
-        // 3. 绘制范围圈
-        circleOverlay = new AMap.Circle({
-            center: targetLngLat,
-            radius: RADIUS, // 半径
-            borderWeight: 1,
-            strokeColor: "#007AFF",
-            strokeOpacity: 0.5,
-            strokeWeight: 1,
-            fillOpacity: 0.1,
-            strokeStyle: 'dashed',
-            strokeDasharray: [10, 10], 
-            fillColor: '#1791fc',
-            zIndex: 50,
-        });
+        // 圈选范围
+        circleOverlay = new AMap.Circle({ center: targetLngLat, radius: RADIUS, borderWeight: 1, strokeColor: "#007AFF", strokeOpacity: 0.5, strokeWeight: 1, fillOpacity: 0.1, strokeStyle: 'dashed', strokeDasharray: [10, 10], fillColor: '#1791fc', zIndex: 50 });
         circleOverlay.setMap(map);
 
-        // 4. 调整视野
         map.setFitView(null, false, [50, 50, 50, 360]);
-        
-        // 5. 显示退出按钮
         document.getElementById('reset-map-btn').style.display = 'block';
-        showStatus(`🎯 发现 ${competitors.length} 个更便宜的平替项目`);
-        
-        // 更新左侧面板为竞品数据
+        showStatus(`🎯 发现 ${competitors.length} 个更便宜的项目`);
         updateDashboard(competitors);
     }
 
     function resetMapState() {
         isCompareMode = false;
         document.getElementById('reset-map-btn').style.display = 'none';
-        
-        // 恢复原有筛选
         const filtered = rawData.filter(item => activeDistricts.has(item.district));
         renderMap(filtered);
         map.setFitView();
-        showStatus("🔄 已恢复全览模式");
+        showStatus("🔄 全览模式");
     }
 
-    // --- 5. 详情窗 ---
+    // --- 5. 详情页 ---
     function showDetail(item) {
         const arrow = item.qoq>=0?'📈':'📉';
-        
-        // 动态注入按钮事件
+        // 动态绑定事件
         setTimeout(() => {
             const btn = document.getElementById('btn-plan-b');
             if(btn) btn.onclick = () => findPlanB(item);
@@ -367,22 +323,16 @@
                         <div style="font-size:20px;font-weight:bold;color:#333;">${(item.vCurrent*100).toFixed(1)}%</div>
                     </div>
                 </div>
-                
                 <div style="padding:0 15px 15px;">
                     <div class="chart-container"><canvas id="trendChart"></canvas></div>
-                    
-                    <button id="btn-plan-b" class="btn-plan-b">
-                        🔍 客户嫌贵？查看周边平替 (Plan B)
-                    </button>
+                    <button id="btn-plan-b" class="btn-plan-b">🔍 客户嫌贵？查看周边平替 (Plan B)</button>
                 </div>
             </div>`;
-        
         infoWindow.setContent(content);
         infoWindow.open(map, [item.lng, item.lat]);
         setTimeout(() => renderChart(item), 100);
     }
 
-    // 辅助函数
     function renderChart(item) {
         const ctx = document.getElementById('trendChart').getContext('2d');
         if(chartInstance) chartInstance.destroy();
