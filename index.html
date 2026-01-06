@@ -36,8 +36,12 @@
         .search-box { display: flex; gap: 5px; margin-bottom: 20px; }
         #search-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; outline: none; }
         #search-btn { padding: 0 15px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        
+        /* 复选框样式 */
         .checkbox-group label { display: flex; align-items: center; margin-bottom: 8px; font-size: 13px; color: #555; cursor: pointer; }
         .checkbox-group input { margin-right: 8px; }
+        /* 全选按钮特殊样式 */
+        .check-all-label { border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 8px !important; font-weight: bold; color: #004080 !important; }
         
         /* 底部按钮 */
         .actions { padding: 15px; border-top: 1px solid #eee; background: white; }
@@ -72,7 +76,7 @@
     <div id="sidebar">
         <div class="brand-header">
             <h2>COLLIERS DATA</h2>
-            <p>办公楼市场监测系统 v5.4</p>
+            <p>办公楼市场监测系统 v5.5</p>
         </div>
         <div class="stat-grid">
             <div class="stat-card"><div class="stat-value" id="stat-count">-</div><div class="stat-label">视野项目</div></div>
@@ -116,6 +120,7 @@
     let map, infoWindow, chartInstance;
     let rawData = [], markers = [], circleOverlay = null;
     let activeDistricts = new Set();
+    let allDistrictsList = []; // 存储所有商圈列表，方便全选
     let currentMode = 'price';
     let isCompareMode = false;
 
@@ -139,12 +144,11 @@
             } else { throw new Error("File 404"); }
         } catch (err) {
             console.warn("读取失败，启用备份数据");
-            processData(DEMO_DATA); // 自动降级
+            processData(DEMO_DATA); 
             showStatus("⚠️ 使用内置备份数据");
         }
     }
 
-    // 辅助函数：模糊查找列名
     function findVal(item, keys) {
         for (let k of keys) { if (item[k] !== undefined) return item[k]; }
         const itemKeys = Object.keys(item);
@@ -155,40 +159,32 @@
         return null;
     }
 
-    // --- ★★★ 数据清洗核心逻辑 ★★★ ---
     function processData(json) {
         rawData = json.map(item => {
-            // 1. 坐标
             const posRaw = findVal(item, ['经纬度', 'Position']);
             const posStr = String(posRaw || "").trim().replace('，', ',');
             const pos = posStr.split(',').map(Number);
 
-            // 2. 基础信息
             const name = findVal(item, ['Project Name CN', 'Project Name EN', 'name']) || "未知项目";
             const district = findVal(item, ['SUBMARKET', '所在区']) || "其他";
             const built_year = findVal(item, ['Completion Date']) || "-";
             
-            // 3. 价格 & 空置率 (重点修复)
             const pCurrent = parseFloat(findVal(item, ['Net Effective Rent', 'Rent'])) || 0;
             
             const vRaw = findVal(item, ['Vacancy Rate', 'Vacancy']);
             let vCurrent = 0;
-            // 兼容 "13.0%" 和 0.13 和 13 几种格式
             if (typeof vRaw === 'string' && vRaw.includes('%')) {
                 vCurrent = parseFloat(vRaw.replace('%', '')) / 100;
-            } else if (vRaw > 1) { // 假设如果是 13.0 这种数字，也是百分比
+            } else if (vRaw > 1) {
                 vCurrent = parseFloat(vRaw) / 100;
             } else {
                 vCurrent = parseFloat(vRaw) || 0;
             }
 
-            // 4. 等级 (去空格，转大写)
             const gRaw = String(findVal(item, ['grades', 'Grade']) || "-").trim().toUpperCase();
             const grade = (gRaw === 'PA' || gRaw === 'PREMIUM A') ? 'PA' : (gRaw.includes('A') ? 'A' : gRaw);
 
-            // 5. LEED (去空格)
             const lRaw = String(findVal(item, ['LEEDS', 'LEED']) || "").trim();
-            // 如果是 N, No, -, 空字符串，都算“无”
             let leed = "无";
             if (lRaw && lRaw !== 'N' && lRaw !== 'No' && lRaw !== '-') leed = lRaw;
 
@@ -211,16 +207,63 @@
         setTimeout(() => document.getElementById('status-bar').style.display = 'none', 3000);
     }
 
+    // --- ★★★ 新增：全选功能 ★★★ ---
     function initFilters() {
-        const districts = [...new Set(rawData.map(d => d.district))].sort();
-        districts.forEach(d => activeDistricts.add(d));
-        document.getElementById('district-filters').innerHTML = districts.map(d => `
-            <label><input type="checkbox" value="${d}" checked onchange="toggleDistrict('${d}')">${d}</label>
+        allDistrictsList = [...new Set(rawData.map(d => d.district))].sort();
+        allDistrictsList.forEach(d => activeDistricts.add(d)); // 默认全选
+
+        const container = document.getElementById('district-filters');
+        
+        // 1. 添加全选按钮
+        let html = `
+            <label class="check-all-label">
+                <input type="checkbox" id="check-all" checked onchange="toggleAllDistricts(this.checked)"> 全选 (Select All)
+            </label>
+        `;
+
+        // 2. 添加单个商圈按钮
+        html += allDistrictsList.map(d => `
+            <label><input type="checkbox" class="district-checkbox" value="${d}" checked onchange="toggleDistrict('${d}')">${d}</label>
         `).join('');
+        
+        container.innerHTML = html;
     }
 
+    // 全选/反选 逻辑
+    function toggleAllDistricts(isChecked) {
+        // 更新 Set
+        if (isChecked) {
+            allDistrictsList.forEach(d => activeDistricts.add(d));
+        } else {
+            activeDistricts.clear();
+        }
+
+        // 更新 UI 上的所有小勾选框
+        const checkboxes = document.querySelectorAll('.district-checkbox');
+        checkboxes.forEach(cb => cb.checked = isChecked);
+
+        // 刷新地图
+        if (!isCompareMode) renderMap(rawData.filter(item => activeDistricts.has(item.district)));
+    }
+
+    // 单个勾选/取消 逻辑
     function toggleDistrict(d) {
         if (activeDistricts.has(d)) activeDistricts.delete(d); else activeDistricts.add(d);
+        
+        // 联动更新“全选”按钮的状态
+        const checkAllBox = document.getElementById('check-all');
+        if (activeDistricts.size === allDistrictsList.length) {
+            checkAllBox.checked = true;
+            checkAllBox.indeterminate = false;
+        } else if (activeDistricts.size === 0) {
+            checkAllBox.checked = false;
+            checkAllBox.indeterminate = false;
+        } else {
+            // 半选状态 (可选，这里简化为不勾选)
+            checkAllBox.checked = false;
+            checkAllBox.indeterminate = true; // 视觉上的半选横杠
+        }
+
         if (!isCompareMode) renderMap(rawData.filter(item => activeDistricts.has(item.district)));
     }
 
@@ -363,7 +406,7 @@
                 </div>
                 <div style="display:flex;padding:15px;">
                     <div style="flex:1;">
-                        <div style="font-size:12px;color:#888;">租金</div>
+                        <div style="font-size:12px;color:#888;">净有效租金</div>
                         <div style="font-size:20px;font-weight:bold;color:#333;">¥${item.pCurrent.toFixed(1)}</div>
                     </div>
                     <div style="text-align:right;">
@@ -397,22 +440,18 @@
         });
     }
 
-    // --- ★★★ 统计修正核心 ★★★ ---
     function updateDashboard(data) {
         const count = data.length;
         document.getElementById('stat-count').innerText = count;
         document.getElementById('stat-price').innerText = count ? (data.reduce((a,b)=>a+b.pCurrent,0)/count).toFixed(2) : '-';
         
-        // 修正1：空置率 (显示百分比)
         const avgVac = count ? ((data.reduce((a,b)=>a+b.vCurrent,0)/count)*100).toFixed(1) : 0;
         document.getElementById('stat-vacancy').innerText = avgVac + '%';
         
-        // 修正2：Grade A (只要是A或PA都算)
         const gradeACount = data.filter(d => d.grade === 'A' || d.grade === 'PA').length;
         const gradeARate = count ? ((gradeACount / count) * 100).toFixed(0) : 0;
         document.getElementById('stat-grade').innerText = gradeARate + '%';
         
-        // 修正3：LEED (只要不是“无”)
         const leedCount = data.filter(d => d.leed !== '无').length;
         document.getElementById('stat-leed').innerText = leedCount + '个';
     }
