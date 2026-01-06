@@ -16,16 +16,20 @@
     <script src="https://webapi.amap.com/maps?v=2.0&key=31fdd14ad134becab8cb33119fa019d5"></script>
     
     <style>
-        /* --- 样式区 --- */
+        /* --- 基础布局 --- */
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; overflow: hidden; display: flex; height: 100vh; background: #f0f2f5; }
         #sidebar { width: 350px; background: #fff; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; z-index: 200; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
         .brand-header { padding: 20px; background: #004080; color: white; }
         .brand-header h2 { margin: 0; font-size: 20px; font-weight: 700; }
         .brand-header p { margin: 5px 0 0; opacity: 0.8; font-size: 12px; }
+        
+        /* 统计区 */
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; }
         .stat-card { background: #fff; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #eee; }
         .stat-value { font-size: 16px; font-weight: 800; color: #004080; margin-bottom: 2px; }
         .stat-label { font-size: 11px; color: #888; }
+        
+        /* 搜索区 */
         .controls { flex: 1; padding: 15px; overflow-y: auto; }
         .control-group { margin-bottom: 20px; }
         .control-title { font-weight: bold; font-size: 13px; margin-bottom: 8px; display: block; color: #333; }
@@ -34,20 +38,25 @@
         #search-btn { padding: 0 15px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
         .checkbox-group label { display: flex; align-items: center; margin-bottom: 8px; font-size: 13px; color: #555; cursor: pointer; }
         .checkbox-group input { margin-right: 8px; }
+        
+        /* 底部按钮 */
         .actions { padding: 15px; border-top: 1px solid #eee; background: white; }
         .btn-mode { width: 100%; padding: 10px; margin-bottom: 5px; border: 1px solid #e0e0e0; background: white; color: #555; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s; text-align: left; }
         .btn-mode.active { background: #e6f0fa; color: #004080; border-color: #004080; }
+        
+        /* 地图与弹窗 */
         #map-container { flex: 1; position: relative; }
         #status-bar { position: absolute; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px; display: none; }
-        
-        /* 弹窗样式 */
         .info-window-card { width: 340px; font-family: sans-serif; }
-        .chart-container { height: 180px; width: 100%; margin-top: 10px; }
-        .trend-tag { padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-left: 6px; font-weight: bold; }
-        .trend-up { background: #ffebee; color: #c62828; }
-        .trend-down { background: #e8f5e9; color: #2e7d32; }
+        .chart-container { height: 160px; width: 100%; margin-top: 10px; }
         
-        /* Plan B 按钮 */
+        /* 标签Badge */
+        .tag-row { display: flex; gap: 5px; margin-top: 6px; }
+        .badge { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; }
+        .badge-grade { background: #3f51b5; }
+        .badge-leed { background: #2e7d32; }
+        .badge-none { background: #bdbdbd; color: #555; }
+
         .btn-plan-b { width: 100%; margin-top: 10px; padding: 8px; background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%); border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 4px 10px rgba(56, 239, 125, 0.3); transition: transform 0.1s; }
         .btn-plan-b:active { transform: scale(0.98); }
         .btn-reset { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: white; padding: 10px 20px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-weight: bold; cursor: pointer; z-index: 999; display: none; border: 1px solid #ccc; }
@@ -58,17 +67,17 @@
     <div id="sidebar">
         <div class="brand-header">
             <h2>COLLIERS DATA</h2>
-            <p>办公楼市场监测系统 v5.0 (New Data)</p>
+            <p>办公楼市场监测系统 v5.2</p>
         </div>
         <div class="stat-grid">
-            <div class="stat-card"><div class="stat-value" id="stat-count">-</div><div class="stat-label">当前视野项目</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-count">-</div><div class="stat-label">视野项目</div></div>
             <div class="stat-card"><div class="stat-value" id="stat-price">-</div><div class="stat-label">平均租金</div></div>
-            <div class="stat-card"><div class="stat-value" id="stat-vacancy">-</div><div class="stat-label">平均空置率</div></div>
-            <div class="stat-card"><div class="stat-value" id="stat-grade">-</div><div class="stat-label">Grade A 占比</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-grade">-</div><div class="stat-label">甲级占比</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-leed">-</div><div class="stat-label">LEED认证</div></div>
         </div>
         <div class="controls">
             <div class="search-box">
-                <input type="text" id="search-input" placeholder="🔍 输入楼宇名称..." onkeydown="handleEnter(event)">
+                <input type="text" id="search-input" placeholder="🔍 搜项目名..." onkeydown="if(event.key==='Enter') executeSearch()">
                 <button id="search-btn" onclick="executeSearch()">查询</button>
             </div>
             <div class="control-group">
@@ -80,6 +89,8 @@
             <span class="control-title">可视化模式</span>
             <button class="btn-mode active" onclick="setMode('price')">💰 按租金热力着色</button>
             <button class="btn-mode" onclick="setMode('vacancy')">🏢 按空置率着色</button>
+            <button class="btn-mode" onclick="setMode('grade')">🏆 按楼宇等级分布</button>
+            <button class="btn-mode" onclick="setMode('leed')">🌿 按LEED认证分布</button>
         </div>
     </div>
 
@@ -89,8 +100,7 @@
     </div>
 
 <script>
-    // 虚拟时间轴，用于图表展示当前水平
-    const QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4', 'Next Q1', 'Next Q2'];
+    const QUARTERS = ['Current']; // 新数据暂无历史，简化图表
     
     let map, infoWindow, chartInstance;
     let rawData = [], markers = [], circleOverlay = null;
@@ -101,11 +111,7 @@
     function init() {
         map = new AMap.Map('map-container', { zoom: 11, center: [116.460787, 39.905477], viewMode: '2D', mapStyle: 'amap://styles/whitesmoke' });
         infoWindow = new AMap.InfoWindow({ isCustom: false, offset: new AMap.Pixel(0, -35), autoMove: true }); 
-        
-        infoWindow.on('close', () => {
-            if(chartInstance) { chartInstance.destroy(); chartInstance = null; }
-        });
-
+        infoWindow.on('close', () => { if(chartInstance) { chartInstance.destroy(); chartInstance = null; } });
         loadExcel();
     }
 
@@ -119,69 +125,50 @@
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
                 const json = XLSX.utils.sheet_to_json(sheet);
                 processData(json);
-            } else {
-                throw new Error("Local file not found");
-            }
+            } else { throw new Error("File not found"); }
         } catch (err) {
-            console.warn("Excel读取失败");
-            showStatus("❌ 需上传 data.xlsx 文件");
+            console.error(err);
+            showStatus("❌ 无法加载 data.xlsx，请检查GitHub文件");
         }
     }
 
-    // --- ★★★ 核心适配逻辑：适配新的Excel列名 ★★★ ---
+    // --- ★★★ 数据处理核心：适配新列名 ★★★ ---
     function processData(json) {
         rawData = json.map(item => {
-            // 1. 坐标处理 (列名：经纬度)
+            // 1. 坐标 (列名：经纬度)
             const posStr = String(item['经纬度'] || "").trim();
-            const pos = posStr.split(',').map(Number); // 自动分割逗号
+            const pos = posStr.split(',').map(Number);
 
-            // 2. 基础信息处理
-            // 优先用中文名，没有则用英文名
+            // 2. 基础信息 (列名：Project Name CN/EN, SUBMARKET, Completion Date)
             const name = item['Project Name CN'] || item['Project Name EN'] || "未知项目";
             const district = item['SUBMARKET'] || item['所在区'] || "其他";
             const built_year = item['Completion Date'] || "-";
-            const grade = item['grades'] || "-";
-
-            // 3. 价格处理 (列名：Net Effective Rent)
+            
+            // 3. 核心指标 (列名：Net Effective Rent, Vacancy Rate)
             const pCurrent = parseFloat(item['Net Effective Rent']) || 0;
-
-            // 4. 空置率处理 (列名：Vacancy Rate，格式 "13.0%")
             let vRaw = item['Vacancy Rate'];
-            let vCurrent = 0;
-            if (typeof vRaw === 'string' && vRaw.includes('%')) {
-                // 如果带%，去掉%并除以100
-                vCurrent = parseFloat(vRaw.replace('%', '')) / 100;
-            } else {
-                vCurrent = parseFloat(vRaw) || 0;
-            }
+            let vCurrent = (typeof vRaw === 'string' && vRaw.includes('%')) ? parseFloat(vRaw.replace('%', '')) / 100 : parseFloat(vRaw) || 0;
 
-            // 5. 历史数据处理
-            // 新表格没有历史季度，为了图表不报错，我们用当前数据填充满，显示一条直线
-            const pHistory = QUARTERS.map(() => pCurrent);
-            const vHistory = QUARTERS.map(() => vCurrent);
+            // 4. 等级与LEED (列名：grades, LEEDS)
+            // 注意：Excel里的 grades 可能是 "A", "B", "Premium"
+            const grade = String(item['grades'] || "-").trim();
+            // 注意：LEEDS 列如果为空，通常视为无认证
+            const leed = item['LEEDS'] ? String(item['LEEDS']).trim() : "无";
 
             return {
-                name,
-                district,
-                built_year,
-                grade,
-                lat: pos[1], 
-                lng: pos[0],
+                name, district, built_year, grade, leed,
+                lat: pos[1], lng: pos[0],
                 isValid: (pos.length === 2 && !isNaN(pos[0]) && !isNaN(pos[1])),
-                qoq: 0, // 新数据无历史对比，环比设为0
-                pCurrent, 
-                vCurrent,
-                priceHistory: pHistory,
-                vacancyHistory: vHistory
+                pCurrent, vCurrent
             };
         }).filter(d => d.isValid);
 
         if (rawData.length === 0) {
-            showStatus("⚠️ 数据加载为空，请检查Excel列名是否匹配");
+            showStatus("⚠️ 加载成功但无有效数据 (请检查经纬度格式)");
             return;
         }
 
-        showStatus(`✅ 成功加载 ${rawData.length} 个项目`);
+        showStatus(`✅ 加载 ${rawData.length} 个项目`);
         initFilters();
         renderMap(rawData);
         setTimeout(() => document.getElementById('status-bar').style.display = 'none', 3000);
@@ -200,46 +187,27 @@
         if (!isCompareMode) renderMap(rawData.filter(item => activeDistricts.has(item.district)));
     }
 
-    function handleEnter(event) {
-        if (event.key === "Enter") {
-            executeSearch();
-        }
-    }
+    function handleEnter(event) { if (event.key === "Enter") executeSearch(); }
 
-    // --- 搜索与精准定位 (保留v4.5的视觉修正) ---
     function executeSearch() {
         if(isCompareMode) resetMapState();
-
         const keyword = document.getElementById('search-input').value.trim();
         if (!keyword) {
             renderMap(rawData.filter(item => activeDistricts.has(item.district)));
             map.setFitView(null, false, [50, 50, 50, 400]); 
             return;
         }
-
-        // 支持中英文搜索
-        const results = rawData.filter(item => 
-            item.name.toLowerCase().includes(keyword.toLowerCase())
-        );
-        
-        if (results.length === 0) { showStatus("⚠️ 未找到项目"); return; }
+        const results = rawData.filter(item => item.name.toLowerCase().includes(keyword.toLowerCase()));
+        if (results.length === 0) { showStatus("⚠️ 未找到"); return; }
         
         renderMap(results);
-
         if (results.length === 1) {
             const target = results[0];
-            showStatus(`🔍 定位到: ${target.name}`);
-            
-            // 查找对应的 Marker
             const targetMarker = markers.find(m => m.getExtData().name === target.name);
-
-            if (targetMarker) {
-                // 使用 setFitView 进行左侧避让
-                map.setFitView([targetMarker], false, [60, 60, 60, 420], 16);
-                setTimeout(() => showDetail(target), 300);
-            }
+            showStatus(`🔍 定位: ${target.name}`);
+            map.setZoomAndCenter(17, [target.lng, target.lat]);
+            setTimeout(() => { map.panBy(175, 0); showDetail(target); }, 150);
         } else {
-            showStatus(`🔍 找到 ${results.length} 个项目`);
             map.setFitView(null, false, [50, 50, 50, 400]);
         }
     }
@@ -250,31 +218,57 @@
         markers = [];
         
         const prices = dataToRender.map(d => d.pCurrent);
-        const maxP = Math.max(...prices, 100); // 调整最大值估算
+        const maxP = Math.max(...prices, 100); 
         const minP = Math.min(...prices, 50);
 
         dataToRender.forEach(item => {
-            let color = '#007AFF';
+            let color = '#999', label = '';
+
+            // --- 核心可视化逻辑 ---
             if (currentMode === 'price') {
-                // 租金可视化 (简单归一化)
                 const ratio = (item.pCurrent - minP) / (maxP - minP || 1);
-                // 限制颜色范围，防止极端值
-                const safeRatio = Math.max(0, Math.min(1, ratio));
-                color = `hsl(${120 - safeRatio * 120}, 75%, 45%)`;
-            } else {
-                // 空置率可视化
+                color = `hsl(${120 - Math.max(0,Math.min(1,ratio)) * 120}, 75%, 45%)`;
+                label = '¥';
+            } else if (currentMode === 'vacancy') {
                 const ratio = Math.min(item.vCurrent / 0.3, 1);
                 color = `hsl(${120 - ratio * 120}, 75%, 45%)`;
+                label = '%';
+            } else if (currentMode === 'grade') {
+                // 等级着色
+                if (item.grade.includes('Premium') || item.grade.includes('甲')) color = '#304ffe'; // 深蓝
+                else if (item.grade.includes('A')) color = '#2979ff'; // 亮蓝
+                else if (item.grade.includes('B')) color = '#40c4ff'; // 浅蓝
+                else color = '#b0bec5'; // 灰色
+                label = 'G';
+            } else if (currentMode === 'leed') {
+                // LEED 着色
+                const l = item.leed.toLowerCase();
+                if (l.includes('platinum')) color = '#1b5e20'; // 铂金
+                else if (l.includes('gold')) color = '#fbc02d'; // 金
+                else if (l.includes('silver')) color = '#757575'; // 银
+                else if (l.includes('certified')) color = '#81c784'; // 认证
+                else color = '#e0e0e0'; // 无
+                label = 'L';
             }
 
-            const content = `<div style="width:26px;height:26px;background:${color};border:2px solid white;border-radius:50%;box-shadow:0 3px 6px rgba(0,0,0,0.3);color:white;display:flex;justify-content:center;align-items:center;font-size:11px;font-weight:bold;">${currentMode==='price'?'¥':'%'}</div>`;
+            const zIndex = (currentMode === 'leed' && color === '#e0e0e0') ? 50 : 100;
+
+            const content = `<div style="
+                width:26px; height:26px; 
+                background:${color}; 
+                border:2px solid white; 
+                border-radius:50%; 
+                box-shadow:0 3px 6px rgba(0,0,0,0.3);
+                color:${(color==='#fbc02d'||color==='#e0e0e0')?'#555':'white'}; 
+                display:flex; justify-content:center; align-items:center;
+                font-size:11px; font-weight:bold;">
+                ${label}
+            </div>`;
             
             const marker = new AMap.Marker({
-                position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-13, -13), map: map, zIndex: 100, extData: item 
+                position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-13, -13), map: map, zIndex: zIndex, extData: item 
             });
             marker.on('click', () => showDetail(item));
-            marker.on('mouseover', function(){ this.setzIndex(200); });
-            marker.on('mouseout', function(){ this.setzIndex(100); });
             markers.push(marker);
         });
         updateDashboard(dataToRender);
@@ -283,32 +277,30 @@
     function findPlanB(targetItem) {
         isCompareMode = true;
         map.clearMap(); markers = [];
-        
         const targetLngLat = new AMap.LngLat(targetItem.lng, targetItem.lat);
-        const RADIUS = 1500; 
         
         const competitors = rawData.filter(item => {
             if (item.name === targetItem.name) return false;
             const itemLngLat = new AMap.LngLat(item.lng, item.lat);
-            return targetLngLat.distance(itemLngLat) <= RADIUS && item.pCurrent < targetItem.pCurrent;
+            return targetLngLat.distance(itemLngLat) <= 1500 && item.pCurrent < targetItem.pCurrent;
         });
 
         const targetMarker = new AMap.Marker({
             position: targetLngLat,
             content: `<div style="width:34px;height:34px;background:#FFD700;border:3px solid #fff;border-radius:50%;box-shadow:0 0 15px rgba(255,215,0,0.6);display:flex;justify-content:center;align-items:center;font-size:20px;">⭐️</div>`,
-            offset: new AMap.Pixel(-17, -17), map: map, zIndex: 999, extData: targetItem
+            offset: new AMap.Pixel(-17, -17), map: map, zIndex: 999
         });
         targetMarker.on('click', () => showDetail(targetItem));
 
         competitors.forEach(item => {
             const priceDiff = (targetItem.pCurrent - item.pCurrent).toFixed(1);
             const content = `<div style="min-width:40px;padding:0 5px;height:24px;background:#2ecc71;border:2px solid white;border-radius:12px;box-shadow:0 3px 6px rgba(0,0,0,0.2);color:white;display:flex;justify-content:center;align-items:center;font-size:11px;font-weight:bold;">📉${priceDiff}</div>`;
-            const marker = new AMap.Marker({ position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-20, -12), map: map, zIndex: 500, extData: item });
+            const marker = new AMap.Marker({ position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-20, -12), map: map, zIndex: 500 });
             marker.on('click', () => showDetail(item));
             markers.push(marker);
         });
 
-        circleOverlay = new AMap.Circle({ center: targetLngLat, radius: RADIUS, borderWeight: 1, strokeColor: "#007AFF", strokeOpacity: 0.5, strokeWeight: 1, fillOpacity: 0.1, strokeStyle: 'dashed', strokeDasharray: [10, 10], fillColor: '#1791fc', zIndex: 50 });
+        circleOverlay = new AMap.Circle({ center: targetLngLat, radius: 1500, borderWeight: 1, strokeColor: "#007AFF", strokeOpacity: 0.5, strokeWeight: 1, fillOpacity: 0.1, strokeStyle: 'dashed', strokeDasharray: [10, 10], fillColor: '#1791fc', zIndex: 50 });
         circleOverlay.setMap(map);
 
         map.setFitView(null, false, [50, 50, 50, 420]);
@@ -320,10 +312,8 @@
     function resetMapState() {
         isCompareMode = false;
         document.getElementById('reset-map-btn').style.display = 'none';
-        const filtered = rawData.filter(item => activeDistricts.has(item.district));
-        renderMap(filtered);
+        renderMap(rawData.filter(item => activeDistricts.has(item.district)));
         map.setFitView(null, false, [50, 50, 50, 400]);
-        showStatus("🔄 全览模式");
     }
 
     function showDetail(item) {
@@ -332,11 +322,18 @@
             if(btn) btn.onclick = () => findPlanB(item);
         }, 0);
 
+        // Badge 生成
+        const gradeBadge = `<span class="badge badge-grade">${item.grade}</span>`;
+        const leedBadge = (item.leed && item.leed !== "无" && item.leed !== "-") 
+            ? `<span class="badge badge-leed">LEED ${item.leed}</span>` 
+            : `<span class="badge badge-none">无LEED</span>`;
+
         const content = `
             <div class="info-window-card">
                 <div style="padding:15px; border-bottom:1px solid #eee;">
                     <h3 style="margin:0;font-size:18px;">${item.name}</h3>
-                    <div style="color:#666;font-size:12px;margin-top:4px;">${item.district} | Grade ${item.grade}</div>
+                    <div style="color:#666;font-size:12px;margin-top:4px;">${item.district} | ${item.built_year}</div>
+                    <div class="tag-row">${gradeBadge} ${leedBadge}</div>
                 </div>
                 <div style="display:flex;padding:15px;">
                     <div style="flex:1;">
@@ -349,29 +346,11 @@
                     </div>
                 </div>
                 <div style="padding:0 15px 15px;">
-                    <div class="chart-container"><canvas id="trendChart"></canvas></div>
                     <button id="btn-plan-b" class="btn-plan-b">🔍 客户嫌贵？查看周边平替 (Plan B)</button>
                 </div>
             </div>`;
         infoWindow.setContent(content);
         infoWindow.open(map, [item.lng, item.lat]);
-        setTimeout(() => renderChart(item), 100);
-    }
-
-    function renderChart(item) {
-        const ctx = document.getElementById('trendChart').getContext('2d');
-        if(chartInstance) chartInstance.destroy();
-        chartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: QUARTERS,
-                datasets: [
-                    { label:'租金', data:item.priceHistory, borderColor:'#004080', backgroundColor:'rgba(0,64,128,0.1)', fill:true, yAxisID:'y', tension:0.4 },
-                    { label:'空置%', data:item.vacancyHistory.map(v=>v*100), borderColor:'#dc3545', borderDash:[5,5], yAxisID:'y1', tension:0.4 }
-                ]
-            },
-            options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false},ticks:{font:{size:9}}}, y:{type:'linear',display:true,position:'left'}, y1:{type:'linear',display:true,position:'right',grid:{drawOnChartArea:false}} } }
-        });
     }
 
     function updateDashboard(data) {
@@ -380,15 +359,14 @@
         document.getElementById('stat-price').innerText = count ? (data.reduce((a,b)=>a+b.pCurrent,0)/count).toFixed(2) : '-';
         document.getElementById('stat-vacancy').innerText = count ? ((data.reduce((a,b)=>a+b.vCurrent,0)/count)*100).toFixed(1)+'%' : '-';
         
-        // 计算 Grade A 占比
-        const gradeACount = data.filter(d => d.grade.includes('A')).length;
+        // Grade A 统计
+        const gradeACount = data.filter(d => d.grade.includes('A') || d.grade.includes('甲')).length;
         const gradeARate = count ? ((gradeACount / count) * 100).toFixed(0) : 0;
         document.getElementById('stat-grade').innerText = gradeARate + '%';
         
-        // 环比现在为0，显示横杠
-        const qoqEl = document.getElementById('stat-qoq');
-        qoqEl.innerText = "-";
-        qoqEl.style.color = '#888';
+        // LEED 统计
+        const leedCount = data.filter(d => d.leed && d.leed !== '无' && d.leed !== '-').length;
+        document.getElementById('stat-leed').innerText = leedCount;
     }
 
     function showStatus(msg) {
