@@ -16,18 +16,20 @@
     <script src="https://webapi.amap.com/maps?v=2.0&key=31fdd14ad134becab8cb33119fa019d5"></script>
     
     <style>
-        /* --- 样式区 --- */
+        /* --- 基础布局 --- */
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; overflow: hidden; display: flex; height: 100vh; background: #f0f2f5; }
         #sidebar { width: 350px; background: #fff; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; z-index: 200; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
         .brand-header { padding: 20px; background: #004080; color: white; }
         .brand-header h2 { margin: 0; font-size: 20px; font-weight: 700; }
         .brand-header p { margin: 5px 0 0; opacity: 0.8; font-size: 12px; }
         
+        /* 统计区 */
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; }
         .stat-card { background: #fff; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #eee; }
         .stat-value { font-size: 16px; font-weight: 800; color: #004080; margin-bottom: 2px; }
         .stat-label { font-size: 11px; color: #888; }
         
+        /* 搜索区 */
         .controls { flex: 1; padding: 15px; overflow-y: auto; }
         .control-group { margin-bottom: 20px; }
         .control-title { font-weight: bold; font-size: 13px; margin-bottom: 8px; display: block; color: #333; }
@@ -37,29 +39,28 @@
         .checkbox-group label { display: flex; align-items: center; margin-bottom: 8px; font-size: 13px; color: #555; cursor: pointer; }
         .checkbox-group input { margin-right: 8px; }
         
+        /* 底部按钮 */
         .actions { padding: 15px; border-top: 1px solid #eee; background: white; }
         .btn-mode { width: 100%; padding: 10px; margin-bottom: 5px; border: 1px solid #e0e0e0; background: white; color: #555; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s; text-align: left; }
         .btn-mode.active { background: #e6f0fa; color: #004080; border-color: #004080; }
         
+        /* 地图与弹窗 */
         #map-container { flex: 1; position: relative; }
         #status-bar { position: absolute; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px; display: none; }
-        
-        /* 弹窗与标签 */
         .info-window-card { width: 340px; font-family: sans-serif; }
         .chart-container { height: 160px; width: 100%; margin-top: 10px; }
+        
         .tag-row { display: flex; gap: 5px; margin-top: 6px; }
         .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; }
         
-        /* 等级颜色 */
-        .badge-pa { background: #1a237e; } /* Premium A 深蓝 */
-        .badge-a { background: #2979ff; } /* A 亮蓝 */
-        .badge-b { background: #40c4ff; } /* B 浅蓝 */
-        
-        /* LEED 颜色 */
-        .badge-platinum { background: #004d40; } /* 铂金 - 深绿 */
-        .badge-gold { background: #fbc02d; color: #333; } /* 金 - 金黄 */
-        .badge-silver { background: #9e9e9e; color: #333; } /* 银 - 银灰 */
-        .badge-none { background: #eeeeee; color: #999; } /* 无 */
+        /* 颜色定义 */
+        .badge-pa { background: #1a237e; } 
+        .badge-a { background: #2979ff; } 
+        .badge-b { background: #40c4ff; } 
+        .badge-platinum { background: #004d40; } 
+        .badge-gold { background: #fbc02d; color: #333; } 
+        .badge-silver { background: #9e9e9e; color: #333; } 
+        .badge-none { background: #eeeeee; color: #999; } 
 
         .btn-plan-b { width: 100%; margin-top: 10px; padding: 8px; background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%); border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 4px 10px rgba(56, 239, 125, 0.3); transition: transform 0.1s; }
         .btn-plan-b:active { transform: scale(0.98); }
@@ -71,13 +72,14 @@
     <div id="sidebar">
         <div class="brand-header">
             <h2>COLLIERS DATA</h2>
-            <p>办公楼市场监测系统 v5.3</p>
+            <p>办公楼市场监测系统 v5.4</p>
         </div>
         <div class="stat-grid">
             <div class="stat-card"><div class="stat-value" id="stat-count">-</div><div class="stat-label">视野项目</div></div>
             <div class="stat-card"><div class="stat-value" id="stat-price">-</div><div class="stat-label">平均租金</div></div>
-            <div class="stat-card"><div class="stat-value" id="stat-grade">-</div><div class="stat-label">A级及以上</div></div>
-            <div class="stat-card"><div class="stat-value" id="stat-leed">-</div><div class="stat-label">LEED认证</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-grade">-</div><div class="stat-label">甲级占比</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-leed">-</div><div class="stat-label">LEED认证数</div></div>
+            <div class="stat-card" style="grid-column: span 2; border-top: 2px solid #eee;"><div class="stat-value" id="stat-vacancy" style="color:#d32f2f">-</div><div class="stat-label">平均空置率</div></div>
         </div>
         <div class="controls">
             <div class="search-box">
@@ -104,11 +106,10 @@
     </div>
 
 <script>
-    // --- 0. 内置备份数据 (如果 data.xlsx 挂了，用这个，保证不白屏) ---
+    // 内置备份数据 (保证不白屏)
     const DEMO_DATA = [
         {"Project Name CN": "国贸写字楼1座", "SUBMARKET": "CBD", "grades": "A", "Completion Date": "1990 Q3", "Net Effective Rent": 288.75, "Vacancy Rate": "13.0%", "LEEDS": "", "经纬度": "116.458363,39.909473"},
-        {"Project Name CN": "国贸写字楼2座", "SUBMARKET": "CBD", "grades": "A", "Completion Date": "1999 Q4", "Net Effective Rent": 307.08, "Vacancy Rate": "2.0%", "LEEDS": "Gold", "经纬度": "116.460469,39.910838"},
-        {"Project Name CN": "测试PA大厦", "SUBMARKET": "丽泽", "grades": "PA", "Completion Date": "2020", "Net Effective Rent": 200, "Vacancy Rate": "5.0%", "LEEDS": "Platinum", "经纬度": "116.336,39.867"}
+        {"Project Name CN": "国贸写字楼2座", "SUBMARKET": "CBD", "grades": "A", "Completion Date": "1999 Q4", "Net Effective Rent": 307.08, "Vacancy Rate": "2.0%", "LEEDS": "Gold", "经纬度": "116.460469,39.910838"}
     ];
 
     const QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4', 'Next Q1', 'Next Q2'];
@@ -127,32 +128,25 @@
 
     async function loadExcel() {
         showStatus("📥 正在读取数据...");
-        let json = [];
-        let usedDemo = false;
-
         try {
             const response = await fetch('./data.xlsx');
             if (response.ok) {
                 const buffer = await response.arrayBuffer();
                 const workbook = XLSX.read(buffer);
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                json = XLSX.utils.sheet_to_json(sheet);
+                const json = XLSX.utils.sheet_to_json(sheet);
+                processData(json);
             } else { throw new Error("File 404"); }
         } catch (err) {
             console.warn("读取失败，启用备份数据");
-            json = DEMO_DATA; // ★★★ 自动降级使用内置数据 ★★★
-            usedDemo = true;
+            processData(DEMO_DATA); // 自动降级
+            showStatus("⚠️ 使用内置备份数据");
         }
-
-        processData(json);
-        if(usedDemo) showStatus("⚠️ 使用内置备份数据 (请检查 Excel 文件名)");
     }
 
-    // --- ★★★ 智能容错处理 (Fuzzy Matcher) ★★★ ---
+    // 辅助函数：模糊查找列名
     function findVal(item, keys) {
-        // 尝试精确匹配
         for (let k of keys) { if (item[k] !== undefined) return item[k]; }
-        // 尝试模糊匹配 (去空格、忽略大小写)
         const itemKeys = Object.keys(item);
         for (let k of keys) {
             const match = itemKeys.find(ik => ik.trim().toLowerCase() === k.toLowerCase());
@@ -161,38 +155,43 @@
         return null;
     }
 
+    // --- ★★★ 数据清洗核心逻辑 ★★★ ---
     function processData(json) {
         rawData = json.map(item => {
-            // 1. 坐标 (支持中文或英文列名)
-            const posRaw = findVal(item, ['经纬度', 'Position', 'position']);
+            // 1. 坐标
+            const posRaw = findVal(item, ['经纬度', 'Position']);
             const posStr = String(posRaw || "").trim().replace('，', ',');
             const pos = posStr.split(',').map(Number);
 
             // 2. 基础信息
             const name = findVal(item, ['Project Name CN', 'Project Name EN', 'name']) || "未知项目";
-            const district = findVal(item, ['SUBMARKET', '所在区', 'district']) || "其他";
-            const built_year = findVal(item, ['Completion Date', 'built_year']) || "-";
+            const district = findVal(item, ['SUBMARKET', '所在区']) || "其他";
+            const built_year = findVal(item, ['Completion Date']) || "-";
             
-            // 3. 核心指标
-            const pRaw = findVal(item, ['Net Effective Rent', 'price', 'Rent']);
-            const pCurrent = parseFloat(pRaw) || 0;
+            // 3. 价格 & 空置率 (重点修复)
+            const pCurrent = parseFloat(findVal(item, ['Net Effective Rent', 'Rent'])) || 0;
             
-            const vRaw = findVal(item, ['Vacancy Rate', 'vacancy']);
+            const vRaw = findVal(item, ['Vacancy Rate', 'Vacancy']);
             let vCurrent = 0;
-            if (typeof vRaw === 'string' && vRaw.includes('%')) vCurrent = parseFloat(vRaw.replace('%', '')) / 100;
-            else vCurrent = parseFloat(vRaw) || 0;
+            // 兼容 "13.0%" 和 0.13 和 13 几种格式
+            if (typeof vRaw === 'string' && vRaw.includes('%')) {
+                vCurrent = parseFloat(vRaw.replace('%', '')) / 100;
+            } else if (vRaw > 1) { // 假设如果是 13.0 这种数字，也是百分比
+                vCurrent = parseFloat(vRaw) / 100;
+            } else {
+                vCurrent = parseFloat(vRaw) || 0;
+            }
 
-            // 4. 等级与LEED (处理 PA, Platinum 等)
-            // grades: 可能有空格，转大写
-            const gRaw = String(findVal(item, ['grades', 'grade']) || "-").trim().toUpperCase();
-            const grade = gRaw === 'PA' ? 'PA' : (gRaw === 'A' ? 'A' : gRaw);
+            // 4. 等级 (去空格，转大写)
+            const gRaw = String(findVal(item, ['grades', 'Grade']) || "-").trim().toUpperCase();
+            const grade = (gRaw === 'PA' || gRaw === 'PREMIUM A') ? 'PA' : (gRaw.includes('A') ? 'A' : gRaw);
 
-            // LEED: 可能有空格，转首字母大写
-            const lRaw = String(findVal(item, ['LEEDS', 'LEED', 'leed']) || "").trim();
+            // 5. LEED (去空格)
+            const lRaw = String(findVal(item, ['LEEDS', 'LEED']) || "").trim();
+            // 如果是 N, No, -, 空字符串，都算“无”
             let leed = "无";
-            if (lRaw && lRaw !== 'undefined' && lRaw !== 'null') leed = lRaw; // 只要有字就算有
+            if (lRaw && lRaw !== 'N' && lRaw !== 'No' && lRaw !== '-') leed = lRaw;
 
-            // 补全历史数据用于画图
             const pHistory = QUARTERS.map(() => pCurrent);
             const vHistory = QUARTERS.map(() => vCurrent);
 
@@ -204,10 +203,7 @@
             };
         }).filter(d => d.isValid);
 
-        if (rawData.length === 0) {
-            showStatus("❌ 数据为空，请检查Excel经纬度列");
-            return;
-        }
+        if (rawData.length === 0) { showStatus("❌ 数据为空"); return; }
 
         showStatus(`✅ 加载 ${rawData.length} 个项目`);
         initFilters();
@@ -240,6 +236,7 @@
         }
         const results = rawData.filter(item => item.name.toLowerCase().includes(keyword.toLowerCase()));
         if (results.length === 0) { showStatus("⚠️ 未找到"); return; }
+        
         renderMap(results);
         if (results.length === 1) {
             const target = results[0];
@@ -264,7 +261,6 @@
         dataToRender.forEach(item => {
             let color = '#999', label = '';
 
-            // --- 可视化核心逻辑 ---
             if (currentMode === 'price') {
                 const ratio = (item.pCurrent - minP) / (maxP - minP || 1);
                 color = `hsl(${120 - Math.max(0,Math.min(1,ratio)) * 120}, 75%, 45%)`;
@@ -274,17 +270,15 @@
                 color = `hsl(${120 - ratio * 120}, 75%, 45%)`;
                 label = '%';
             } else if (currentMode === 'grade') {
-                // 等级：PA深蓝，A亮蓝，其他灰
                 if (item.grade === 'PA') color = '#1a237e'; 
                 else if (item.grade === 'A') color = '#2979ff';
                 else color = '#b0bec5'; 
                 label = 'G';
             } else if (currentMode === 'leed') {
-                // LEED：Platinum深绿，Gold金，Silver银
                 const l = item.leed.toLowerCase();
-                if (l.includes('platinum')) color = '#004d40';
-                else if (l.includes('gold')) color = '#fbc02d';
-                else if (l.includes('silver')) color = '#9e9e9e';
+                if (l.includes('platinum') || l.includes('铂')) color = '#004d40';
+                else if (l.includes('gold') || l.includes('金')) color = '#fbc02d';
+                else if (l.includes('silver') || l.includes('银')) color = '#9e9e9e';
                 else if (l.includes('cert')) color = '#81c784';
                 else color = '#eeeeee'; 
                 label = 'L';
@@ -352,31 +346,24 @@
             if(btn) btn.onclick = () => findPlanB(item);
         }, 0);
 
-        // --- 生成不同颜色的标签 ---
-        let gradeClass = 'badge-none';
-        if (item.grade === 'PA') gradeClass = 'badge-pa';
-        else if (item.grade === 'A') gradeClass = 'badge-a';
-        else if (item.grade === 'B') gradeClass = 'badge-b';
-
-        let leedClass = 'badge-none';
-        const l = item.leed.toLowerCase();
-        if (l.includes('platinum')) leedClass = 'badge-platinum';
-        else if (l.includes('gold')) leedClass = 'badge-gold';
-        else if (l.includes('silver')) leedClass = 'badge-silver';
-
-        const gradeBadge = `<span class="badge ${gradeClass}">${item.grade === '-' ? '未知' : item.grade}</span>`;
-        const leedBadge = `<span class="badge ${leedClass}">${item.leed === '无' ? '无LEED' : item.leed}</span>`;
+        let gradeClass = item.grade === 'PA' ? 'badge-pa' : (item.grade === 'A' ? 'badge-a' : 'badge-none');
+        let leedClass = item.leed.toLowerCase().includes('gold') ? 'badge-gold' : 
+                        item.leed.toLowerCase().includes('plat') ? 'badge-platinum' : 
+                        item.leed === '无' ? 'badge-none' : 'badge-silver';
 
         const content = `
             <div class="info-window-card">
                 <div style="padding:15px; border-bottom:1px solid #eee;">
                     <h3 style="margin:0;font-size:18px;">${item.name}</h3>
                     <div style="color:#666;font-size:12px;margin-top:4px;">${item.district} | ${item.built_year}</div>
-                    <div class="tag-row">${gradeBadge} ${leedBadge}</div>
+                    <div class="tag-row">
+                        <span class="badge ${gradeClass}">${item.grade === '-' ? '未评级' : item.grade}级</span>
+                        <span class="badge ${leedClass}">${item.leed}</span>
+                    </div>
                 </div>
                 <div style="display:flex;padding:15px;">
                     <div style="flex:1;">
-                        <div style="font-size:12px;color:#888;">净有效租金</div>
+                        <div style="font-size:12px;color:#888;">租金</div>
                         <div style="font-size:20px;font-weight:bold;color:#333;">¥${item.pCurrent.toFixed(1)}</div>
                     </div>
                     <div style="text-align:right;">
@@ -410,20 +397,24 @@
         });
     }
 
+    // --- ★★★ 统计修正核心 ★★★ ---
     function updateDashboard(data) {
         const count = data.length;
         document.getElementById('stat-count').innerText = count;
         document.getElementById('stat-price').innerText = count ? (data.reduce((a,b)=>a+b.pCurrent,0)/count).toFixed(2) : '-';
-        document.getElementById('stat-vacancy').innerText = count ? ((data.reduce((a,b)=>a+b.vCurrent,0)/count)*100).toFixed(1)+'%' : '-';
         
-        // 统计 Grade A (包括 PA 和 A)
+        // 修正1：空置率 (显示百分比)
+        const avgVac = count ? ((data.reduce((a,b)=>a+b.vCurrent,0)/count)*100).toFixed(1) : 0;
+        document.getElementById('stat-vacancy').innerText = avgVac + '%';
+        
+        // 修正2：Grade A (只要是A或PA都算)
         const gradeACount = data.filter(d => d.grade === 'A' || d.grade === 'PA').length;
         const gradeARate = count ? ((gradeACount / count) * 100).toFixed(0) : 0;
         document.getElementById('stat-grade').innerText = gradeARate + '%';
         
-        // 统计 LEED (有值的都算)
-        const leedCount = data.filter(d => d.leed !== '无' && d.leed !== '').length;
-        document.getElementById('stat-leed').innerText = leedCount;
+        // 修正3：LEED (只要不是“无”)
+        const leedCount = data.filter(d => d.leed !== '无').length;
+        document.getElementById('stat-leed').innerText = leedCount + '个';
     }
 
     function showStatus(msg) {
