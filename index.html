@@ -50,7 +50,7 @@
         .user-info-bar { background: #e3f2fd; padding: 10px 20px; font-size: 12px; color: #004080; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #bbdefb; }
         .logout-link { cursor: pointer; text-decoration: underline; }
 
-        /* 统计卡片 (改为 2x2 布局) */
+        /* 统计卡片 (2x2 布局) */
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; }
         .stat-card { background: #fff; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #eee; }
         .stat-value { font-size: 16px; font-weight: 800; color: #004080; margin-bottom: 2px; }
@@ -75,7 +75,7 @@
         .checkbox-group input { margin-right: 8px; }
         .check-all-label { border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 8px !important; font-weight: bold; color: #004080 !important; }
 
-        /* --- 左下角 2x2 网格布局 --- */
+        /* 左下角 2x2 网格布局 */
         .actions { 
             padding: 15px; 
             border-top: 1px solid #eee; 
@@ -106,7 +106,7 @@
         /* 地图区 */
         #map-container { flex: 1; position: relative; }
         
-        /* --- 状态条移到顶部正中 --- */
+        /* 状态条移到顶部正中 */
         #status-bar { 
             position: absolute; 
             top: 20px; 
@@ -122,7 +122,7 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
 
-        /* --- 右上角悬浮功能区 --- */
+        /* 右上角悬浮功能区 */
         #top-right-panel {
             position: absolute;
             top: 20px;
@@ -241,7 +241,7 @@
         <div id="top-right-panel">
             <button class="top-btn" onclick="downloadReport()">📄 下载季报</button>
             <button id="btn-update" class="top-btn admin-btn" style="display:none;" onclick="window.location.href='update.html'">✏️ 季度数据更新</button>
-            <button id="btn-analysis" class="top-btn admin-btn" style="display:none;" onclick="alert('进入管理员看板...')">📊 行为分析</button>
+            <button id="btn-analysis" class="top-btn admin-btn" style="display:none;" onclick="window.location.href='admin.html'">📊 行为分析</button>
         </div>
 
         <div id="status-bar"></div>
@@ -300,6 +300,28 @@
     }
 
     function logout() { localStorage.removeItem('colliers_user'); location.reload(); }
+
+    // --- 日志记录模块 (自动埋点) ---
+    async function logSearchAction(keyword, metric, op, val) {
+        if (CURRENT_USER.role === 'admin') return; // 管理员不记录
+        if (!keyword && !val) return; // 空搜不记录
+
+        try {
+            fetch('/api/log-search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user: CURRENT_USER.name,
+                    action: 'search',
+                    details: {
+                        keyword: keyword || '无',
+                        filter: val ? `${metric} ${op} ${val}` : '无'
+                    },
+                    time: new Date().toLocaleString()
+                })
+            });
+        } catch (e) { console.error(e); }
+    }
 
     // --- 地图与数据核心逻辑 ---
     // 备份数据，防止Excel读取失败
@@ -439,6 +461,9 @@
                 advVal = parseFloat(advValRaw);
             }
         }
+
+        // ★★★ 这里插入了日志记录功能 ★★★
+        logSearchAction(keyword, advMetric, advOp, advValRaw);
 
         const filtered = rawData.filter(item => {
             if (!activeDistricts.has(item.district)) return false;
