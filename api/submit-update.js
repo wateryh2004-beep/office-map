@@ -1,59 +1,48 @@
 const XLSX = require('xlsx');
-const { Octokit } = require("@octokit/rest"); // 必须在 package.json 只有安装了这个库
+const { Octokit } = require("@octokit/rest");
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
     const { user, data } = req.body;
-    if (!user || !data || data.length === 0) {
-        return res.status(400).json({ status: 'fail', message: '数据为空' });
+    
+    // 检查 GitHub Token 是否配置
+    if (!process.env.GITHUB_TOKEN) {
+        return res.status(500).json({ status: 'error', message: 'Vercel 环境变量 GITHUB_TOKEN 未配置' });
     }
 
     try {
-        // 1. 将 JSON 数据转换为 Excel Buffer
+        // 1. 生成 Excel 文件 (在内存中)
         const worksheet = XLSX.utils.json_to_sheet(data);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "QuarterlyUpdate");
-        // write 得到的是二进制 Buffer
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+        // 生成二进制 buffer
         const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
-        // 2. 准备上传到 GitHub
-        // 文件名：姓名-日期-时间.xlsx
-        const dateStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-        const filename = `updates/${user}-${dateStr}.xlsx`; // 存放在 updates 文件夹下
+        // 2. 准备上传参数
+        // 文件名格式：updates/姓名-日期.xlsx
+        const dateStr = new Date().toISOString().split('T')[0]; // 2026-02-02
+        // 加个时间戳防止同一天覆盖：姓名-日期-时间戳.xlsx
+        const timestamp = new Date().getTime(); 
+        const filename = `updates/${user}-${dateStr}-${timestamp}.xlsx`; 
 
-        // 初始化 GitHub 客户端
+        // 3. 初始化 GitHub 客户端
         const octokit = new Octokit({
-            auth: process.env.GITHUB_TOKEN // 必须在 Vercel 环境变量里配置
+            auth: process.env.GITHUB_TOKEN
         });
 
-        // 获取仓库信息 (需要你手动填一下你的仓库名)
-        const OWNER = 'wateryh2004-beep'; // ★★★ 你的 GitHub 用户名 ★★★
-        const REPO = 'beep';              // ★★★ 你的仓库名 ★★★
-        const BRANCH = 'main';            // 分支名，通常是 main 或 master
+        // ⚠️ 请修改下面的配置为你自己的 GitHub 信息
+        const OWNER = 'wateryh2004-beep'; // 你的 GitHub 用户名
+        const REPO = 'beep';              // 你的仓库名
+        const BRANCH = 'main';            // 分支名 (main 或 master)
 
-        // 3. 检查文件是否存在（为了获取 sha，如果是更新的话）
-        let sha = null;
-        try {
-            const { data: existingFile } = await octokit.repos.getContent({
-                owner: OWNER,
-                repo: REPO,
-                path: filename,
-                ref: BRANCH,
-            });
-            sha = existingFile.sha; // 如果文件已存在，拿到 sha 才能覆盖
-        } catch (e) {
-            // 文件不存在，这是正常的，说明是第一次上传
-        }
-
-        // 4. 上传文件 (Create or Update)
+        // 4. 上传文件
         await octokit.repos.createOrUpdateFileContents({
             owner: OWNER,
             repo: REPO,
             path: filename,
-            message: `feat: ${user} quarterly update`, // Commit message
-            content: excelBuffer.toString('base64'), // 必须转为 base64
-            sha: sha, // 如果是新建，sha 为 null；如果是覆盖，sha 必须有值
+            message: `feat: ${user} uploaded quarterly data`, // Commit 备注
+            content: excelBuffer.toString('base64'), // 必须转为 base64 格式
             branch: BRANCH,
             committer: {
                 name: "Vercel Bot",
