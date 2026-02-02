@@ -50,18 +50,28 @@
         .user-info-bar { background: #e3f2fd; padding: 10px 20px; font-size: 12px; color: #004080; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #bbdefb; }
         .logout-link { cursor: pointer; text-decoration: underline; }
 
+        /* 统计卡片 (改为 2x2 布局) */
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; }
         .stat-card { background: #fff; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #eee; }
         .stat-value { font-size: 16px; font-weight: 800; color: #004080; margin-bottom: 2px; }
         .stat-label { font-size: 11px; color: #888; }
         
         .controls { flex: 1; padding: 15px; overflow-y: auto; }
+        .control-group { margin-bottom: 20px; }
         .control-title { font-weight: bold; font-size: 13px; margin-bottom: 8px; display: block; color: #333; }
+        
+        /* 搜索框 */
         .search-box { display: flex; gap: 5px; margin-bottom: 20px; }
         #search-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; outline: none; }
         #search-btn { padding: 0 15px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
         
-        /* 下载与更新按钮区 */
+        /* 高级筛选样式 */
+        .filter-row { display: flex; gap: 5px; margin-bottom: 8px; }
+        .filter-select, .filter-val-input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; outline: none; }
+        .filter-btn { width: 100%; padding: 8px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .filter-btn:hover { background: #003366; }
+
+        /* 按钮与复选框 */
         .feature-links { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
         .btn-feature { 
             display: block; width: 100%; padding: 10px; margin-bottom: 8px; 
@@ -88,8 +98,6 @@
         .chart-container { height: 160px; width: 100%; margin-top: 10px; }
         .tag-row { display: flex; gap: 5px; margin-top: 6px; }
         .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; }
-        
-        /* 标签颜色 */
         .badge-pa { background: #1a237e; } .badge-a { background: #2979ff; } .badge-b { background: #40c4ff; } 
         .badge-platinum { background: #004d40; } .badge-gold { background: #fbc02d; color: #333; } 
         .badge-silver { background: #9e9e9e; color: #333; } .badge-none { background: #eeeeee; color: #999; } 
@@ -115,7 +123,7 @@
     <div id="sidebar">
         <div class="brand-header">
             <h2>COLLIERS DATA</h2>
-            <p>办公楼市场监测系统 v5.8</p>
+            <p>办公楼市场监测系统 v5.9</p>
         </div>
         
         <div class="user-info-bar">
@@ -126,10 +134,10 @@
         <div class="stat-grid">
             <div class="stat-card"><div class="stat-value" id="stat-count">-</div><div class="stat-label">视野项目</div></div>
             <div class="stat-card"><div class="stat-value" id="stat-price">-</div><div class="stat-label">平均租金</div></div>
-            <div class="stat-card"><div class="stat-value" id="stat-grade">-</div><div class="stat-label">A级及以上</div></div>
-            <div class="stat-card"><div class="stat-value" id="stat-leed">-</div><div class="stat-label">LEED认证数</div></div>
-            <div class="stat-card" style="grid-column: span 2; border-top: 2px solid #eee;"><div class="stat-value" id="stat-vacancy" style="color:#d32f2f">-</div><div class="stat-label">平均空置率</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-leed">-</div><div class="stat-label">LEED认证</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-vacancy" style="color:#d32f2f">-</div><div class="stat-label">平均空置率</div></div>
         </div>
+        
         <div class="controls">
             <div class="feature-links">
                 <button class="btn-feature" onclick="downloadReport()">📄 下载最新季报 (Report)</button>
@@ -138,9 +146,30 @@
             </div>
 
             <div class="search-box">
-                <input type="text" id="search-input" placeholder="🔍 搜项目名..." onkeydown="if(event.key==='Enter') executeSearch()">
-                <button id="search-btn" onclick="executeSearch()">查询</button>
+                <input type="text" id="search-input" placeholder="🔍 搜项目名..." onkeydown="if(event.key==='Enter') executeFilters()">
+                <button id="search-btn" onclick="executeFilters()">查询</button>
             </div>
+
+            <div class="control-group">
+                <span class="control-title">高级数值筛选 (Advanced Filter)</span>
+                <div class="filter-row">
+                    <select id="adv-metric" class="filter-select" style="flex:1;">
+                        <option value="pCurrent">租金 (Rent)</option>
+                        <option value="vCurrent">空置率 (Vacancy)</option>
+                        <option value="vacArea">空置面积 (Area)</option>
+                    </select>
+                    <select id="adv-op" class="filter-select" style="width:60px;">
+                        <option value=">">></option>
+                        <option value="<"><</option>
+                        <option value="=">=</option>
+                        <option value=">=">≥</option>
+                        <option value="<=">≤</option>
+                    </select>
+                    <input type="text" id="adv-val" class="filter-val-input" style="flex:1;" placeholder="数值/百分比">
+                </div>
+                <button class="filter-btn" onclick="executeFilters()">执行筛选 (Apply)</button>
+            </div>
+
             <div class="control-group">
                 <span class="control-title">商圈筛选 (Submarket)</span>
                 <div class="checkbox-group" id="district-filters"><label>数据加载中...</label></div>
@@ -162,9 +191,7 @@
 
 <script>
     // --- 下载季报函数 ---
-    function downloadReport() {
-        window.open('./sample_report.pdf', '_blank');
-    }
+    function downloadReport() { window.open('./sample_report.pdf', '_blank'); }
 
     // --- 认证模块 ---
     const CURRENT_USER = { name: '', role: 'viewer' };
@@ -184,9 +211,7 @@
         const phone = document.getElementById('login-phone').value.trim();
         const msg = document.getElementById('login-msg');
 
-        if (!name || !id || !phone) {
-            msg.innerText = "请填写完整信息"; msg.style.display = 'block'; return;
-        }
+        if (!name || !id || !phone) { msg.innerText = "请填写完整信息"; msg.style.display = 'block'; return; }
         msg.style.display = 'none';
         try {
             const res = await fetch('/api/login', {
@@ -199,13 +224,8 @@
                 localStorage.setItem('colliers_user', JSON.stringify(data.data));
                 loginSuccess(data.data);
                 init();
-            } else {
-                msg.innerText = data.message || "认证失败"; msg.style.display = 'block';
-            }
-        } catch (e) {
-            console.error(e);
-            msg.innerText = "系统连接错误"; msg.style.display = 'block';
-        }
+            } else { msg.innerText = data.message || "认证失败"; msg.style.display = 'block'; }
+        } catch (e) { console.error(e); msg.innerText = "系统连接错误"; msg.style.display = 'block'; }
     }
 
     function loginSuccess(user) {
@@ -217,13 +237,9 @@
         if (user.role === 'admin') document.getElementById('btn-analysis').style.display = 'block';
     }
 
-    function logout() {
-        localStorage.removeItem('colliers_user');
-        location.reload();
-    }
+    function logout() { localStorage.removeItem('colliers_user'); location.reload(); }
 
     // --- 地图与数据核心逻辑 ---
-    // 内置备份数据 
     const DEMO_DATA = [
         {"写字楼名称": "国贸写字楼1座", "子市场": "CBD", "写字楼等级": "A", "竣工时间": "1990 Q3", "净有效租金": 288.75, "空置率": "13.0%", "LEEDS": "", "经纬度": "116.458363,39.909473", "空置面积": 9400, "总面积": 72308},
         {"写字楼名称": "国贸写字楼2座", "子市场": "CBD", "写字楼等级": "A", "竣工时间": "1999 Q4", "净有效租金": 307.08, "空置率": "2.0%", "LEEDS": "Gold", "经纬度": "116.460469,39.910838", "空置面积": 1450, "总面积": 72308}
@@ -269,7 +285,6 @@
         return null;
     }
 
-    // --- ★★★ 核心适配：新列名 & 新字段 ★★★ ---
     function processData(json) {
         rawData = json.map(item => {
             const posRaw = findVal(item, ['经纬度', 'Position']);
@@ -280,10 +295,8 @@
             const district = findVal(item, ['子市场', 'SUBMARKET', '所在区']) || "其他";
             const built_year = findVal(item, ['竣工时间', 'Completion Date']) || "-";
             
-            // 核心指标
             const pCurrent = parseFloat(findVal(item, ['净有效租金', 'Net Effective Rent'])) || 0;
             
-            // 空置率处理
             const vRaw = findVal(item, ['空置率', 'Vacancy Rate']);
             let vCurrent = 0;
             if (typeof vRaw === 'string' && vRaw.includes('%')) {
@@ -294,7 +307,6 @@
                 vCurrent = parseFloat(vRaw) / 100; 
             }
 
-            // 新增字段
             const vacArea = parseFloat(findVal(item, ['空置面积', 'Vacancy Area'])) || 0;
             const totalArea = parseFloat(findVal(item, ['总面积', 'Total Area'])) || 0;
 
@@ -309,7 +321,7 @@
                 name, district, built_year, grade, leed,
                 lat: pos[1], lng: pos[0],
                 isValid: (pos.length === 2 && !isNaN(pos[0]) && !isNaN(pos[1])),
-                pCurrent, vCurrent, vacArea, totalArea // 新增到对象中
+                pCurrent, vCurrent, vacArea, totalArea
             };
         }).filter(d => d.isValid);
 
@@ -334,7 +346,7 @@
         if (isChecked) allDistrictsList.forEach(d => activeDistricts.add(d));
         else activeDistricts.clear();
         document.querySelectorAll('.district-checkbox').forEach(cb => cb.checked = isChecked);
-        if (!isCompareMode) renderMap(rawData.filter(item => activeDistricts.has(item.district)));
+        executeFilters(); // 更新为统一筛选入口
     }
 
     function toggleDistrict(d) {
@@ -342,27 +354,72 @@
         const checkAllBox = document.getElementById('check-all');
         checkAllBox.checked = activeDistricts.size === allDistrictsList.length;
         checkAllBox.indeterminate = activeDistricts.size > 0 && activeDistricts.size < allDistrictsList.length;
-        if (!isCompareMode) renderMap(rawData.filter(item => activeDistricts.has(item.district)));
+        executeFilters(); // 更新为统一筛选入口
     }
 
-    function handleEnter(event) { if (event.key === "Enter") executeSearch(); }
-
-    function executeSearch() {
+    // --- ★★★ 核心升级：统一筛选逻辑 (Keyword + Submarket + Advanced) ★★★ ---
+    function executeFilters() {
         if(isCompareMode) resetMapState();
-        const keyword = document.getElementById('search-input').value.trim();
-        if (!keyword) {
-            renderMap(rawData.filter(item => activeDistricts.has(item.district)));
-            map.setFitView(null, false, [50, 50, 50, 400]); return;
+
+        // 1. 获取所有筛选条件
+        const keyword = document.getElementById('search-input').value.trim().toLowerCase();
+        
+        // 高级筛选条件
+        const advMetric = document.getElementById('adv-metric').value; // pCurrent, vCurrent, vacArea
+        const advOp = document.getElementById('adv-op').value; // >, <, = ...
+        let advValRaw = document.getElementById('adv-val').value.trim();
+        let advVal = null;
+
+        // 处理高级筛选数值 (百分比转小数)
+        if (advValRaw !== '') {
+            advValRaw = advValRaw.replace(/,/g, ''); // 去除千分位逗号
+            if (advMetric === 'vCurrent' && advValRaw.includes('%')) {
+                advVal = parseFloat(advValRaw) / 100;
+            } else {
+                advVal = parseFloat(advValRaw);
+            }
         }
-        const results = rawData.filter(item => item.name.toLowerCase().includes(keyword.toLowerCase()));
-        if (results.length === 0) { showStatus("⚠️ 未找到"); return; }
-        renderMap(results);
-        if (results.length === 1) {
-            const target = results[0];
-            map.setZoomAndCenter(17, [target.lng, target.lat]);
-            setTimeout(() => { map.panBy(175, 0); showDetail(target); }, 150);
+
+        // 2. 遍历数据进行过滤
+        const filtered = rawData.filter(item => {
+            // 条件A: 商圈匹配
+            if (!activeDistricts.has(item.district)) return false;
+
+            // 条件B: 关键词匹配 (如果有)
+            if (keyword && !item.name.toLowerCase().includes(keyword)) return false;
+
+            // 条件C: 高级筛选 (如果有数值)
+            if (advVal !== null && !isNaN(advVal)) {
+                const itemVal = item[advMetric];
+                switch (advOp) {
+                    case '>': if (!(itemVal > advVal)) return false; break;
+                    case '<': if (!(itemVal < advVal)) return false; break;
+                    case '=': if (!(Math.abs(itemVal - advVal) < 0.0001)) return false; break; // 浮点数相等判断
+                    case '>=': if (!(itemVal >= advVal)) return false; break;
+                    case '<=': if (!(itemVal <= advVal)) return false; break;
+                }
+            }
+
+            return true;
+        });
+
+        // 3. 渲染结果
+        if (filtered.length === 0) {
+            showStatus("⚠️ 未找到匹配项目");
+            renderMap([]); // 清空地图
         } else {
-            map.setFitView(null, false, [50, 50, 50, 400]);
+            if(keyword || (advVal !== null && !isNaN(advVal))) showStatus(`🔍 筛选出 ${filtered.length} 个项目`);
+            renderMap(filtered);
+            
+            // 如果是单个搜索，自动聚焦
+            if (filtered.length === 1 && keyword) {
+                const target = filtered[0];
+                map.setZoomAndCenter(17, [target.lng, target.lat]);
+                setTimeout(() => { map.panBy(175, 0); showDetail(target); }, 150);
+            } else {
+                // 如果没有特意聚焦某个点，就自动缩放看全景
+                // map.setFitView(null, false, [50, 50, 50, 400]); 
+            }
         }
     }
 
@@ -399,7 +456,6 @@
         updateDashboard(dataToRender);
     }
 
-    // --- ★★★ 详情页重构：隐藏图表，增加面积显示 ★★★ ---
     function showDetail(item) {
         setTimeout(() => {
             const btn = document.getElementById('btn-plan-b');
@@ -478,33 +534,24 @@
     function resetMapState() {
         isCompareMode = false;
         document.getElementById('reset-map-btn').style.display = 'none';
-        renderMap(rawData.filter(item => activeDistricts.has(item.district)));
-        map.setFitView(null, false, [50, 50, 50, 400]);
+        executeFilters(); // 复位时重新应用筛选
     }
 
-    // --- ★★★ 升级版统计逻辑：剔除0值数据 ★★★ ---
     function updateDashboard(data) {
         const count = data.length;
         document.getElementById('stat-count').innerText = count;
 
-        // 租金统计 (剔除 0 或无效值)
         const validRentData = data.filter(d => d.pCurrent > 0);
         const avgRent = validRentData.length ? 
             (validRentData.reduce((a,b)=>a+b.pCurrent,0) / validRentData.length).toFixed(2) : '-';
         document.getElementById('stat-price').innerText = avgRent;
         
-        // 空置率统计 (剔除 0 或无效值)
-        // 注意：如果你认为 0% 空置率是有效数据，这里条件应改为 d.vCurrent >= 0
-        // 但根据你之前的要求“缺失或0则剔除”，这里用 > 0
         const validVacData = data.filter(d => d.vCurrent > 0);
         const avgVac = validVacData.length ? 
             ((validVacData.reduce((a,b)=>a+b.vCurrent,0) / validVacData.length) * 100).toFixed(1) : '-';
         document.getElementById('stat-vacancy').innerText = avgVac + '%';
         
-        const gradeACount = data.filter(d => d.grade === 'A' || d.grade === 'PA').length;
-        const gradeARate = count ? ((gradeACount / count) * 100).toFixed(0) : 0;
-        document.getElementById('stat-grade').innerText = gradeARate + '%';
-        
+        // 删除了 Grade 占比，改为只展示 LEED 计数
         const leedCount = data.filter(d => d.leed !== '无').length;
         document.getElementById('stat-leed').innerText = leedCount + '个';
     }
@@ -519,9 +566,7 @@
         document.querySelectorAll('.btn-mode').forEach(btn => btn.classList.remove('active'));
         event.currentTarget.classList.add('active');
         if(!isCompareMode) {
-            const keyword = document.getElementById('search-input').value.trim();
-            if(keyword) executeSearch(); 
-            else renderMap(rawData.filter(item => activeDistricts.has(item.district)));
+            executeFilters();
         }
     }
 </script>
