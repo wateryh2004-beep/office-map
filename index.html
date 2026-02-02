@@ -83,10 +83,13 @@
         #map-container { flex: 1; position: relative; }
         #status-bar { position: absolute; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px; display: none; }
         
+        /* 弹窗样式 */
         .info-window-card { width: 340px; font-family: sans-serif; }
         .chart-container { height: 160px; width: 100%; margin-top: 10px; }
         .tag-row { display: flex; gap: 5px; margin-top: 6px; }
         .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; }
+        
+        /* 标签颜色 */
         .badge-pa { background: #1a237e; } .badge-a { background: #2979ff; } .badge-b { background: #40c4ff; } 
         .badge-platinum { background: #004d40; } .badge-gold { background: #fbc02d; color: #333; } 
         .badge-silver { background: #9e9e9e; color: #333; } .badge-none { background: #eeeeee; color: #999; } 
@@ -112,7 +115,7 @@
     <div id="sidebar">
         <div class="brand-header">
             <h2>COLLIERS DATA</h2>
-            <p>办公楼市场监测系统 v5.6</p>
+            <p>办公楼市场监测系统 v5.7</p>
         </div>
         
         <div class="user-info-bar">
@@ -130,7 +133,6 @@
         <div class="controls">
             <div class="feature-links">
                 <button class="btn-feature" onclick="downloadReport()">📄 下载最新季报 (Report)</button>
-                
                 <button id="btn-update" class="btn-feature admin-btn" style="display:none;" onclick="alert('进入季报填报系统...')">✏️ 季报更新 (Update)</button>
                 <button id="btn-analysis" class="btn-feature admin-btn" style="display:none;" onclick="alert('进入管理员看板...')">📊 行为分析 (Admin)</button>
             </div>
@@ -161,23 +163,18 @@
 <script>
     // --- 下载季报函数 ---
     function downloadReport() {
-        // 这里假设文件名叫 sample_report.pdf
-        // _blank 表示在新标签页打开，浏览器通常会自动下载
         window.open('./sample_report.pdf', '_blank');
     }
 
     // --- 认证模块 ---
     const CURRENT_USER = { name: '', role: 'viewer' };
 
-    // 页面加载时检查登录状态
     window.onload = function() {
         const cachedUser = localStorage.getItem('colliers_user');
         if (cachedUser) {
             const user = JSON.parse(cachedUser);
             loginSuccess(user);
-            init(); // 登录过直接加载地图
-        } else {
-            // 没登录，显示遮罩，暂不加载地图
+            init(); 
         }
     };
 
@@ -188,51 +185,36 @@
         const msg = document.getElementById('login-msg');
 
         if (!name || !id || !phone) {
-            msg.innerText = "请填写完整信息";
-            msg.style.display = 'block';
-            return;
+            msg.innerText = "请填写完整信息"; msg.style.display = 'block'; return;
         }
-
         msg.style.display = 'none';
-        
         try {
             const res = await fetch('/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, id, phone })
             });
-            
             const data = await res.json();
-            
             if (data.status === 'success') {
                 localStorage.setItem('colliers_user', JSON.stringify(data.data));
                 loginSuccess(data.data);
-                init(); // 认证成功后才开始加载数据
+                init();
             } else {
-                msg.innerText = data.message || "认证失败";
-                msg.style.display = 'block';
+                msg.innerText = data.message || "认证失败"; msg.style.display = 'block';
             }
         } catch (e) {
             console.error(e);
-            msg.innerText = "系统连接错误";
-            msg.style.display = 'block';
+            msg.innerText = "系统连接错误"; msg.style.display = 'block';
         }
     }
 
     function loginSuccess(user) {
         CURRENT_USER.name = user.name;
         CURRENT_USER.role = user.role;
-
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('user-display').innerText = `${user.name} (${user.role})`;
-
-        // 权限控制：根据角色显示按钮
-        if (user.role === 'editor' || user.role === 'admin') {
-            document.getElementById('btn-update').style.display = 'block';
-        }
-        if (user.role === 'admin') {
-            document.getElementById('btn-analysis').style.display = 'block';
-        }
+        if (user.role === 'editor' || user.role === 'admin') document.getElementById('btn-update').style.display = 'block';
+        if (user.role === 'admin') document.getElementById('btn-analysis').style.display = 'block';
     }
 
     function logout() {
@@ -240,20 +222,17 @@
         location.reload();
     }
 
-    // --- 下面是地图核心逻辑 ---
-    // 内置备份数据 
+    // --- 地图与数据核心逻辑 ---
+    // 内置备份数据 (防止Excel读取失败白屏)
     const DEMO_DATA = [
-        {"Project Name CN": "国贸写字楼1座", "SUBMARKET": "CBD", "grades": "A", "Completion Date": "1990 Q3", "Net Effective Rent": 288.75, "Vacancy Rate": "13.0%", "LEEDS": "", "经纬度": "116.458363,39.909473"},
-        {"Project Name CN": "国贸写字楼2座", "SUBMARKET": "CBD", "grades": "A", "Completion Date": "1999 Q4", "Net Effective Rent": 307.08, "Vacancy Rate": "2.0%", "LEEDS": "Gold", "经纬度": "116.460469,39.910838"}
+        {"写字楼名称": "国贸写字楼1座", "子市场": "CBD", "写字楼等级": "A", "竣工时间": "1990 Q3", "净有效租金": 288.75, "空置率": "13.0%", "LEEDS": "", "经纬度": "116.458363,39.909473", "空置面积": 9400, "总面积": 72308},
+        {"写字楼名称": "国贸写字楼2座", "子市场": "CBD", "写字楼等级": "A", "竣工时间": "1999 Q4", "净有效租金": 307.08, "空置率": "2.0%", "LEEDS": "", "经纬度": "116.460469,39.910838", "空置面积": 1450, "总面积": 72308}
     ];
 
-    const QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4', 'Next Q1', 'Next Q2'];
     let map, infoWindow, chartInstance;
     let rawData = [], markers = [], circleOverlay = null;
-    let activeDistricts = new Set();
-    let allDistrictsList = []; 
-    let currentMode = 'price';
-    let isCompareMode = false;
+    let activeDistricts = new Set(), allDistrictsList = [];
+    let currentMode = 'price', isCompareMode = false;
 
     function init() {
         map = new AMap.Map('map-container', { zoom: 11, center: [116.460787, 39.905477], viewMode: '2D', mapStyle: 'amap://styles/whitesmoke' });
@@ -290,43 +269,53 @@
         return null;
     }
 
+    // --- ★★★ 核心适配：新列名 & 新字段 ★★★ ---
     function processData(json) {
         rawData = json.map(item => {
             const posRaw = findVal(item, ['经纬度', 'Position']);
             const posStr = String(posRaw || "").trim().replace('，', ',');
             const pos = posStr.split(',').map(Number);
 
-            const name = findVal(item, ['Project Name CN', 'Project Name EN', 'name']) || "未知项目";
-            const district = findVal(item, ['SUBMARKET', '所在区']) || "其他";
-            const built_year = findVal(item, ['Completion Date']) || "-";
+            const name = findVal(item, ['写字楼名称', 'Project Name CN', 'name']) || "未知项目";
+            const district = findVal(item, ['子市场', 'SUBMARKET', '所在区']) || "其他";
+            const built_year = findVal(item, ['竣工时间', 'Completion Date']) || "-";
             
-            const pCurrent = parseFloat(findVal(item, ['Net Effective Rent', 'Rent'])) || 0;
+            // 核心指标
+            const pCurrent = parseFloat(findVal(item, ['净有效租金', 'Net Effective Rent'])) || 0;
             
-            const vRaw = findVal(item, ['Vacancy Rate', 'Vacancy']);
+            // 空置率 (兼容 0.129 和 13.0% 格式)
+            const vRaw = findVal(item, ['空置率', 'Vacancy Rate']);
             let vCurrent = 0;
             if (typeof vRaw === 'string' && vRaw.includes('%')) {
                 vCurrent = parseFloat(vRaw.replace('%', '')) / 100;
-            } else if (vRaw > 1) {
-                vCurrent = parseFloat(vRaw) / 100;
+            } else if (vRaw <= 1) { // 假设是 0.129 这种小数
+                vCurrent = parseFloat(vRaw);
             } else {
-                vCurrent = parseFloat(vRaw) || 0;
+                vCurrent = parseFloat(vRaw) / 100; // 防御性处理
             }
 
-            const gRaw = String(findVal(item, ['grades', 'Grade']) || "-").trim().toUpperCase();
+            // 新增字段
+            const vacArea = parseFloat(findVal(item, ['空置面积', 'Vacancy Area'])) || 0;
+            const totalArea = parseFloat(findVal(item, ['总面积', 'Total Area'])) || 0;
+
+            // 等级与LEED
+            const gRaw = String(findVal(item, ['写字楼等级', 'grades', 'Grade']) || "-").trim().toUpperCase();
             const grade = (gRaw === 'PA' || gRaw === 'PREMIUM A') ? 'PA' : (gRaw.includes('A') ? 'A' : gRaw);
 
             const lRaw = String(findVal(item, ['LEEDS', 'LEED']) || "").trim();
             let leed = "无";
             if (lRaw && lRaw !== 'N' && lRaw !== 'No' && lRaw !== '-') leed = lRaw;
 
-            const pHistory = QUARTERS.map(() => pCurrent);
-            const vHistory = QUARTERS.map(() => vCurrent);
+            // 为了图表兼容，生成假历史数据
+            const pHistory = [pCurrent, pCurrent, pCurrent, pCurrent];
+            const vHistory = [vCurrent, vCurrent, vCurrent, vCurrent];
 
             return {
                 name, district, built_year, grade, leed,
                 lat: pos[1], lng: pos[0],
                 isValid: (pos.length === 2 && !isNaN(pos[0]) && !isNaN(pos[1])),
-                pCurrent, vCurrent, priceHistory: pHistory, vacancyHistory: vHistory, qoq: 0
+                pCurrent, vCurrent, vacArea, totalArea, // 新增到对象中
+                priceHistory: pHistory, vacancyHistory: vHistory
             };
         }).filter(d => d.isValid);
 
@@ -341,48 +330,24 @@
     function initFilters() {
         allDistrictsList = [...new Set(rawData.map(d => d.district))].sort();
         allDistrictsList.forEach(d => activeDistricts.add(d)); 
-
         const container = document.getElementById('district-filters');
-        
-        let html = `
-            <label class="check-all-label">
-                <input type="checkbox" id="check-all" checked onchange="toggleAllDistricts(this.checked)"> 全选 (Select All)
-            </label>
-        `;
-
-        html += allDistrictsList.map(d => `
-            <label><input type="checkbox" class="district-checkbox" value="${d}" checked onchange="toggleDistrict('${d}')">${d}</label>
-        `).join('');
-        
+        let html = `<label class="check-all-label"><input type="checkbox" id="check-all" checked onchange="toggleAllDistricts(this.checked)"> 全选 (Select All)</label>`;
+        html += allDistrictsList.map(d => `<label><input type="checkbox" class="district-checkbox" value="${d}" checked onchange="toggleDistrict('${d}')">${d}</label>`).join('');
         container.innerHTML = html;
     }
 
     function toggleAllDistricts(isChecked) {
-        if (isChecked) {
-            allDistrictsList.forEach(d => activeDistricts.add(d));
-        } else {
-            activeDistricts.clear();
-        }
-        const checkboxes = document.querySelectorAll('.district-checkbox');
-        checkboxes.forEach(cb => cb.checked = isChecked);
+        if (isChecked) allDistrictsList.forEach(d => activeDistricts.add(d));
+        else activeDistricts.clear();
+        document.querySelectorAll('.district-checkbox').forEach(cb => cb.checked = isChecked);
         if (!isCompareMode) renderMap(rawData.filter(item => activeDistricts.has(item.district)));
     }
 
     function toggleDistrict(d) {
         if (activeDistricts.has(d)) activeDistricts.delete(d); else activeDistricts.add(d);
-        
         const checkAllBox = document.getElementById('check-all');
-        if (activeDistricts.size === allDistrictsList.length) {
-            checkAllBox.checked = true;
-            checkAllBox.indeterminate = false;
-        } else if (activeDistricts.size === 0) {
-            checkAllBox.checked = false;
-            checkAllBox.indeterminate = false;
-        } else {
-            checkAllBox.checked = false;
-            checkAllBox.indeterminate = true; 
-        }
-
+        checkAllBox.checked = activeDistricts.size === allDistrictsList.length;
+        checkAllBox.indeterminate = activeDistricts.size > 0 && activeDistricts.size < allDistrictsList.length;
         if (!isCompareMode) renderMap(rawData.filter(item => activeDistricts.has(item.district)));
     }
 
@@ -393,17 +358,13 @@
         const keyword = document.getElementById('search-input').value.trim();
         if (!keyword) {
             renderMap(rawData.filter(item => activeDistricts.has(item.district)));
-            map.setFitView(null, false, [50, 50, 50, 400]); 
-            return;
+            map.setFitView(null, false, [50, 50, 50, 400]); return;
         }
         const results = rawData.filter(item => item.name.toLowerCase().includes(keyword.toLowerCase()));
         if (results.length === 0) { showStatus("⚠️ 未找到"); return; }
-        
         renderMap(results);
         if (results.length === 1) {
             const target = results[0];
-            const targetMarker = markers.find(m => m.getExtData().name === target.name);
-            showStatus(`🔍 定位: ${target.name}`);
             map.setZoomAndCenter(17, [target.lng, target.lat]);
             setTimeout(() => { map.panBy(175, 0); showDetail(target); }, 150);
         } else {
@@ -422,62 +383,94 @@
 
         dataToRender.forEach(item => {
             let color = '#999', label = '';
-
             if (currentMode === 'price') {
                 const ratio = (item.pCurrent - minP) / (maxP - minP || 1);
-                color = `hsl(${120 - Math.max(0,Math.min(1,ratio)) * 120}, 75%, 45%)`;
-                label = '¥';
+                color = `hsl(${120 - Math.max(0,Math.min(1,ratio)) * 120}, 75%, 45%)`; label = '¥';
             } else if (currentMode === 'vacancy') {
                 const ratio = Math.min(item.vCurrent / 0.3, 1);
-                color = `hsl(${120 - ratio * 120}, 75%, 45%)`;
-                label = '%';
+                color = `hsl(${120 - ratio * 120}, 75%, 45%)`; label = '%';
             } else if (currentMode === 'grade') {
-                if (item.grade === 'PA') color = '#1a237e'; 
-                else if (item.grade === 'A') color = '#2979ff';
-                else color = '#b0bec5'; 
-                label = 'G';
+                if (item.grade === 'PA') color = '#1a237e'; else if (item.grade === 'A') color = '#2979ff'; else color = '#b0bec5'; label = 'G';
             } else if (currentMode === 'leed') {
                 const l = item.leed.toLowerCase();
-                if (l.includes('platinum') || l.includes('铂')) color = '#004d40';
-                else if (l.includes('gold') || l.includes('金')) color = '#fbc02d';
-                else if (l.includes('silver') || l.includes('银')) color = '#9e9e9e';
-                else if (l.includes('cert')) color = '#81c784';
-                else color = '#eeeeee'; 
-                label = 'L';
+                if (l.includes('platinum')) color = '#004d40'; else if (l.includes('gold')) color = '#fbc02d'; else if (l.includes('cert')) color = '#81c784'; else color = '#eeeeee'; label = 'L';
             }
-
             const zIndex = (currentMode === 'leed' && color === '#eeeeee') ? 50 : 100;
             const textColor = (color==='#fbc02d'||color==='#eeeeee') ? '#555' : 'white';
-
             const content = `<div style="width:26px; height:26px; background:${color}; border:2px solid white; border-radius:50%; box-shadow:0 3px 6px rgba(0,0,0,0.3); color:${textColor}; display:flex; justify-content:center; align-items:center; font-size:11px; font-weight:bold;">${label}</div>`;
-            
-            const marker = new AMap.Marker({
-                position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-13, -13), map: map, zIndex: zIndex, extData: item 
-            });
+            const marker = new AMap.Marker({ position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-13, -13), map: map, zIndex: zIndex, extData: item });
             marker.on('click', () => showDetail(item));
             markers.push(marker);
         });
         updateDashboard(dataToRender);
     }
 
+    // --- ★★★ 详情页重构：隐藏图表，增加面积显示 ★★★ ---
+    function showDetail(item) {
+        setTimeout(() => {
+            const btn = document.getElementById('btn-plan-b');
+            if(btn) btn.onclick = () => findPlanB(item);
+        }, 0);
+
+        let gradeClass = item.grade === 'PA' ? 'badge-pa' : (item.grade === 'A' ? 'badge-a' : 'badge-none');
+        let leedClass = item.leed.toLowerCase().includes('gold') ? 'badge-gold' : item.leed === '无' ? 'badge-none' : 'badge-silver';
+
+        const content = `
+            <div class="info-window-card">
+                <div style="padding:15px; border-bottom:1px solid #eee;">
+                    <h3 style="margin:0;font-size:18px;">${item.name}</h3>
+                    <div style="color:#666;font-size:12px;margin-top:4px;">${item.district} | ${item.built_year}</div>
+                    <div class="tag-row">
+                        <span class="badge ${gradeClass}">${item.grade}级</span>
+                        <span class="badge ${leedClass}">${item.leed}</span>
+                    </div>
+                </div>
+                <div style="padding:15px; border-bottom:1px solid #eee;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                        <div>
+                            <div style="font-size:11px;color:#888;">净有效租金</div>
+                            <div style="font-size:16px;font-weight:bold;color:#333;">¥${item.pCurrent.toFixed(1)}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:11px;color:#888;">空置率</div>
+                            <div style="font-size:16px;font-weight:bold;color:#333;">${(item.vCurrent*100).toFixed(1)}%</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <div>
+                            <div style="font-size:11px;color:#888;">空置面积</div>
+                            <div style="font-size:14px;font-weight:bold;color:#555;">${item.vacArea.toLocaleString()} m²</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:11px;color:#888;">总面积</div>
+                            <div style="font-size:14px;font-weight:bold;color:#555;">${item.totalArea.toLocaleString()} m²</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="padding:15px;">
+                    <button id="btn-plan-b" class="btn-plan-b">🔍 客户嫌贵？查看周边平替 (Plan B)</button>
+                </div>
+            </div>`;
+        infoWindow.setContent(content);
+        infoWindow.open(map, [item.lng, item.lat]);
+        
+        // 渲染图表的代码也已注释，不再执行
+        // setTimeout(() => renderChart(item), 100);
+    }
+
+    // function renderChart(item) { ... } // 暂时停用
+
     function findPlanB(targetItem) {
         isCompareMode = true;
         map.clearMap(); markers = [];
         const targetLngLat = new AMap.LngLat(targetItem.lng, targetItem.lat);
-        
         const competitors = rawData.filter(item => {
             if (item.name === targetItem.name) return false;
             const itemLngLat = new AMap.LngLat(item.lng, item.lat);
             return targetLngLat.distance(itemLngLat) <= 1500 && item.pCurrent < targetItem.pCurrent;
         });
-
-        const targetMarker = new AMap.Marker({
-            position: targetLngLat,
-            content: `<div style="width:34px;height:34px;background:#FFD700;border:3px solid #fff;border-radius:50%;box-shadow:0 0 15px rgba(255,215,0,0.6);display:flex;justify-content:center;align-items:center;font-size:20px;">⭐️</div>`,
-            offset: new AMap.Pixel(-17, -17), map: map, zIndex: 999
-        });
+        const targetMarker = new AMap.Marker({ position: targetLngLat, content: `<div style="width:34px;height:34px;background:#FFD700;border:3px solid #fff;border-radius:50%;box-shadow:0 0 15px rgba(255,215,0,0.6);display:flex;justify-content:center;align-items:center;font-size:20px;">⭐️</div>`, offset: new AMap.Pixel(-17, -17), map: map, zIndex: 999 });
         targetMarker.on('click', () => showDetail(targetItem));
-
         competitors.forEach(item => {
             const priceDiff = (targetItem.pCurrent - item.pCurrent).toFixed(1);
             const content = `<div style="min-width:40px;padding:0 5px;height:24px;background:#2ecc71;border:2px solid white;border-radius:12px;box-shadow:0 3px 6px rgba(0,0,0,0.2);color:white;display:flex;justify-content:center;align-items:center;font-size:11px;font-weight:bold;">📉${priceDiff}</div>`;
@@ -485,10 +478,8 @@
             marker.on('click', () => showDetail(item));
             markers.push(marker);
         });
-
         circleOverlay = new AMap.Circle({ center: targetLngLat, radius: 1500, borderWeight: 1, strokeColor: "#007AFF", strokeOpacity: 0.5, strokeWeight: 1, fillOpacity: 0.1, strokeStyle: 'dashed', strokeDasharray: [10, 10], fillColor: '#1791fc', zIndex: 50 });
         circleOverlay.setMap(map);
-
         map.setFitView(null, false, [50, 50, 50, 420]);
         document.getElementById('reset-map-btn').style.display = 'block';
         showStatus(`🎯 发现 ${competitors.length} 个更便宜的项目`);
@@ -502,75 +493,15 @@
         map.setFitView(null, false, [50, 50, 50, 400]);
     }
 
-    function showDetail(item) {
-        setTimeout(() => {
-            const btn = document.getElementById('btn-plan-b');
-            if(btn) btn.onclick = () => findPlanB(item);
-        }, 0);
-
-        let gradeClass = item.grade === 'PA' ? 'badge-pa' : (item.grade === 'A' ? 'badge-a' : 'badge-none');
-        let leedClass = item.leed.toLowerCase().includes('gold') ? 'badge-gold' : 
-                        item.leed.toLowerCase().includes('plat') ? 'badge-platinum' : 
-                        item.leed === '无' ? 'badge-none' : 'badge-silver';
-
-        const content = `
-            <div class="info-window-card">
-                <div style="padding:15px; border-bottom:1px solid #eee;">
-                    <h3 style="margin:0;font-size:18px;">${item.name}</h3>
-                    <div style="color:#666;font-size:12px;margin-top:4px;">${item.district} | ${item.built_year}</div>
-                    <div class="tag-row">
-                        <span class="badge ${gradeClass}">${item.grade === '-' ? '未评级' : item.grade}级</span>
-                        <span class="badge ${leedClass}">${item.leed}</span>
-                    </div>
-                </div>
-                <div style="display:flex;padding:15px;">
-                    <div style="flex:1;">
-                        <div style="font-size:12px;color:#888;">净有效租金</div>
-                        <div style="font-size:20px;font-weight:bold;color:#333;">¥${item.pCurrent.toFixed(1)}</div>
-                    </div>
-                    <div style="text-align:right;">
-                        <div style="font-size:12px;color:#888;">空置率</div>
-                        <div style="font-size:20px;font-weight:bold;color:#333;">${(item.vCurrent*100).toFixed(1)}%</div>
-                    </div>
-                </div>
-                <div style="padding:0 15px 15px;">
-                    <div class="chart-container"><canvas id="trendChart"></canvas></div>
-                    <button id="btn-plan-b" class="btn-plan-b">🔍 客户嫌贵？查看周边平替 (Plan B)</button>
-                </div>
-            </div>`;
-        infoWindow.setContent(content);
-        infoWindow.open(map, [item.lng, item.lat]);
-        setTimeout(() => renderChart(item), 100);
-    }
-
-    function renderChart(item) {
-        const ctx = document.getElementById('trendChart').getContext('2d');
-        if(chartInstance) chartInstance.destroy();
-        chartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: QUARTERS,
-                datasets: [
-                    { label:'租金', data:item.priceHistory, borderColor:'#004080', backgroundColor:'rgba(0,64,128,0.1)', fill:true, yAxisID:'y', tension:0 },
-                    { label:'空置%', data:item.vacancyHistory.map(v=>v*100), borderColor:'#dc3545', borderDash:[5,5], yAxisID:'y1', tension:0 }
-                ]
-            },
-            options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false},ticks:{font:{size:9}}}, y:{type:'linear',display:true,position:'left'}, y1:{type:'linear',display:true,position:'right',grid:{drawOnChartArea:false}} } }
-        });
-    }
-
     function updateDashboard(data) {
         const count = data.length;
         document.getElementById('stat-count').innerText = count;
         document.getElementById('stat-price').innerText = count ? (data.reduce((a,b)=>a+b.pCurrent,0)/count).toFixed(2) : '-';
-        
         const avgVac = count ? ((data.reduce((a,b)=>a+b.vCurrent,0)/count)*100).toFixed(1) : 0;
         document.getElementById('stat-vacancy').innerText = avgVac + '%';
-        
         const gradeACount = data.filter(d => d.grade === 'A' || d.grade === 'PA').length;
         const gradeARate = count ? ((gradeACount / count) * 100).toFixed(0) : 0;
         document.getElementById('stat-grade').innerText = gradeARate + '%';
-        
         const leedCount = data.filter(d => d.leed !== '无').length;
         document.getElementById('stat-leed').innerText = leedCount + '个';
     }
@@ -590,7 +521,6 @@
             else renderMap(rawData.filter(item => activeDistricts.has(item.district)));
         }
     }
-
 </script>
 </body>
 </html>
