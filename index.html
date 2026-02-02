@@ -115,7 +115,7 @@
     <div id="sidebar">
         <div class="brand-header">
             <h2>COLLIERS DATA</h2>
-            <p>办公楼市场监测系统 v5.7</p>
+            <p>办公楼市场监测系统 v5.8</p>
         </div>
         
         <div class="user-info-bar">
@@ -223,10 +223,10 @@
     }
 
     // --- 地图与数据核心逻辑 ---
-    // 内置备份数据 (防止Excel读取失败白屏)
+    // 内置备份数据 
     const DEMO_DATA = [
         {"写字楼名称": "国贸写字楼1座", "子市场": "CBD", "写字楼等级": "A", "竣工时间": "1990 Q3", "净有效租金": 288.75, "空置率": "13.0%", "LEEDS": "", "经纬度": "116.458363,39.909473", "空置面积": 9400, "总面积": 72308},
-        {"写字楼名称": "国贸写字楼2座", "子市场": "CBD", "写字楼等级": "A", "竣工时间": "1999 Q4", "净有效租金": 307.08, "空置率": "2.0%", "LEEDS": "", "经纬度": "116.460469,39.910838", "空置面积": 1450, "总面积": 72308}
+        {"写字楼名称": "国贸写字楼2座", "子市场": "CBD", "写字楼等级": "A", "竣工时间": "1999 Q4", "净有效租金": 307.08, "空置率": "2.0%", "LEEDS": "Gold", "经纬度": "116.460469,39.910838", "空置面积": 1450, "总面积": 72308}
     ];
 
     let map, infoWindow, chartInstance;
@@ -283,22 +283,21 @@
             // 核心指标
             const pCurrent = parseFloat(findVal(item, ['净有效租金', 'Net Effective Rent'])) || 0;
             
-            // 空置率 (兼容 0.129 和 13.0% 格式)
+            // 空置率处理
             const vRaw = findVal(item, ['空置率', 'Vacancy Rate']);
             let vCurrent = 0;
             if (typeof vRaw === 'string' && vRaw.includes('%')) {
                 vCurrent = parseFloat(vRaw.replace('%', '')) / 100;
-            } else if (vRaw <= 1) { // 假设是 0.129 这种小数
+            } else if (vRaw <= 1) { 
                 vCurrent = parseFloat(vRaw);
             } else {
-                vCurrent = parseFloat(vRaw) / 100; // 防御性处理
+                vCurrent = parseFloat(vRaw) / 100; 
             }
 
             // 新增字段
             const vacArea = parseFloat(findVal(item, ['空置面积', 'Vacancy Area'])) || 0;
             const totalArea = parseFloat(findVal(item, ['总面积', 'Total Area'])) || 0;
 
-            // 等级与LEED
             const gRaw = String(findVal(item, ['写字楼等级', 'grades', 'Grade']) || "-").trim().toUpperCase();
             const grade = (gRaw === 'PA' || gRaw === 'PREMIUM A') ? 'PA' : (gRaw.includes('A') ? 'A' : gRaw);
 
@@ -306,16 +305,11 @@
             let leed = "无";
             if (lRaw && lRaw !== 'N' && lRaw !== 'No' && lRaw !== '-') leed = lRaw;
 
-            // 为了图表兼容，生成假历史数据
-            const pHistory = [pCurrent, pCurrent, pCurrent, pCurrent];
-            const vHistory = [vCurrent, vCurrent, vCurrent, vCurrent];
-
             return {
                 name, district, built_year, grade, leed,
                 lat: pos[1], lng: pos[0],
                 isValid: (pos.length === 2 && !isNaN(pos[0]) && !isNaN(pos[1])),
-                pCurrent, vCurrent, vacArea, totalArea, // 新增到对象中
-                priceHistory: pHistory, vacancyHistory: vHistory
+                pCurrent, vCurrent, vacArea, totalArea // 新增到对象中
             };
         }).filter(d => d.isValid);
 
@@ -453,12 +447,7 @@
             </div>`;
         infoWindow.setContent(content);
         infoWindow.open(map, [item.lng, item.lat]);
-        
-        // 渲染图表的代码也已注释，不再执行
-        // setTimeout(() => renderChart(item), 100);
     }
-
-    // function renderChart(item) { ... } // 暂时停用
 
     function findPlanB(targetItem) {
         isCompareMode = true;
@@ -493,15 +482,29 @@
         map.setFitView(null, false, [50, 50, 50, 400]);
     }
 
+    // --- ★★★ 升级版统计逻辑：剔除0值数据 ★★★ ---
     function updateDashboard(data) {
         const count = data.length;
         document.getElementById('stat-count').innerText = count;
-        document.getElementById('stat-price').innerText = count ? (data.reduce((a,b)=>a+b.pCurrent,0)/count).toFixed(2) : '-';
-        const avgVac = count ? ((data.reduce((a,b)=>a+b.vCurrent,0)/count)*100).toFixed(1) : 0;
+
+        // 租金统计 (剔除 0 或无效值)
+        const validRentData = data.filter(d => d.pCurrent > 0);
+        const avgRent = validRentData.length ? 
+            (validRentData.reduce((a,b)=>a+b.pCurrent,0) / validRentData.length).toFixed(2) : '-';
+        document.getElementById('stat-price').innerText = avgRent;
+        
+        // 空置率统计 (剔除 0 或无效值)
+        // 注意：如果你认为 0% 空置率是有效数据，这里条件应改为 d.vCurrent >= 0
+        // 但根据你之前的要求“缺失或0则剔除”，这里用 > 0
+        const validVacData = data.filter(d => d.vCurrent > 0);
+        const avgVac = validVacData.length ? 
+            ((validVacData.reduce((a,b)=>a+b.vCurrent,0) / validVacData.length) * 100).toFixed(1) : '-';
         document.getElementById('stat-vacancy').innerText = avgVac + '%';
+        
         const gradeACount = data.filter(d => d.grade === 'A' || d.grade === 'PA').length;
         const gradeARate = count ? ((gradeACount / count) * 100).toFixed(0) : 0;
         document.getElementById('stat-grade').innerText = gradeARate + '%';
+        
         const leedCount = data.filter(d => d.leed !== '无').length;
         document.getElementById('stat-leed').innerText = leedCount + '个';
     }
