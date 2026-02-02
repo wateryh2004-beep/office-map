@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>季度数据填报系统 | Colliers</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f7fa; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        h2 { border-bottom: 2px solid #f57c00; padding-bottom: 10px; color: #333; }
+        
+        /* 表格样式 */
+        .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
+        .data-table th, .data-table td { border: 1px solid #e0e0e0; padding: 10px; text-align: left; }
+        .data-table th { background: #004080; color: white; position: sticky; top: 0; }
+        .data-table tr:hover { background: #f9f9f9; }
+        
+        /* 输入框高亮 */
+        .input-cell input { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .input-cell input:focus { border-color: #f57c00; outline: none; background: #fff8e1; }
+        
+        .btn-submit { background: #f57c00; color: white; border: none; padding: 12px 30px; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; float: right; margin-top: 20px; }
+        .btn-submit:hover { background: #ef6c00; }
+        .status-msg { float: right; margin-top: 32px; margin-right: 15px; font-size: 14px; color: #666; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 id="page-title">季度数据填报</h2>
+    <p style="color:#666; font-size:13px;">请在下方表格的黄色区域输入新季度数据。确认无误后点击提交。</p>
+    
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width:15%">写字楼名称</th>
+                    <th style="width:10%">子市场</th>
+                    <th style="width:10%">当前租金</th>
+                    <th style="width:10%">当前空置率</th>
+                    <th style="background:#f57c00; width:12%">✏️ 新季度租金</th>
+                    <th style="background:#f57c00; width:12%">✏️ 新季度空置率(%)</th>
+                    <th style="background:#f57c00; width:12%">✏️ 新空置面积(㎡)</th>
+                    <th style="background:#f57c00; width:19%">✏️ 备注信息</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                <tr><td colspan="8" style="text-align:center;">正在加载您的楼宇数据...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="status-msg" id="status-msg"></div>
+    <button class="btn-submit" onclick="submitData()">🚀 提交并生成报表 (Submit)</button>
+</div>
+
+<script>
+    let currentUser = null;
+    let myBuildings = [];
+
+    // 1. 页面加载：检查权限并拉取数据
+    window.onload = async function() {
+        const userStr = localStorage.getItem('colliers_user');
+        if (!userStr) { alert("请先登录"); window.location.href = 'index.html'; return; }
+        
+        currentUser = JSON.parse(userStr);
+        document.getElementById('page-title').innerText = `季度数据填报 - ${currentUser.name}`;
+
+        // 调用后端API获取该用户的楼宇
+        try {
+            const res = await fetch(`/api/get-my-buildings?user=${encodeURIComponent(currentUser.name)}`);
+            const data = await res.json();
+            
+            if (data.status === 'success') {
+                myBuildings = data.data;
+                renderTable(myBuildings);
+            } else {
+                document.getElementById('table-body').innerHTML = `<tr><td colspan="8" style="color:red;text-align:center;">${data.message}</td></tr>`;
+            }
+        } catch (e) {
+            console.error(e);
+            alert("数据加载失败");
+        }
+    };
+
+    // 2. 渲染表格
+    function renderTable(list) {
+        const tbody = document.getElementById('table-body');
+        if (list.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">名下暂无负责楼宇</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = list.map((item, index) => `
+            <tr data-id="${index}">
+                <td>${item['写字楼名称'] || item['Project Name CN']}</td>
+                <td>${item['子市场'] || item['SUBMARKET']}</td>
+                <td>${item['净有效租金'] || item['Net Effective Rent']}</td>
+                <td>${(parseFloat(item['空置率'] || item['Vacancy Rate'])*100).toFixed(1)}%</td>
+                <td class="input-cell"><input type="number" class="new-rent" placeholder="输入租金"></td>
+                <td class="input-cell"><input type="number" class="new-vacancy" placeholder="例如: 15.5"></td>
+                <td class="input-cell"><input type="number" class="new-area" placeholder="输入面积"></td>
+                <td class="input-cell"><input type="text" class="new-remark" placeholder="备注..."></td>
+            </tr>
+        `).join('');
+    }
+
+    // 3. 提交数据
+    async function submitData() {
+        const btn = document.querySelector('.btn-submit');
+        const msg = document.getElementById('status-msg');
+        
+        // 收集数据
+        const rows = document.querySelectorAll('#table-body tr');
+        const submission = [];
+        
+        rows.forEach((row, index) => {
+            const building = myBuildings[index];
+            const rent = row.querySelector('.new-rent').value;
+            const vac = row.querySelector('.new-vacancy').value;
+            const area = row.querySelector('.new-area').value;
+            const remark = row.querySelector('.new-remark').value;
+
+            // 只要填了一项，就算作更新
+            if(rent || vac || area || remark) {
+                submission.push({
+                    "写字楼名称": building['写字楼名称'] || building['Project Name CN'],
+                    "子市场": building['子市场'] || building['SUBMARKET'],
+                    "原租金": building['净有效租金'] || building['Net Effective Rent'],
+                    "新季度租金": rent,
+                    "新季度空置率": vac ? (vac + '%') : '',
+                    "新季度空置面积": area,
+                    "新季度备注": remark,
+                    "填报时间": new Date().toLocaleString()
+                });
+            }
+        });
+
+        if (submission.length === 0) { alert("请至少填写一行数据"); return; }
+
+        // 发送给后端
+        btn.disabled = true;
+        btn.innerText = "正在上传 GitHub...";
+        msg.innerText = "正在生成 Excel 并推送至云端，请稍候...";
+
+        try {
+            const res = await fetch('/api/submit-update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user: currentUser.name,
+                    data: submission
+                })
+            });
+            const result = await res.json();
+            
+            if (result.status === 'success') {
+                alert(`✅ 提交成功！\n文件已保存为: ${result.filename}`);
+                window.location.href = 'index.html'; // 返回首页
+            } else {
+                alert("提交失败: " + result.message);
+                btn.disabled = false;
+                btn.innerText = "🚀 提交并生成报表";
+            }
+        } catch (e) {
+            console.error(e);
+            alert("网络错误");
+            btn.disabled = false;
+        }
+    }
+</script>
+</body>
+</html>
