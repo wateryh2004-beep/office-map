@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "@octokit/rest": "^19.0.0"
   }
 }
