@@ -9,66 +9,53 @@
         .header h1 { margin: 0; font-size: 20px; }
         .back-link { color: white; text-decoration: none; font-size: 14px; opacity: 0.8; }
         
-        /* 布局改为 Grid，适应 3 张卡片 */
+        /* 2x2 网格布局 */
         .container { 
             max-width: 1200px; 
             margin: 20px auto; 
             padding: 0 20px; 
             display: grid; 
-            grid-template-columns: 1fr 1fr; /* 上面两张并排 */
+            grid-template-columns: 1fr 1fr; 
             gap: 20px; 
         }
         
-        /* 第三张卡片横跨整行 */
-        .card-full-width { grid-column: span 2; }
+        /* 卡片基础样式 */
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 20px; display: flex; flex-direction: column; height: 320px; }
+        .card-tall { height: 500px; } /* 下面两张卡片高一点 */
 
-        .card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 20px; display: flex; flex-direction: column; }
-        .card-h-limit { height: 500px; overflow: hidden; } /* 限制日志和文件列表的高度 */
-
-        .card-header { border-bottom: 2px solid #f57c00; padding-bottom: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .card-header h3 { margin: 0; color: #333; }
+        .card-header { border-bottom: 2px solid #f57c00; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .card-header h3 { margin: 0; color: #333; font-size: 16px; }
         
+        /* 管理区域内部样式 */
+        .manage-box { text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100%; gap: 15px; }
+        .manage-desc { font-size: 13px; color: #666; margin: 0; }
+        .file-input { border: 1px dashed #ccc; padding: 10px; border-radius: 4px; width: 80%; margin: 0 auto; }
+        
+        /* 按钮组 */
+        .btn-group { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
+        .btn-primary { background: #004080; color: white; padding: 8px 15px; border-radius: 4px; text-decoration: none; font-size: 13px; border: none; cursor: pointer; }
+        .btn-danger { background: #dc3545; color: white; padding: 8px 15px; border-radius: 4px; font-size: 13px; border: none; cursor: pointer; }
+        .btn-danger:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* 日志和文件列表样式 */
         .scroll-area { flex: 1; overflow-y: auto; }
-        
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
         th { background: #f9f9f9; color: #666; position: sticky; top: 0; }
         
         .log-user { font-weight: bold; color: #004080; }
         .log-keyword { background: #e3f2fd; padding: 2px 6px; border-radius: 4px; color: #004080; }
-        .btn-download { background: #007bff; color: white; text-decoration: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; }
-        .btn-download:hover { background: #0056b3; }
-        
-        .empty-tip { text-align: center; color: #999; margin-top: 50px; }
-
-        /* 工具栏样式 */
+        .btn-download-sm { background: #28a745; color: white; text-decoration: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
         .download-bar { display: flex; gap: 5px; }
-        .month-input { padding: 5px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; width: 110px; }
-        .btn-excel { background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
-        .btn-excel:hover { background: #218838; }
+        .month-input { padding: 4px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
+        .empty-tip { text-align: center; color: #999; margin-top: 30px; }
 
-        /* --- 核心数据管理卡片样式 --- */
-        .source-manage-box { display: flex; align-items: center; gap: 30px; padding: 20px; background: #f8f9fa; border-radius: 6px; border: 1px dashed #ccc; }
-        .manage-step { flex: 1; text-align: center; }
-        .step-arrow { font-size: 24px; color: #ccc; }
-        .btn-primary { background: #004080; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none; font-weight: bold; display: inline-block; border: none; cursor: pointer; }
-        .btn-danger { background: #dc3545; color: white; padding: 10px 20px; border-radius: 4px; font-weight: bold; border: none; cursor: pointer; }
-        .btn-danger:disabled { background: #ccc; cursor: not-allowed; }
-        .file-input { margin-top: 10px; }
-
-        /* --- 右下角悬浮版本号 --- */
+        /* 右下角版本号 */
         #version-tag {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0, 64, 128, 0.9);
-            color: white;
-            padding: 10px 15px;
-            border-radius: 4px;
-            font-size: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            z-index: 9999;
-            display: none; /* 加载完成后显示 */
+            position: fixed; bottom: 20px; right: 20px;
+            background: rgba(0, 64, 128, 0.9); color: white;
+            padding: 10px 15px; border-radius: 4px; font-size: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 9999; display: none;
         }
         #version-tag strong { color: #f57c00; }
     </style>
@@ -81,93 +68,69 @@
 </div>
 
 <div class="container">
-    <div class="card card-full-width">
+    <div class="card">
         <div class="card-header">
-            <h3>🗄️ 核心数据源管理 (Source Data)</h3>
-            <span style="font-size:12px; color:#666;">⚠️ 请谨慎操作，此处的更新将直接覆盖全系统的底层数据。</span>
+            <h3>🗄️ 核心数据源 (Map Data)</h3>
         </div>
-        <div class="source-manage-box">
-            <div class="manage-step">
-                <h4>第一步：备份/下载</h4>
-                <p style="font-size:12px; color:#666;">下载当前正在生效的 data.xlsx</p>
-                <a href="./data.xlsx" class="btn-primary" download>⬇️ 下载源文件</a>
-            </div>
-            
-            <div class="step-arrow">➔</div>
-
-            <div class="manage-step">
-                <h4>第二步：上传更新</h4>
-                <p style="font-size:12px; color:#666;">上传修改后的 Excel (必须保持表头一致)</p>
-                <input type="file" id="source-file" accept=".xlsx" class="file-input">
-            </div>
-
-            <div class="step-arrow">➔</div>
-
-            <div class="manage-step">
-                <h4>第三步：生效</h4>
-                <p style="font-size:12px; color:#666;">上传后约需 2分钟 生效</p>
-                <button class="btn-danger" id="btn-upload-source" onclick="uploadSourceData()">🚀 确认覆盖更新</button>
-            </div>
+        <div class="manage-box">
+            <p class="manage-desc">管理地图底层的 data.xlsx 文件</p>
+            <a href="./data.xlsx" class="btn-primary" download style="width:fit-content; margin:0 auto;">⬇️ 备份当前数据</a>
+            <hr style="width:80%; border:0; border-top:1px solid #eee; margin:5px auto;">
+            <input type="file" id="source-file" accept=".xlsx" class="file-input">
+            <button class="btn-danger" id="btn-upload-source" onclick="uploadSourceData()">🚀 覆盖更新 Excel</button>
         </div>
     </div>
 
-    <div class="card card-h-limit">
+    <div class="card">
         <div class="card-header">
-            <h3>👥 本月搜索日志</h3>
+            <h3>📄 市场季报 (Report PDF)</h3>
+        </div>
+        <div class="manage-box">
+            <p class="manage-desc">更新 sample_report.pdf (建议 < 4MB)</p>
+            <a href="./sample_report.pdf" target="_blank" class="btn-primary" style="width:fit-content; margin:0 auto;">👁️ 预览当前季报</a>
+            <hr style="width:80%; border:0; border-top:1px solid #eee; margin:5px auto;">
+            <input type="file" id="report-file" accept=".pdf" class="file-input">
+            <button class="btn-danger" id="btn-upload-report" onclick="uploadReport()">🚀 覆盖更新 PDF</button>
+        </div>
+    </div>
+
+    <div class="card card-tall">
+        <div class="card-header">
+            <h3>👥 用户搜索日志</h3>
             <div class="download-bar">
                 <input type="month" id="log-month" class="month-input">
-                <button class="btn-excel" onclick="downloadLogExcel()">📥 导出Excel</button>
+                <button class="btn-primary" onclick="downloadLogExcel()" style="padding:4px 8px;">📥 导出</button>
             </div>
         </div>
         <div class="scroll-area">
             <table id="log-table">
-                <thead>
-                    <tr>
-                        <th style="width:25%">时间</th>
-                        <th style="width:20%">用户</th>
-                        <th>检索内容</th>
-                    </tr>
-                </thead>
-                <tbody id="log-body">
-                    <tr><td colspan="3" class="empty-tip">正在加载本月日志...</td></tr>
-                </tbody>
+                <thead><tr><th>时间</th><th>用户</th><th>检索内容</th></tr></thead>
+                <tbody id="log-body"><tr><td colspan="3" class="empty-tip">加载中...</td></tr></tbody>
             </table>
         </div>
     </div>
 
-    <div class="card card-h-limit">
+    <div class="card card-tall">
         <div class="card-header">
-            <h3>📁 季度数据文件 (Editor Uploads)</h3>
+            <h3>📁 季度填报文件 (Uploads)</h3>
         </div>
         <div class="scroll-area">
             <table id="file-table">
-                <thead>
-                    <tr>
-                        <th>文件名</th>
-                        <th style="width:15%">大小</th>
-                        <th style="width:20%">操作</th>
-                    </tr>
-                </thead>
-                <tbody id="file-body">
-                    <tr><td colspan="3" class="empty-tip">正在获取云端文件列表...</td></tr>
-                </tbody>
+                <thead><tr><th>文件名</th><th>大小</th><th>操作</th></tr></thead>
+                <tbody id="file-body"><tr><td colspan="3" class="empty-tip">加载中...</td></tr></tbody>
             </table>
         </div>
     </div>
 </div>
 
 <div id="version-tag">
-    📅 本数据更新于：<strong id="last-update-time">加载中...</strong>
+    📅 底表更新于：<strong id="last-update-time">加载中...</strong>
 </div>
 
 <script>
     let currentUser = null;
-
-    // 初始化
     const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    document.getElementById('log-month').value = `${yyyy}-${mm}`;
+    document.getElementById('log-month').value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
 
     window.onload = function() {
         const userStr = localStorage.getItem('colliers_user');
@@ -177,10 +140,69 @@
 
         loadLogs();
         loadFiles();
-        loadVersionInfo(); // 加载右下角时间
+        loadVersionInfo();
     };
 
-    // --- 新功能：加载版本信息 ---
+    // --- 核心功能 1：上传 Source Excel ---
+    async function uploadSourceData() {
+        await handleFileUpload('source-file', 'btn-upload-source', '/api/update-source', 'Excel', () => {
+            setTimeout(loadVersionInfo, 2000); // 成功后刷新时间
+        });
+    }
+
+    // --- 核心功能 2：上传 Report PDF (新增) ---
+    async function uploadReport() {
+        await handleFileUpload('report-file', 'btn-upload-report', '/api/update-report', 'PDF', null);
+    }
+
+    // --- 通用上传逻辑封装 ---
+    async function handleFileUpload(inputId, btnId, apiUrl, typeName, onSuccess) {
+        const fileInput = document.getElementById(inputId);
+        const file = fileInput.files[0];
+        if (!file) { alert(`请先选择一个 ${typeName} 文件！`); return; }
+        
+        // Vercel 限制 Payload 4.5MB，安全起见限制 4MB
+        if (file.size > 4 * 1024 * 1024) { 
+            alert("❌ 文件过大！\n由于 Vercel 限制，上传文件不能超过 4MB。\n请压缩 PDF 或 Excel 后再试。");
+            return;
+        }
+
+        if (!confirm(`⚠️ 确认要覆盖更新现有的 ${typeName} 吗？\n\n更新后需要 1-2 分钟生效。`)) return;
+
+        const btn = document.getElementById(btnId);
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = "正在上传...";
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async function () {
+            const base64Content = reader.result.split(',')[1];
+            try {
+                const res = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content: base64Content, user: currentUser.name })
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    alert(`✅ ${typeName} 更新成功！\n请等待几分钟让服务器重新构建。`);
+                    fileInput.value = ''; // 清空选择
+                    if(onSuccess) onSuccess();
+                } else {
+                    alert("更新失败: " + result.message);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("网络错误");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        };
+    }
+
+    // --- 加载右下角版本 ---
     async function loadVersionInfo() {
         try {
             const res = await fetch('/api/get-source-meta');
@@ -189,60 +211,10 @@
                 document.getElementById('last-update-time').innerText = data.lastUpdated;
                 document.getElementById('version-tag').style.display = 'block';
             }
-        } catch (e) { console.error("版本获取失败", e); }
+        } catch (e) { console.error(e); }
     }
 
-    // --- 新功能：上传源数据 ---
-    async function uploadSourceData() {
-        const fileInput = document.getElementById('source-file');
-        const file = fileInput.files[0];
-        if (!file) { alert("请先选择一个 Excel 文件！"); return; }
-
-        if (!confirm("⚠️ 高危操作警告 ⚠️\n\n您即将覆盖整个系统的底层数据表！\n\n覆盖后：\n1. 系统将使用新数据重新构建。\n2. 生效需要 1-2 分钟。\n3. 请确保表头格式与旧版一致。\n\n确定要继续吗？")) {
-            return;
-        }
-
-        const btn = document.getElementById('btn-upload-source');
-        btn.disabled = true;
-        btn.innerText = "正在上传...";
-
-        // 读取文件转 Base64
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = async function () {
-            const base64Content = reader.result.split(',')[1]; // 去掉 data:application/xxx;base64, 前缀
-
-            try {
-                const res = await fetch('/api/update-source', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        content: base64Content,
-                        user: currentUser.name
-                    })
-                });
-                const result = await res.json();
-
-                if (result.status === 'success') {
-                    alert("✅ 更新成功！\n\nVercel 正在后台重新构建系统，请等待约 2 分钟后刷新首页查看新数据。");
-                    btn.innerText = "上传成功";
-                    // 重新获取一下时间
-                    setTimeout(loadVersionInfo, 2000);
-                } else {
-                    alert("更新失败: " + result.message);
-                    btn.disabled = false;
-                    btn.innerText = "🚀 确认覆盖更新";
-                }
-            } catch (e) {
-                console.error(e);
-                alert("网络错误");
-                btn.disabled = false;
-                btn.innerText = "🚀 确认覆盖更新";
-            }
-        };
-    }
-
-    // --- 原有功能：日志与文件列表 ---
+    // --- 日志与文件列表 (保持不变) ---
     async function loadLogs() {
         try {
             const res = await fetch('/api/get-logs');
@@ -251,15 +223,11 @@
             if (result.data && result.data.length > 0) {
                 tbody.innerHTML = result.data.map(log => `
                     <tr>
-                        <td style="color:#999; font-size:12px;">${log.time}</td>
+                        <td style="color:#999;font-size:12px;">${log.time}</td>
                         <td class="log-user">${log.user}</td>
-                        <td>
-                            <span class="log-keyword">${log.details.keyword}</span>
-                            ${log.details.filter !== '无' ? `<br><span style="color:#999;font-size:11px;">${log.details.filter}</span>` : ''}
-                        </td>
-                    </tr>
-                `).join('');
-            } else { tbody.innerHTML = '<tr><td colspan="3" class="empty-tip">本月暂无记录</td></tr>'; }
+                        <td><span class="log-keyword">${log.details.keyword}</span> ${log.details.filter!=='无'?`<br><span style="color:#999;font-size:11px;">${log.details.filter}</span>`:''}</td>
+                    </tr>`).join('');
+            } else { tbody.innerHTML = '<tr><td colspan="3" class="empty-tip">暂无记录</td></tr>'; }
         } catch (e) { console.error(e); }
     }
 
@@ -278,12 +246,11 @@
                 result.data.sort((a, b) => b.name.localeCompare(a.name));
                 tbody.innerHTML = result.data.map(file => `
                     <tr>
-                        <td style="font-weight:500;">📄 ${file.name}</td>
-                        <td style="color:#666;">${file.size}</td>
-                        <td><a href="${file.download_url}" class="btn-download" target="_blank">⬇ 下载</a></td>
-                    </tr>
-                `).join('');
-            } else { tbody.innerHTML = '<tr><td colspan="3" class="empty-tip">暂无上传文件</td></tr>'; }
+                        <td style="font-weight:500;font-size:12px;">${file.name}</td>
+                        <td style="color:#666;font-size:12px;">${file.size}</td>
+                        <td><a href="${file.download_url}" class="btn-download-sm" target="_blank">⬇ 下载</a></td>
+                    </tr>`).join('');
+            } else { tbody.innerHTML = '<tr><td colspan="3" class="empty-tip">暂无文件</td></tr>'; }
         } catch (e) { console.error(e); }
     }
 </script>
