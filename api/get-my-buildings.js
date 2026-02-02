@@ -12,10 +12,10 @@ export default function handler(req, res) {
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const allData = XLSX.utils.sheet_to_json(sheet);
 
-        // 筛选逻辑：USER 列匹配
-        // 注意：Excel里的USER列必须准确，区分大小写最好 trim() 一下
+        // 筛选逻辑：USER 列匹配 (兼容大小写和空格)
         const myData = allData.filter(item => {
-            const itemUser = item['USER'] || item['user']; // 兼容大小写
+            // 尝试找 USER 列，或者 User 列，或者 user 列
+            const itemUser = item['USER'] || item['User'] || item['user']; 
             return itemUser && String(itemUser).trim() === String(userName).trim();
         });
 
@@ -23,6 +23,6 @@ export default function handler(req, res) {
 
     } catch (e) {
         console.error(e);
-        return res.status(500).json({ status: 'error', message: '服务器读取数据失败' });
+        return res.status(500).json({ status: 'error', message: '服务器读取 data.xlsx 失败' });
     }
 }
