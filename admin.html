@@ -4,25 +4,30 @@
     <meta charset="utf-8">
     <title>管理员控制台 | Colliers Admin</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; padding: 0; margin: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; padding: 0; margin: 0; padding-bottom: 60px; }
         .header { background: #004080; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
         .header h1 { margin: 0; font-size: 20px; }
         .back-link { color: white; text-decoration: none; font-size: 14px; opacity: 0.8; }
         
-        .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        /* 布局改为 Grid，适应 3 张卡片 */
+        .container { 
+            max-width: 1200px; 
+            margin: 20px auto; 
+            padding: 0 20px; 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; /* 上面两张并排 */
+            gap: 20px; 
+        }
         
-        .card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 20px; height: 600px; overflow: hidden; display: flex; flex-direction: column; }
-        
-        /* 标题栏带工具 */
+        /* 第三张卡片横跨整行 */
+        .card-full-width { grid-column: span 2; }
+
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 20px; display: flex; flex-direction: column; }
+        .card-h-limit { height: 500px; overflow: hidden; } /* 限制日志和文件列表的高度 */
+
         .card-header { border-bottom: 2px solid #f57c00; padding-bottom: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
         .card-header h3 { margin: 0; color: #333; }
         
-        /* 下载工具条 */
-        .download-bar { display: flex; gap: 5px; }
-        .month-input { padding: 5px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; width: 110px; }
-        .btn-excel { background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
-        .btn-excel:hover { background: #218838; }
-
         .scroll-area { flex: 1; overflow-y: auto; }
         
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -35,6 +40,37 @@
         .btn-download:hover { background: #0056b3; }
         
         .empty-tip { text-align: center; color: #999; margin-top: 50px; }
+
+        /* 工具栏样式 */
+        .download-bar { display: flex; gap: 5px; }
+        .month-input { padding: 5px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; width: 110px; }
+        .btn-excel { background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .btn-excel:hover { background: #218838; }
+
+        /* --- 核心数据管理卡片样式 --- */
+        .source-manage-box { display: flex; align-items: center; gap: 30px; padding: 20px; background: #f8f9fa; border-radius: 6px; border: 1px dashed #ccc; }
+        .manage-step { flex: 1; text-align: center; }
+        .step-arrow { font-size: 24px; color: #ccc; }
+        .btn-primary { background: #004080; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none; font-weight: bold; display: inline-block; border: none; cursor: pointer; }
+        .btn-danger { background: #dc3545; color: white; padding: 10px 20px; border-radius: 4px; font-weight: bold; border: none; cursor: pointer; }
+        .btn-danger:disabled { background: #ccc; cursor: not-allowed; }
+        .file-input { margin-top: 10px; }
+
+        /* --- 右下角悬浮版本号 --- */
+        #version-tag {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 64, 128, 0.9);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-size: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 9999;
+            display: none; /* 加载完成后显示 */
+        }
+        #version-tag strong { color: #f57c00; }
     </style>
 </head>
 <body>
@@ -45,11 +81,41 @@
 </div>
 
 <div class="container">
-    <div class="card">
+    <div class="card card-full-width">
+        <div class="card-header">
+            <h3>🗄️ 核心数据源管理 (Source Data)</h3>
+            <span style="font-size:12px; color:#666;">⚠️ 请谨慎操作，此处的更新将直接覆盖全系统的底层数据。</span>
+        </div>
+        <div class="source-manage-box">
+            <div class="manage-step">
+                <h4>第一步：备份/下载</h4>
+                <p style="font-size:12px; color:#666;">下载当前正在生效的 data.xlsx</p>
+                <a href="./data.xlsx" class="btn-primary" download>⬇️ 下载源文件</a>
+            </div>
+            
+            <div class="step-arrow">➔</div>
+
+            <div class="manage-step">
+                <h4>第二步：上传更新</h4>
+                <p style="font-size:12px; color:#666;">上传修改后的 Excel (必须保持表头一致)</p>
+                <input type="file" id="source-file" accept=".xlsx" class="file-input">
+            </div>
+
+            <div class="step-arrow">➔</div>
+
+            <div class="manage-step">
+                <h4>第三步：生效</h4>
+                <p style="font-size:12px; color:#666;">上传后约需 2分钟 生效</p>
+                <button class="btn-danger" id="btn-upload-source" onclick="uploadSourceData()">🚀 确认覆盖更新</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-h-limit">
         <div class="card-header">
             <h3>👥 本月搜索日志</h3>
             <div class="download-bar">
-                <input type="month" id="log-month" class="month-input" value="2026-02">
+                <input type="month" id="log-month" class="month-input">
                 <button class="btn-excel" onclick="downloadLogExcel()">📥 导出Excel</button>
             </div>
         </div>
@@ -69,7 +135,7 @@
         </div>
     </div>
 
-    <div class="card">
+    <div class="card card-h-limit">
         <div class="card-header">
             <h3>📁 季度数据文件 (Editor Uploads)</h3>
         </div>
@@ -90,8 +156,14 @@
     </div>
 </div>
 
+<div id="version-tag">
+    📅 本数据更新于：<strong id="last-update-time">加载中...</strong>
+</div>
+
 <script>
-    // 初始化默认月份为当前月
+    let currentUser = null;
+
+    // 初始化
     const today = new Date();
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -100,20 +172,82 @@
     window.onload = function() {
         const userStr = localStorage.getItem('colliers_user');
         if (!userStr) { alert("请先登录"); window.location.href = 'index.html'; return; }
-        const user = JSON.parse(userStr);
-        if (user.role !== 'admin') { alert("无权访问"); window.location.href = 'index.html'; return; }
+        currentUser = JSON.parse(userStr);
+        if (currentUser.role !== 'admin') { alert("无权访问"); window.location.href = 'index.html'; return; }
 
         loadLogs();
         loadFiles();
+        loadVersionInfo(); // 加载右下角时间
     };
 
-    // 1. 加载本月日志 (预览用)
+    // --- 新功能：加载版本信息 ---
+    async function loadVersionInfo() {
+        try {
+            const res = await fetch('/api/get-source-meta');
+            const data = await res.json();
+            if (data.status === 'success') {
+                document.getElementById('last-update-time').innerText = data.lastUpdated;
+                document.getElementById('version-tag').style.display = 'block';
+            }
+        } catch (e) { console.error("版本获取失败", e); }
+    }
+
+    // --- 新功能：上传源数据 ---
+    async function uploadSourceData() {
+        const fileInput = document.getElementById('source-file');
+        const file = fileInput.files[0];
+        if (!file) { alert("请先选择一个 Excel 文件！"); return; }
+
+        if (!confirm("⚠️ 高危操作警告 ⚠️\n\n您即将覆盖整个系统的底层数据表！\n\n覆盖后：\n1. 系统将使用新数据重新构建。\n2. 生效需要 1-2 分钟。\n3. 请确保表头格式与旧版一致。\n\n确定要继续吗？")) {
+            return;
+        }
+
+        const btn = document.getElementById('btn-upload-source');
+        btn.disabled = true;
+        btn.innerText = "正在上传...";
+
+        // 读取文件转 Base64
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async function () {
+            const base64Content = reader.result.split(',')[1]; // 去掉 data:application/xxx;base64, 前缀
+
+            try {
+                const res = await fetch('/api/update-source', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        content: base64Content,
+                        user: currentUser.name
+                    })
+                });
+                const result = await res.json();
+
+                if (result.status === 'success') {
+                    alert("✅ 更新成功！\n\nVercel 正在后台重新构建系统，请等待约 2 分钟后刷新首页查看新数据。");
+                    btn.innerText = "上传成功";
+                    // 重新获取一下时间
+                    setTimeout(loadVersionInfo, 2000);
+                } else {
+                    alert("更新失败: " + result.message);
+                    btn.disabled = false;
+                    btn.innerText = "🚀 确认覆盖更新";
+                }
+            } catch (e) {
+                console.error(e);
+                alert("网络错误");
+                btn.disabled = false;
+                btn.innerText = "🚀 确认覆盖更新";
+            }
+        };
+    }
+
+    // --- 原有功能：日志与文件列表 ---
     async function loadLogs() {
         try {
             const res = await fetch('/api/get-logs');
             const result = await res.json();
             const tbody = document.getElementById('log-body');
-            
             if (result.data && result.data.length > 0) {
                 tbody.innerHTML = result.data.map(log => `
                     <tr>
@@ -125,44 +259,31 @@
                         </td>
                     </tr>
                 `).join('');
-            } else {
-                tbody.innerHTML = '<tr><td colspan="3" class="empty-tip">本月暂无记录</td></tr>';
-            }
+            } else { tbody.innerHTML = '<tr><td colspan="3" class="empty-tip">本月暂无记录</td></tr>'; }
         } catch (e) { console.error(e); }
     }
 
-    // 2. 触发 Excel 下载 (核心功能)
     function downloadLogExcel() {
         const month = document.getElementById('log-month').value;
         if(!month) { alert("请选择月份"); return; }
-        
-        // 直接触发浏览器下载
         window.open(`/api/download-logs?month=${month}`, '_blank');
     }
 
-    // 3. 加载文件列表
     async function loadFiles() {
         try {
             const res = await fetch('/api/get-uploaded-files');
             const result = await res.json();
             const tbody = document.getElementById('file-body');
-            
             if (result.data && result.data.length > 0) {
-                // 按文件名倒序
                 result.data.sort((a, b) => b.name.localeCompare(a.name));
-
                 tbody.innerHTML = result.data.map(file => `
                     <tr>
                         <td style="font-weight:500;">📄 ${file.name}</td>
                         <td style="color:#666;">${file.size}</td>
-                        <td>
-                            <a href="${file.download_url}" class="btn-download" target="_blank">⬇ 下载</a>
-                        </td>
+                        <td><a href="${file.download_url}" class="btn-download" target="_blank">⬇ 下载</a></td>
                     </tr>
                 `).join('');
-            } else {
-                tbody.innerHTML = '<tr><td colspan="3" class="empty-tip">暂无上传文件</td></tr>';
-            }
+            } else { tbody.innerHTML = '<tr><td colspan="3" class="empty-tip">暂无上传文件</td></tr>'; }
         } catch (e) { console.error(e); }
     }
 </script>
