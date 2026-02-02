@@ -3,201 +3,616 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>季度数据填报系统 | Colliers</title>
+    <title>高力国际Colliers | 内部数据系统</title>
+    
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script type="text/javascript">
+        window._AMapSecurityConfig = {
+            securityJsCode: '你的安全密钥', // ★★★ 请填入你的高德安全密钥 ★★★
+        }
+    </script>
+    <script src="https://webapi.amap.com/maps?v=2.0&key=52a4c9550fbf0eb95da83d2fbbb72b41"></script>
+    
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f7fa; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        h2 { border-bottom: 2px solid #f57c00; padding-bottom: 10px; color: #333; display: flex; justify-content: space-between; align-items: center; }
-        .back-link { font-size: 14px; color: #004080; text-decoration: none; font-weight: normal; }
+        /* --- 基础布局 --- */
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; overflow: hidden; display: flex; height: 100vh; background: #f0f2f5; }
         
-        /* 表格样式 */
-        .table-wrapper { overflow-x: auto; margin-top: 20px; }
-        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1000px; }
-        .data-table th, .data-table td { border: 1px solid #e0e0e0; padding: 10px; text-align: left; }
-        .data-table th { background: #004080; color: white; position: sticky; top: 0; z-index: 10; }
-        .data-table tr:hover { background: #f9f9f9; }
-        
-        /* 锁定前几列 */
-        .data-table td:nth-child(1) { background: #f8f9fa; font-weight: bold; }
+        /* 登录遮罩层 */
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 64, 128, 0.95); z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .login-box {
+            background: white; padding: 40px; border-radius: 8px; width: 320px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center;
+        }
+        .login-box h2 { margin: 0 0 20px 0; color: #004080; }
+        .login-input {
+            width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd;
+            border-radius: 4px; box-sizing: border-box; font-size: 14px;
+        }
+        .login-btn {
+            width: 100%; padding: 12px; background: #004080; color: white;
+            border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px;
+        }
+        .login-btn:hover { background: #003366; }
+        .login-error { color: red; font-size: 12px; margin-top: 10px; display: none; }
 
-        /* 输入框高亮 */
-        .input-cell { background: #fff8e1; /*甚至可以让背景微黄提示可编辑*/ }
-        .input-cell input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
-        .input-cell input:focus { border-color: #f57c00; outline: none; background: white; box-shadow: 0 0 0 2px rgba(245, 124, 0, 0.2); }
+        /* 左侧侧边栏 */
+        #sidebar { width: 350px; background: #fff; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; z-index: 200; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
+        .brand-header { padding: 20px; background: #004080; color: white; }
+        .brand-header h2 { margin: 0; font-size: 20px; font-weight: 700; }
+        .brand-header p { margin: 5px 0 0; opacity: 0.8; font-size: 12px; }
         
-        .btn-submit { background: #f57c00; color: white; border: none; padding: 12px 30px; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; float: right; margin-top: 20px; box-shadow: 0 4px 6px rgba(245, 124, 0, 0.2); transition: all 0.2s; }
-        .btn-submit:hover { background: #ef6c00; transform: translateY(-1px); }
-        .btn-submit:disabled { background: #ccc; cursor: not-allowed; }
+        .user-info-bar { background: #e3f2fd; padding: 10px 20px; font-size: 12px; color: #004080; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #bbdefb; }
+        .logout-link { cursor: pointer; text-decoration: underline; }
+
+        /* 统计卡片 (改为 2x2 布局) */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; }
+        .stat-card { background: #fff; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #eee; }
+        .stat-value { font-size: 16px; font-weight: 800; color: #004080; margin-bottom: 2px; }
+        .stat-label { font-size: 11px; color: #888; }
         
-        .status-msg { float: right; margin-top: 32px; margin-right: 15px; font-size: 14px; color: #666; }
+        /* 中间滚动控制区 */
+        .controls { flex: 1; padding: 15px; overflow-y: auto; }
+        .control-group { margin-bottom: 20px; }
+        .control-title { font-weight: bold; font-size: 13px; margin-bottom: 8px; display: block; color: #333; }
+        
+        .search-box { display: flex; gap: 5px; margin-bottom: 20px; }
+        #search-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; outline: none; }
+        #search-btn { padding: 0 15px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        
+        /* 高级筛选样式 */
+        .filter-row { display: flex; gap: 5px; margin-bottom: 8px; }
+        .filter-select, .filter-val-input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; outline: none; }
+        .filter-btn { width: 100%; padding: 8px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .filter-btn:hover { background: #003366; }
+
+        .checkbox-group label { display: flex; align-items: center; margin-bottom: 8px; font-size: 13px; color: #555; cursor: pointer; }
+        .checkbox-group input { margin-right: 8px; }
+        .check-all-label { border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 8px !important; font-weight: bold; color: #004080 !important; }
+
+        /* --- 左下角 2x2 网格布局 --- */
+        .actions { 
+            padding: 15px; 
+            border-top: 1px solid #eee; 
+            background: white; 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 8px; 
+        }
+        .btn-mode { 
+            width: 100%; 
+            padding: 10px 5px;
+            border: 1px solid #e0e0e0; 
+            background: white; 
+            color: #555; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 12px; 
+            transition: all 0.2s; 
+            text-align: center; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .btn-mode.active { background: #e6f0fa; color: #004080; border-color: #004080; }
+        
+        /* 地图区 */
+        #map-container { flex: 1; position: relative; }
+        
+        /* --- 状态条移到顶部正中 --- */
+        #status-bar { 
+            position: absolute; 
+            top: 20px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            z-index: 1000; 
+            background: rgba(0,0,0,0.8); 
+            color: white; 
+            padding: 10px 20px; 
+            border-radius: 30px; 
+            font-size: 13px; 
+            display: none; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        /* --- 右上角悬浮功能区 --- */
+        #top-right-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: row; 
+            gap: 10px;
+        }
+        .top-btn {
+            padding: 10px 15px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            color: #333;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .top-btn:hover { background: #f9f9f9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .top-btn.admin-btn { border-left: 4px solid #f57c00; } /* 橙色边框区分管理功能 */
+        
+        /* 弹窗样式 */
+        .info-window-card { width: 340px; font-family: sans-serif; }
+        .chart-container { height: 160px; width: 100%; margin-top: 10px; }
+        .tag-row { display: flex; gap: 5px; margin-top: 6px; }
+        .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; }
+        
+        /* 标签颜色 */
+        .badge-pa { background: #1a237e; } .badge-a { background: #2979ff; } .badge-b { background: #40c4ff; } 
+        .badge-platinum { background: #004d40; } .badge-gold { background: #fbc02d; color: #333; } 
+        .badge-silver { background: #9e9e9e; color: #333; } .badge-none { background: #eeeeee; color: #999; } 
+
+        .btn-plan-b { width: 100%; margin-top: 10px; padding: 8px; background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%); border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 4px 10px rgba(56, 239, 125, 0.3); transition: transform 0.1s; }
+        .btn-reset { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: white; padding: 10px 20px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-weight: bold; cursor: pointer; z-index: 999; display: none; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>
-        <span id="page-title">季度数据填报</span>
-        <a href="index.html" class="back-link">← 返回地图首页</a>
-    </h2>
-    <p style="color:#666; font-size:13px;">说明：系统已自动筛选出您负责的项目。请在黄色区域输入新一季度的更新数据，无需更新的项目可留空。</p>
-    
-    <div class="table-wrapper">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th style="width:15%">写字楼名称</th>
-                    <th style="width:10%">子市场</th>
-                    <th style="width:10%">当前租金</th>
-                    <th style="width:10%">当前空置率</th>
-                    <th style="background:#e65100; width:12%">新季度租金</th>
-                    <th style="background:#e65100; width:12%">新季度空置率(%)</th>
-                    <th style="background:#e65100; width:12%">新空置面积(㎡)</th>
-                    <th style="background:#e65100; width:19%">备注信息</th>
-                </tr>
-            </thead>
-            <tbody id="table-body">
-                <tr><td colspan="8" style="text-align:center; padding: 30px; color:#888;">正在加载您的数据...</td></tr>
-            </tbody>
-        </table>
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2>COLLIERS DATA</h2>
+            <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据查询系统 v6.0</p>
+            <input type="text" id="login-name" class="login-input" placeholder="姓名 (Name)">
+            <input type="text" id="login-id" class="login-input" placeholder="工号 (Employee ID)">
+            <input type="text" id="login-phone" class="login-input" placeholder="手机号 (Phone)">
+            <button class="login-btn" onclick="handleLogin()">认证进入</button>
+            <div id="login-msg" class="login-error">认证失败</div>
+        </div>
     </div>
 
-    <div class="status-msg" id="status-msg"></div>
-    <button class="btn-submit" onclick="submitData()">🚀 提交并上传云端 (Submit)</button>
-    <div style="clear:both;"></div>
-</div>
+    <div id="sidebar">
+        <div class="brand-header">
+            <h2>COLLIERS DATA</h2>
+            <p>办公楼市场监测系统 v6.0</p>
+        </div>
+        
+        <div class="user-info-bar">
+            <span id="user-display">未登录</span>
+            <span class="logout-link" onclick="logout()">退出</span>
+        </div>
+
+        <div class="stat-grid">
+            <div class="stat-card"><div class="stat-value" id="stat-count">-</div><div class="stat-label">视野项目</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-price">-</div><div class="stat-label">平均租金</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-leed">-</div><div class="stat-label">LEED认证</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-vacancy" style="color:#d32f2f">-</div><div class="stat-label">平均空置率</div></div>
+        </div>
+        
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="🔍 搜项目名..." onkeydown="if(event.key==='Enter') executeFilters()">
+                <button id="search-btn" onclick="executeFilters()">查询</button>
+            </div>
+
+            <div class="control-group">
+                <span class="control-title">高级数值筛选 (Advanced Filter)</span>
+                <div class="filter-row">
+                    <select id="adv-metric" class="filter-select" style="flex:1;">
+                        <option value="pCurrent">租金 (Rent)</option>
+                        <option value="vCurrent">空置率 (Vacancy)</option>
+                        <option value="vacArea">空置面积 (Area)</option>
+                    </select>
+                    <select id="adv-op" class="filter-select" style="width:60px;">
+                        <option value=">">></option>
+                        <option value="<"><</option>
+                        <option value="=">=</option>
+                        <option value=">=">≥</option>
+                        <option value="<=">≤</option>
+                    </select>
+                    <input type="text" id="adv-val" class="filter-val-input" style="flex:1;" placeholder="数值/百分比">
+                </div>
+                <button class="filter-btn" onclick="executeFilters()">执行筛选 (Apply)</button>
+            </div>
+
+            <div class="control-group">
+                <span class="control-title">商圈筛选 (Submarket)</span>
+                <div class="checkbox-group" id="district-filters"><label>数据加载中...</label></div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn-mode active" onclick="setMode('price')">💰 租金热力</button>
+            <button class="btn-mode" onclick="setMode('vacancy')">🏢 空置率</button>
+            <button class="btn-mode" onclick="setMode('grade')">🏆 楼宇等级</button>
+            <button class="btn-mode" onclick="setMode('leed')">🌿 LEED认证</button>
+        </div>
+    </div>
+
+    <div id="map-container">
+        <div id="top-right-panel">
+            <button class="top-btn" onclick="downloadReport()">📄 下载季报</button>
+            <button id="btn-update" class="top-btn admin-btn" style="display:none;" onclick="window.location.href='update.html'">✏️ 季度数据更新</button>
+            <button id="btn-analysis" class="top-btn admin-btn" style="display:none;" onclick="alert('进入管理员看板...')">📊 行为分析</button>
+        </div>
+
+        <div id="status-bar"></div>
+        
+        <button id="reset-map-btn" class="btn-reset" onclick="resetMapState()">🔄 退出竞品对比模式</button>
+    </div>
 
 <script>
-    let currentUser = null;
-    let myBuildings = [];
+    // --- 下载季报函数 ---
+    function downloadReport() { window.open('./sample_report.pdf', '_blank'); }
 
-    // 1. 页面加载：检查权限并拉取数据
-    window.onload = async function() {
-        const userStr = localStorage.getItem('colliers_user');
-        if (!userStr) { alert("请先登录"); window.location.href = 'index.html'; return; }
-        
-        currentUser = JSON.parse(userStr);
-        document.getElementById('page-title').innerText = `季度填报 - ${currentUser.name}`;
+    // --- 认证模块 ---
+    const CURRENT_USER = { name: '', role: 'viewer' };
 
-        // 调用后端API获取该用户的楼宇
-        try {
-            // 注意：这里需要确保 api/get-my-buildings.js 存在
-            const res = await fetch(`/api/get-my-buildings?user=${encodeURIComponent(currentUser.name)}`);
-            const data = await res.json();
-            
-            if (data.status === 'success') {
-                myBuildings = data.data;
-                renderTable(myBuildings);
-            } else {
-                document.getElementById('table-body').innerHTML = `<tr><td colspan="8" style="color:red;text-align:center;">${data.message}</td></tr>`;
-            }
-        } catch (e) {
-            console.error(e);
-            document.getElementById('table-body').innerHTML = `<tr><td colspan="8" style="color:red;text-align:center;">数据加载失败，请检查网络或后端接口</td></tr>`;
+    window.onload = function() {
+        const cachedUser = localStorage.getItem('colliers_user');
+        if (cachedUser) {
+            const user = JSON.parse(cachedUser);
+            loginSuccess(user);
+            init(); 
         }
     };
 
-    // 2. 渲染表格
-    function renderTable(list) {
-        const tbody = document.getElementById('table-body');
-        if (list.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px;">您名下暂无负责的楼宇数据 (USER字段不匹配)</td></tr>`;
-            return;
-        }
+    async function handleLogin() {
+        const name = document.getElementById('login-name').value.trim();
+        const id = document.getElementById('login-id').value.trim();
+        const phone = document.getElementById('login-phone').value.trim();
+        const msg = document.getElementById('login-msg');
 
-        tbody.innerHTML = list.map((item, index) => {
-            // 兼容中英文列名
-            const name = item['写字楼名称'] || item['Project Name CN'] || item['name'];
-            const district = item['子市场'] || item['SUBMARKET'] || item['district'];
-            const rent = item['净有效租金'] || item['Net Effective Rent'] || item['pCurrent'];
-            
-            // 空置率显示百分比
-            let vac = item['空置率'] || item['Vacancy Rate'] || item['vCurrent'];
-            if(vac && !String(vac).includes('%') && vac < 1) vac = (vac * 100).toFixed(1) + '%';
-
-            return `
-            <tr data-id="${index}">
-                <td>${name}</td>
-                <td>${district}</td>
-                <td>${rent || '-'}</td>
-                <td>${vac || '-'}</td>
-                <td class="input-cell"><input type="number" class="new-rent" placeholder="输入租金"></td>
-                <td class="input-cell"><input type="number" class="new-vacancy" placeholder="例如: 15.5"></td>
-                <td class="input-cell"><input type="number" class="new-area" placeholder="输入面积"></td>
-                <td class="input-cell"><input type="text" class="new-remark" placeholder="备注..."></td>
-            </tr>
-        `}).join('');
-    }
-
-    // 3. 提交数据
-    async function submitData() {
-        const btn = document.querySelector('.btn-submit');
-        const msg = document.getElementById('status-msg');
-        
-        // 收集数据
-        const rows = document.querySelectorAll('#table-body tr');
-        const submission = [];
-        let hasData = false;
-        
-        rows.forEach((row, index) => {
-            const building = myBuildings[index];
-            if(!building) return;
-
-            const rent = row.querySelector('.new-rent').value.trim();
-            const vac = row.querySelector('.new-vacancy').value.trim();
-            const area = row.querySelector('.new-area').value.trim();
-            const remark = row.querySelector('.new-remark').value.trim();
-
-            // 只要填了一项，就算作更新
-            if(rent || vac || area || remark) {
-                hasData = true;
-                submission.push({
-                    "写字楼名称": building['写字楼名称'] || building['Project Name CN'],
-                    "子市场": building['子市场'] || building['SUBMARKET'],
-                    "原租金": building['净有效租金'] || building['Net Effective Rent'],
-                    "新季度租金": rent,
-                    "新季度空置率": vac ? (vac + '%') : '',
-                    "新季度空置面积": area,
-                    "新季度备注": remark,
-                    "填报时间": new Date().toLocaleString()
-                });
-            }
-        });
-
-        if (!hasData) { alert("请至少填写一行数据后再提交"); return; }
-
-        // 发送给后端
-        btn.disabled = true;
-        btn.innerText = "正在上传 GitHub...";
-        msg.innerText = "正在生成 Excel 并推送至云端，请稍候...";
-
+        if (!name || !id || !phone) { msg.innerText = "请填写完整信息"; msg.style.display = 'block'; return; }
+        msg.style.display = 'none';
         try {
-            const res = await fetch('/api/submit-update', {
+            const res = await fetch('/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    user: currentUser.name,
-                    data: submission
-                })
+                body: JSON.stringify({ name, id, phone })
             });
-            const result = await res.json();
+            const data = await res.json();
+            if (data.status === 'success') {
+                localStorage.setItem('colliers_user', JSON.stringify(data.data));
+                loginSuccess(data.data);
+                init();
+            } else { msg.innerText = data.message || "认证失败"; msg.style.display = 'block'; }
+        } catch (e) { console.error(e); msg.innerText = "系统连接错误"; msg.style.display = 'block'; }
+    }
+
+    function loginSuccess(user) {
+        CURRENT_USER.name = user.name;
+        CURRENT_USER.role = user.role;
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('user-display').innerText = `${user.name} (${user.role})`;
+        
+        // 权限控制：右上角按钮显示
+        if (user.role === 'editor' || user.role === 'admin') document.getElementById('btn-update').style.display = 'flex';
+        if (user.role === 'admin') document.getElementById('btn-analysis').style.display = 'flex';
+    }
+
+    function logout() { localStorage.removeItem('colliers_user'); location.reload(); }
+
+    // --- 地图与数据核心逻辑 ---
+    // 备份数据，防止Excel读取失败
+    const DEMO_DATA = [
+        {"写字楼名称": "国贸写字楼1座", "子市场": "CBD", "写字楼等级": "A", "竣工时间": "1990 Q3", "净有效租金": 288.75, "空置率": "13.0%", "LEEDS": "", "经纬度": "116.458363,39.909473", "空置面积": 9400, "总面积": 72308},
+        {"写字楼名称": "国贸写字楼2座", "子市场": "CBD", "写字楼等级": "A", "竣工时间": "1999 Q4", "净有效租金": 307.08, "空置率": "2.0%", "LEEDS": "Gold", "经纬度": "116.460469,39.910838", "空置面积": 1450, "总面积": 72308}
+    ];
+
+    let map, infoWindow, chartInstance;
+    let rawData = [], markers = [], circleOverlay = null;
+    let activeDistricts = new Set(), allDistrictsList = [];
+    let currentMode = 'price', isCompareMode = false;
+
+    function init() {
+        map = new AMap.Map('map-container', { zoom: 11, center: [116.460787, 39.905477], viewMode: '2D', mapStyle: 'amap://styles/whitesmoke' });
+        infoWindow = new AMap.InfoWindow({ isCustom: false, offset: new AMap.Pixel(0, -35), autoMove: true }); 
+        infoWindow.on('close', () => { if(chartInstance) { chartInstance.destroy(); chartInstance = null; } });
+        loadExcel();
+    }
+
+    async function loadExcel() {
+        showStatus("📥 正在读取数据...");
+        try {
+            const response = await fetch('./data.xlsx');
+            if (response.ok) {
+                const buffer = await response.arrayBuffer();
+                const workbook = XLSX.read(buffer);
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(sheet);
+                processData(json);
+            } else { throw new Error("File 404"); }
+        } catch (err) {
+            console.warn("读取失败，启用备份数据");
+            processData(DEMO_DATA); 
+            showStatus("⚠️ 使用内置备份数据");
+        }
+    }
+
+    function findVal(item, keys) {
+        for (let k of keys) { if (item[k] !== undefined) return item[k]; }
+        const itemKeys = Object.keys(item);
+        for (let k of keys) {
+            const match = itemKeys.find(ik => ik.trim().toLowerCase() === k.toLowerCase());
+            if (match) return item[match];
+        }
+        return null;
+    }
+
+    // 数据处理核心
+    function processData(json) {
+        rawData = json.map(item => {
+            const posRaw = findVal(item, ['经纬度', 'Position']);
+            const posStr = String(posRaw || "").trim().replace('，', ',');
+            const pos = posStr.split(',').map(Number);
+
+            const name = findVal(item, ['写字楼名称', 'Project Name CN', 'name']) || "未知项目";
+            const district = findVal(item, ['子市场', 'SUBMARKET', '所在区']) || "其他";
+            const built_year = findVal(item, ['竣工时间', 'Completion Date']) || "-";
             
-            if (result.status === 'success') {
-                alert(`✅ 提交成功！\n文件已保存为: ${result.filename}`);
-                msg.innerText = "上传成功！";
-                btn.innerText = "提交成功";
-                // 可选：提交后是否清空或跳转
-                // window.location.href = 'index.html'; 
+            const pCurrent = parseFloat(findVal(item, ['净有效租金', 'Net Effective Rent'])) || 0;
+            
+            const vRaw = findVal(item, ['空置率', 'Vacancy Rate']);
+            let vCurrent = 0;
+            if (typeof vRaw === 'string' && vRaw.includes('%')) {
+                vCurrent = parseFloat(vRaw.replace('%', '')) / 100;
+            } else if (vRaw <= 1) { 
+                vCurrent = parseFloat(vRaw);
             } else {
-                alert("提交失败: " + result.message);
-                btn.disabled = false;
-                btn.innerText = "🚀 重新提交";
-                msg.innerText = "上传失败，请重试";
+                vCurrent = parseFloat(vRaw) / 100; 
             }
-        } catch (e) {
-            console.error(e);
-            alert("网络错误");
-            btn.disabled = false;
-            btn.innerText = "🚀 重新提交";
+
+            const vacArea = parseFloat(findVal(item, ['空置面积', 'Vacancy Area'])) || 0;
+            const totalArea = parseFloat(findVal(item, ['总面积', 'Total Area'])) || 0;
+
+            const gRaw = String(findVal(item, ['写字楼等级', 'grades', 'Grade']) || "-").trim().toUpperCase();
+            const grade = (gRaw === 'PA' || gRaw === 'PREMIUM A') ? 'PA' : (gRaw.includes('A') ? 'A' : gRaw);
+
+            const lRaw = String(findVal(item, ['LEEDS', 'LEED']) || "").trim();
+            let leed = "无";
+            if (lRaw && lRaw !== 'N' && lRaw !== 'No' && lRaw !== '-') leed = lRaw;
+
+            return {
+                name, district, built_year, grade, leed,
+                lat: pos[1], lng: pos[0],
+                isValid: (pos.length === 2 && !isNaN(pos[0]) && !isNaN(pos[1])),
+                pCurrent, vCurrent, vacArea, totalArea
+            };
+        }).filter(d => d.isValid);
+
+        if (rawData.length === 0) { showStatus("❌ 数据为空"); return; }
+
+        showStatus(`✅ 加载 ${rawData.length} 个项目`);
+        initFilters();
+        renderMap(rawData);
+        setTimeout(() => document.getElementById('status-bar').style.display = 'none', 3000);
+    }
+
+    function initFilters() {
+        allDistrictsList = [...new Set(rawData.map(d => d.district))].sort();
+        allDistrictsList.forEach(d => activeDistricts.add(d)); 
+        const container = document.getElementById('district-filters');
+        let html = `<label class="check-all-label"><input type="checkbox" id="check-all" checked onchange="toggleAllDistricts(this.checked)"> 全选 (Select All)</label>`;
+        html += allDistrictsList.map(d => `<label><input type="checkbox" class="district-checkbox" value="${d}" checked onchange="toggleDistrict('${d}')">${d}</label>`).join('');
+        container.innerHTML = html;
+    }
+
+    function toggleAllDistricts(isChecked) {
+        if (isChecked) allDistrictsList.forEach(d => activeDistricts.add(d));
+        else activeDistricts.clear();
+        document.querySelectorAll('.district-checkbox').forEach(cb => cb.checked = isChecked);
+        executeFilters(); 
+    }
+
+    function toggleDistrict(d) {
+        if (activeDistricts.has(d)) activeDistricts.delete(d); else activeDistricts.add(d);
+        const checkAllBox = document.getElementById('check-all');
+        checkAllBox.checked = activeDistricts.size === allDistrictsList.length;
+        checkAllBox.indeterminate = activeDistricts.size > 0 && activeDistricts.size < allDistrictsList.length;
+        executeFilters(); 
+    }
+
+    // 综合筛选：关键词 + 数值 + 商圈
+    function executeFilters() {
+        if(isCompareMode) resetMapState();
+
+        const keyword = document.getElementById('search-input').value.trim().toLowerCase();
+        const advMetric = document.getElementById('adv-metric').value;
+        const advOp = document.getElementById('adv-op').value; 
+        let advValRaw = document.getElementById('adv-val').value.trim();
+        let advVal = null;
+
+        if (advValRaw !== '') {
+            advValRaw = advValRaw.replace(/,/g, ''); 
+            if (advMetric === 'vCurrent' && advValRaw.includes('%')) {
+                advVal = parseFloat(advValRaw) / 100;
+            } else {
+                advVal = parseFloat(advValRaw);
+            }
+        }
+
+        const filtered = rawData.filter(item => {
+            if (!activeDistricts.has(item.district)) return false;
+            if (keyword && !item.name.toLowerCase().includes(keyword)) return false;
+            if (advVal !== null && !isNaN(advVal)) {
+                const itemVal = item[advMetric];
+                switch (advOp) {
+                    case '>': if (!(itemVal > advVal)) return false; break;
+                    case '<': if (!(itemVal < advVal)) return false; break;
+                    case '=': if (!(Math.abs(itemVal - advVal) < 0.0001)) return false; break; 
+                    case '>=': if (!(itemVal >= advVal)) return false; break;
+                    case '<=': if (!(itemVal <= advVal)) return false; break;
+                }
+            }
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            showStatus("⚠️ 未找到匹配项目");
+            renderMap([]); 
+        } else {
+            if(keyword || (advVal !== null && !isNaN(advVal))) showStatus(`🔍 筛选出 ${filtered.length} 个项目`);
+            renderMap(filtered);
+            if (filtered.length === 1 && keyword) {
+                const target = filtered[0];
+                map.setZoomAndCenter(17, [target.lng, target.lat]);
+                setTimeout(() => { map.panBy(175, 0); showDetail(target); }, 150);
+            }
+        }
+    }
+
+    function renderMap(dataToRender) {
+        map.clearMap();
+        if (circleOverlay) { map.remove(circleOverlay); circleOverlay = null; }
+        markers = [];
+        
+        const prices = dataToRender.map(d => d.pCurrent);
+        const maxP = Math.max(...prices, 100); 
+        const minP = Math.min(...prices, 50);
+
+        dataToRender.forEach(item => {
+            let color = '#999', label = '';
+            if (currentMode === 'price') {
+                const ratio = (item.pCurrent - minP) / (maxP - minP || 1);
+                color = `hsl(${120 - Math.max(0,Math.min(1,ratio)) * 120}, 75%, 45%)`; label = '¥';
+            } else if (currentMode === 'vacancy') {
+                const ratio = Math.min(item.vCurrent / 0.3, 1);
+                color = `hsl(${120 - ratio * 120}, 75%, 45%)`; label = '%';
+            } else if (currentMode === 'grade') {
+                if (item.grade === 'PA') color = '#1a237e'; else if (item.grade === 'A') color = '#2979ff'; else color = '#b0bec5'; label = 'G';
+            } else if (currentMode === 'leed') {
+                const l = item.leed.toLowerCase();
+                if (l.includes('platinum')) color = '#004d40'; else if (l.includes('gold')) color = '#fbc02d'; else if (l.includes('cert')) color = '#81c784'; else color = '#eeeeee'; label = 'L';
+            }
+            const zIndex = (currentMode === 'leed' && color === '#eeeeee') ? 50 : 100;
+            const textColor = (color==='#fbc02d'||color==='#eeeeee') ? '#555' : 'white';
+            const content = `<div style="width:26px; height:26px; background:${color}; border:2px solid white; border-radius:50%; box-shadow:0 3px 6px rgba(0,0,0,0.3); color:${textColor}; display:flex; justify-content:center; align-items:center; font-size:11px; font-weight:bold;">${label}</div>`;
+            const marker = new AMap.Marker({ position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-13, -13), map: map, zIndex: zIndex, extData: item });
+            marker.on('click', () => showDetail(item));
+            markers.push(marker);
+        });
+        updateDashboard(dataToRender);
+    }
+
+    function showDetail(item) {
+        setTimeout(() => {
+            const btn = document.getElementById('btn-plan-b');
+            if(btn) btn.onclick = () => findPlanB(item);
+        }, 0);
+
+        let gradeClass = item.grade === 'PA' ? 'badge-pa' : (item.grade === 'A' ? 'badge-a' : 'badge-none');
+        let leedClass = item.leed.toLowerCase().includes('gold') ? 'badge-gold' : item.leed === '无' ? 'badge-none' : 'badge-silver';
+
+        const content = `
+            <div class="info-window-card">
+                <div style="padding:15px; border-bottom:1px solid #eee;">
+                    <h3 style="margin:0;font-size:18px;">${item.name}</h3>
+                    <div style="color:#666;font-size:12px;margin-top:4px;">${item.district} | ${item.built_year}</div>
+                    <div class="tag-row">
+                        <span class="badge ${gradeClass}">${item.grade}级</span>
+                        <span class="badge ${leedClass}">${item.leed}</span>
+                    </div>
+                </div>
+                <div style="padding:15px; border-bottom:1px solid #eee;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                        <div>
+                            <div style="font-size:11px;color:#888;">净有效租金</div>
+                            <div style="font-size:16px;font-weight:bold;color:#333;">¥${item.pCurrent.toFixed(1)}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:11px;color:#888;">空置率</div>
+                            <div style="font-size:16px;font-weight:bold;color:#333;">${(item.vCurrent*100).toFixed(1)}%</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <div>
+                            <div style="font-size:11px;color:#888;">空置面积</div>
+                            <div style="font-size:14px;font-weight:bold;color:#555;">${item.vacArea.toLocaleString()} m²</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:11px;color:#888;">总面积</div>
+                            <div style="font-size:14px;font-weight:bold;color:#555;">${item.totalArea.toLocaleString()} m²</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="padding:15px;">
+                    <button id="btn-plan-b" class="btn-plan-b">🔍 客户嫌贵？查看周边平替 (Plan B)</button>
+                </div>
+            </div>`;
+        infoWindow.setContent(content);
+        infoWindow.open(map, [item.lng, item.lat]);
+    }
+
+    function findPlanB(targetItem) {
+        isCompareMode = true;
+        map.clearMap(); markers = [];
+        const targetLngLat = new AMap.LngLat(targetItem.lng, targetItem.lat);
+        const competitors = rawData.filter(item => {
+            if (item.name === targetItem.name) return false;
+            const itemLngLat = new AMap.LngLat(item.lng, item.lat);
+            return targetLngLat.distance(itemLngLat) <= 1500 && item.pCurrent < targetItem.pCurrent;
+        });
+        const targetMarker = new AMap.Marker({ position: targetLngLat, content: `<div style="width:34px;height:34px;background:#FFD700;border:3px solid #fff;border-radius:50%;box-shadow:0 0 15px rgba(255,215,0,0.6);display:flex;justify-content:center;align-items:center;font-size:20px;">⭐️</div>`, offset: new AMap.Pixel(-17, -17), map: map, zIndex: 999 });
+        targetMarker.on('click', () => showDetail(targetItem));
+        competitors.forEach(item => {
+            const priceDiff = (targetItem.pCurrent - item.pCurrent).toFixed(1);
+            const content = `<div style="min-width:40px;padding:0 5px;height:24px;background:#2ecc71;border:2px solid white;border-radius:12px;box-shadow:0 3px 6px rgba(0,0,0,0.2);color:white;display:flex;justify-content:center;align-items:center;font-size:11px;font-weight:bold;">📉${priceDiff}</div>`;
+            const marker = new AMap.Marker({ position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-20, -12), map: map, zIndex: 500 });
+            marker.on('click', () => showDetail(item));
+            markers.push(marker);
+        });
+        circleOverlay = new AMap.Circle({ center: targetLngLat, radius: 1500, borderWeight: 1, strokeColor: "#007AFF", strokeOpacity: 0.5, strokeWeight: 1, fillOpacity: 0.1, strokeStyle: 'dashed', strokeDasharray: [10, 10], fillColor: '#1791fc', zIndex: 50 });
+        circleOverlay.setMap(map);
+        map.setFitView(null, false, [50, 50, 50, 420]);
+        document.getElementById('reset-map-btn').style.display = 'block';
+        showStatus(`🎯 发现 ${competitors.length} 个更便宜的项目`);
+        updateDashboard(competitors);
+    }
+
+    function resetMapState() {
+        isCompareMode = false;
+        document.getElementById('reset-map-btn').style.display = 'none';
+        executeFilters();
+    }
+
+    function updateDashboard(data) {
+        const count = data.length;
+        document.getElementById('stat-count').innerText = count;
+
+        const validRentData = data.filter(d => d.pCurrent > 0);
+        const avgRent = validRentData.length ? 
+            (validRentData.reduce((a,b)=>a+b.pCurrent,0) / validRentData.length).toFixed(2) : '-';
+        document.getElementById('stat-price').innerText = avgRent;
+        
+        const validVacData = data.filter(d => d.vCurrent > 0);
+        const avgVac = validVacData.length ? 
+            ((validVacData.reduce((a,b)=>a+b.vCurrent,0) / validVacData.length) * 100).toFixed(1) : '-';
+        document.getElementById('stat-vacancy').innerText = avgVac + '%';
+        
+        const leedCount = data.filter(d => d.leed !== '无').length;
+        document.getElementById('stat-leed').innerText = leedCount + '个';
+    }
+
+    function showStatus(msg) {
+        const el = document.getElementById('status-bar');
+        el.innerText = msg; el.style.display = 'block';
+    }
+
+    function setMode(mode) {
+        currentMode = mode;
+        document.querySelectorAll('.btn-mode').forEach(btn => btn.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        if(!isCompareMode) {
+            executeFilters();
         }
     }
 </script>
