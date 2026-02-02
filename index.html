@@ -41,7 +41,7 @@
         .login-btn:hover { background: #003366; }
         .login-error { color: red; font-size: 12px; margin-top: 10px; display: none; }
 
-        /* 主界面 */
+        /* 左侧侧边栏 */
         #sidebar { width: 350px; background: #fff; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; z-index: 200; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
         .brand-header { padding: 20px; background: #004080; color: white; }
         .brand-header h2 { margin: 0; font-size: 20px; font-weight: 700; }
@@ -50,17 +50,17 @@
         .user-info-bar { background: #e3f2fd; padding: 10px 20px; font-size: 12px; color: #004080; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #bbdefb; }
         .logout-link { cursor: pointer; text-decoration: underline; }
 
-        /* 统计卡片 (改为 2x2 布局) */
+        /* 统计卡片 (2x2) */
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; }
         .stat-card { background: #fff; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #eee; }
         .stat-value { font-size: 16px; font-weight: 800; color: #004080; margin-bottom: 2px; }
         .stat-label { font-size: 11px; color: #888; }
         
+        /* 中间滚动区 */
         .controls { flex: 1; padding: 15px; overflow-y: auto; }
         .control-group { margin-bottom: 20px; }
         .control-title { font-weight: bold; font-size: 13px; margin-bottom: 8px; display: block; color: #333; }
         
-        /* 搜索框 */
         .search-box { display: flex; gap: 5px; margin-bottom: 20px; }
         #search-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; outline: none; }
         #search-btn { padding: 0 15px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
@@ -71,33 +71,92 @@
         .filter-btn { width: 100%; padding: 8px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
         .filter-btn:hover { background: #003366; }
 
-        /* 按钮与复选框 */
-        .feature-links { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
-        .btn-feature { 
-            display: block; width: 100%; padding: 10px; margin-bottom: 8px; 
-            text-align: left; background: #fff; border: 1px solid #ddd; 
-            border-radius: 4px; cursor: pointer; font-size: 13px; color: #333;
-            transition: all 0.2s;
-        }
-        .btn-feature:hover { background: #f5f5f5; border-color: #ccc; }
-        .btn-feature.admin-btn { border-left: 4px solid #f57c00; background: #fff3e0; }
-
         .checkbox-group label { display: flex; align-items: center; margin-bottom: 8px; font-size: 13px; color: #555; cursor: pointer; }
         .checkbox-group input { margin-right: 8px; }
         .check-all-label { border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 8px !important; font-weight: bold; color: #004080 !important; }
 
-        .actions { padding: 15px; border-top: 1px solid #eee; background: white; }
-        .btn-mode { width: 100%; padding: 10px; margin-bottom: 5px; border: 1px solid #e0e0e0; background: white; color: #555; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s; text-align: left; }
+        /* --- ★★★ 核心修改：左下角 2x2 网格布局 ★★★ --- */
+        .actions { 
+            padding: 15px; 
+            border-top: 1px solid #eee; 
+            background: white; 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 8px; 
+        }
+        .btn-mode { 
+            width: 100%; 
+            padding: 10px 5px; /* 稍微减小左右 padding 防止换行 */
+            border: 1px solid #e0e0e0; 
+            background: white; 
+            color: #555; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 12px; /* 稍微减小字体 */
+            transition: all 0.2s; 
+            text-align: center; /* 居中更好看 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
         .btn-mode.active { background: #e6f0fa; color: #004080; border-color: #004080; }
         
+        /* 地图区 */
         #map-container { flex: 1; position: relative; }
-        #status-bar { position: absolute; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px; display: none; }
+        
+        /* --- ★★★ 核心修改：状态条移到顶部正中，防止遮挡 ★★★ --- */
+        #status-bar { 
+            position: absolute; 
+            top: 20px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            z-index: 1000; 
+            background: rgba(0,0,0,0.8); 
+            color: white; 
+            padding: 10px 20px; 
+            border-radius: 30px; 
+            font-size: 13px; 
+            display: none; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        /* --- ★★★ 核心修改：右上角悬浮功能区 ★★★ --- */
+        #top-right-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: row; /* 横向排列，如果想竖向改成 column */
+            gap: 10px;
+        }
+        .top-btn {
+            padding: 10px 15px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            color: #333;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .top-btn:hover { background: #f9f9f9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .top-btn.admin-btn { border-left: 4px solid #f57c00; } /* 橙色边框区分管理员功能 */
         
         /* 弹窗样式 */
         .info-window-card { width: 340px; font-family: sans-serif; }
         .chart-container { height: 160px; width: 100%; margin-top: 10px; }
         .tag-row { display: flex; gap: 5px; margin-top: 6px; }
         .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; }
+        
+        /* 标签颜色 */
         .badge-pa { background: #1a237e; } .badge-a { background: #2979ff; } .badge-b { background: #40c4ff; } 
         .badge-platinum { background: #004d40; } .badge-gold { background: #fbc02d; color: #333; } 
         .badge-silver { background: #9e9e9e; color: #333; } .badge-none { background: #eeeeee; color: #999; } 
@@ -111,7 +170,7 @@
     <div id="login-overlay">
         <div class="login-box">
             <h2>COLLIERS DATA</h2>
-            <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据查询系统 v2.0</p>
+            <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据查询系统 v6.0</p>
             <input type="text" id="login-name" class="login-input" placeholder="姓名 (Name)">
             <input type="text" id="login-id" class="login-input" placeholder="工号 (Employee ID)">
             <input type="text" id="login-phone" class="login-input" placeholder="手机号 (Phone)">
@@ -123,7 +182,7 @@
     <div id="sidebar">
         <div class="brand-header">
             <h2>COLLIERS DATA</h2>
-            <p>办公楼市场监测系统 v5.9</p>
+            <p>办公楼市场监测系统 v6.0</p>
         </div>
         
         <div class="user-info-bar">
@@ -139,12 +198,6 @@
         </div>
         
         <div class="controls">
-            <div class="feature-links">
-                <button class="btn-feature" onclick="downloadReport()">📄 下载最新季报 (Report)</button>
-                <button id="btn-update" class="btn-feature admin-btn" style="display:none;" onclick="alert('进入季报填报系统...')">✏️ 季报更新 (Update)</button>
-                <button id="btn-analysis" class="btn-feature admin-btn" style="display:none;" onclick="alert('进入管理员看板...')">📊 行为分析 (Admin)</button>
-            </div>
-
             <div class="search-box">
                 <input type="text" id="search-input" placeholder="🔍 搜项目名..." onkeydown="if(event.key==='Enter') executeFilters()">
                 <button id="search-btn" onclick="executeFilters()">查询</button>
@@ -175,17 +228,24 @@
                 <div class="checkbox-group" id="district-filters"><label>数据加载中...</label></div>
             </div>
         </div>
+
         <div class="actions">
-            <span class="control-title">可视化模式</span>
-            <button class="btn-mode active" onclick="setMode('price')">💰 按租金热力着色</button>
-            <button class="btn-mode" onclick="setMode('vacancy')">🏢 按空置率着色</button>
-            <button class="btn-mode" onclick="setMode('grade')">🏆 按楼宇等级分布</button>
-            <button class="btn-mode" onclick="setMode('leed')">🌿 按LEED认证分布</button>
+            <button class="btn-mode active" onclick="setMode('price')">💰 租金热力</button>
+            <button class="btn-mode" onclick="setMode('vacancy')">🏢 空置率</button>
+            <button class="btn-mode" onclick="setMode('grade')">🏆 楼宇等级</button>
+            <button class="btn-mode" onclick="setMode('leed')">🌿 LEED认证</button>
         </div>
     </div>
 
     <div id="map-container">
+        <div id="top-right-panel">
+            <button class="top-btn" onclick="downloadReport()">📄 下载季报</button>
+            <button id="btn-update" class="top-btn admin-btn" style="display:none;" onclick="alert('进入季度数据填报系统...')">✏️ 季度数据更新</button>
+            <button id="btn-analysis" class="top-btn admin-btn" style="display:none;" onclick="alert('进入管理员看板...')">📊 行为分析</button>
+        </div>
+
         <div id="status-bar"></div>
+        
         <button id="reset-map-btn" class="btn-reset" onclick="resetMapState()">🔄 退出竞品对比模式</button>
     </div>
 
@@ -233,8 +293,10 @@
         CURRENT_USER.role = user.role;
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('user-display').innerText = `${user.name} (${user.role})`;
-        if (user.role === 'editor' || user.role === 'admin') document.getElementById('btn-update').style.display = 'block';
-        if (user.role === 'admin') document.getElementById('btn-analysis').style.display = 'block';
+        
+        // 权限控制：右上角按钮显示
+        if (user.role === 'editor' || user.role === 'admin') document.getElementById('btn-update').style.display = 'flex'; // 使用 flex 保持图标对齐
+        if (user.role === 'admin') document.getElementById('btn-analysis').style.display = 'flex';
     }
 
     function logout() { localStorage.removeItem('colliers_user'); location.reload(); }
@@ -346,7 +408,7 @@
         if (isChecked) allDistrictsList.forEach(d => activeDistricts.add(d));
         else activeDistricts.clear();
         document.querySelectorAll('.district-checkbox').forEach(cb => cb.checked = isChecked);
-        executeFilters(); // 更新为统一筛选入口
+        executeFilters(); 
     }
 
     function toggleDistrict(d) {
@@ -354,25 +416,20 @@
         const checkAllBox = document.getElementById('check-all');
         checkAllBox.checked = activeDistricts.size === allDistrictsList.length;
         checkAllBox.indeterminate = activeDistricts.size > 0 && activeDistricts.size < allDistrictsList.length;
-        executeFilters(); // 更新为统一筛选入口
+        executeFilters(); 
     }
 
-    // --- ★★★ 核心升级：统一筛选逻辑 (Keyword + Submarket + Advanced) ★★★ ---
     function executeFilters() {
         if(isCompareMode) resetMapState();
 
-        // 1. 获取所有筛选条件
         const keyword = document.getElementById('search-input').value.trim().toLowerCase();
-        
-        // 高级筛选条件
-        const advMetric = document.getElementById('adv-metric').value; // pCurrent, vCurrent, vacArea
-        const advOp = document.getElementById('adv-op').value; // >, <, = ...
+        const advMetric = document.getElementById('adv-metric').value;
+        const advOp = document.getElementById('adv-op').value; 
         let advValRaw = document.getElementById('adv-val').value.trim();
         let advVal = null;
 
-        // 处理高级筛选数值 (百分比转小数)
         if (advValRaw !== '') {
-            advValRaw = advValRaw.replace(/,/g, ''); // 去除千分位逗号
+            advValRaw = advValRaw.replace(/,/g, ''); 
             if (advMetric === 'vCurrent' && advValRaw.includes('%')) {
                 advVal = parseFloat(advValRaw) / 100;
             } else {
@@ -380,45 +437,32 @@
             }
         }
 
-        // 2. 遍历数据进行过滤
         const filtered = rawData.filter(item => {
-            // 条件A: 商圈匹配
             if (!activeDistricts.has(item.district)) return false;
-
-            // 条件B: 关键词匹配 (如果有)
             if (keyword && !item.name.toLowerCase().includes(keyword)) return false;
-
-            // 条件C: 高级筛选 (如果有数值)
             if (advVal !== null && !isNaN(advVal)) {
                 const itemVal = item[advMetric];
                 switch (advOp) {
                     case '>': if (!(itemVal > advVal)) return false; break;
                     case '<': if (!(itemVal < advVal)) return false; break;
-                    case '=': if (!(Math.abs(itemVal - advVal) < 0.0001)) return false; break; // 浮点数相等判断
+                    case '=': if (!(Math.abs(itemVal - advVal) < 0.0001)) return false; break; 
                     case '>=': if (!(itemVal >= advVal)) return false; break;
                     case '<=': if (!(itemVal <= advVal)) return false; break;
                 }
             }
-
             return true;
         });
 
-        // 3. 渲染结果
         if (filtered.length === 0) {
             showStatus("⚠️ 未找到匹配项目");
-            renderMap([]); // 清空地图
+            renderMap([]); 
         } else {
             if(keyword || (advVal !== null && !isNaN(advVal))) showStatus(`🔍 筛选出 ${filtered.length} 个项目`);
             renderMap(filtered);
-            
-            // 如果是单个搜索，自动聚焦
             if (filtered.length === 1 && keyword) {
                 const target = filtered[0];
                 map.setZoomAndCenter(17, [target.lng, target.lat]);
                 setTimeout(() => { map.panBy(175, 0); showDetail(target); }, 150);
-            } else {
-                // 如果没有特意聚焦某个点，就自动缩放看全景
-                // map.setFitView(null, false, [50, 50, 50, 400]); 
             }
         }
     }
@@ -534,7 +578,7 @@
     function resetMapState() {
         isCompareMode = false;
         document.getElementById('reset-map-btn').style.display = 'none';
-        executeFilters(); // 复位时重新应用筛选
+        executeFilters();
     }
 
     function updateDashboard(data) {
@@ -551,7 +595,6 @@
             ((validVacData.reduce((a,b)=>a+b.vCurrent,0) / validVacData.length) * 100).toFixed(1) : '-';
         document.getElementById('stat-vacancy').innerText = avgVac + '%';
         
-        // 删除了 Grade 占比，改为只展示 LEED 计数
         const leedCount = data.filter(d => d.leed !== '无').length;
         document.getElementById('stat-leed').innerText = leedCount + '个';
     }
