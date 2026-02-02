@@ -112,7 +112,7 @@
     <div id="sidebar">
         <div class="brand-header">
             <h2>COLLIERS DATA</h2>
-            <p>办公楼市场监测系统 v5.5</p>
+            <p>办公楼市场监测系统 v5.6</p>
         </div>
         
         <div class="user-info-bar">
@@ -129,7 +129,8 @@
         </div>
         <div class="controls">
             <div class="feature-links">
-                <button class="btn-feature" onclick="alert('即将下载最新季报...')">📄 下载最新季报 (Report)</button>
+                <button class="btn-feature" onclick="downloadReport()">📄 下载最新季报 (Report)</button>
+                
                 <button id="btn-update" class="btn-feature admin-btn" style="display:none;" onclick="alert('进入季报填报系统...')">✏️ 季报更新 (Update)</button>
                 <button id="btn-analysis" class="btn-feature admin-btn" style="display:none;" onclick="alert('进入管理员看板...')">📊 行为分析 (Admin)</button>
             </div>
@@ -158,6 +159,13 @@
     </div>
 
 <script>
+    // --- 下载季报函数 ---
+    function downloadReport() {
+        // 这里假设文件名叫 sample_report.pdf
+        // _blank 表示在新标签页打开，浏览器通常会自动下载
+        window.open('./sample_report.pdf', '_blank');
+    }
+
     // --- 认证模块 ---
     const CURRENT_USER = { name: '', role: 'viewer' };
 
@@ -232,9 +240,7 @@
         location.reload();
     }
 
-    // --- 下面是地图核心逻辑 (复用之前的，稍作变量适配) ---
-    // ... 原有的地图代码保持不变 ...
-    
+    // --- 下面是地图核心逻辑 ---
     // 内置备份数据 
     const DEMO_DATA = [
         {"Project Name CN": "国贸写字楼1座", "SUBMARKET": "CBD", "grades": "A", "Completion Date": "1990 Q3", "Net Effective Rent": 288.75, "Vacancy Rate": "13.0%", "LEEDS": "", "经纬度": "116.458363,39.909473"},
@@ -248,15 +254,6 @@
     let allDistrictsList = []; 
     let currentMode = 'price';
     let isCompareMode = false;
-
-    // init 被移到 loginSuccess 后调用，这里声明一下即可
-    // function init() { ... } 
-
-    // --- 为了避免代码过长，请把 v5.5 的剩余JS逻辑粘贴在这里 ---
-    // 包括 loadExcel, processData, renderMap 等所有函数
-    // 注意：window.onload 已经在上面定义了，不要重复定义。
-    
-    // ↓↓↓↓↓ 将 v5.5 版本的 init 及之后的所有函数粘贴在这里 ↓↓↓↓↓
 
     function init() {
         map = new AMap.Map('map-container', { zoom: 11, center: [116.460787, 39.905477], viewMode: '2D', mapStyle: 'amap://styles/whitesmoke' });
