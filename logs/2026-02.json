@@ -1,0 +1,11 @@
+[
+  {
+    "user": "张三",
+    "action": "search",
+    "details": {
+      "keyword": "中信大厦",
+      "filter": "无"
+    },
+    "time": "2026/2/2 22:53:01"
+  }
+]
