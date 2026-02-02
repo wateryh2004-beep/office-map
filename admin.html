@@ -3,13 +3,16 @@
 <head>
     <meta charset="utf-8">
     <title>管理员控制台 | Colliers Admin</title>
+    <script type="module">
+        import { Octokit } from "https://esm.sh/@octokit/rest";
+        window.Octokit = Octokit; // 挂载到全局以便调用
+    </script>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; padding: 0; margin: 0; padding-bottom: 60px; }
         .header { background: #004080; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
         .header h1 { margin: 0; font-size: 20px; }
         .back-link { color: white; text-decoration: none; font-size: 14px; opacity: 0.8; }
         
-        /* 2x2 网格布局 */
         .container { 
             max-width: 1200px; 
             margin: 20px auto; 
@@ -19,25 +22,21 @@
             gap: 20px; 
         }
         
-        /* 卡片基础样式 */
         .card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 20px; display: flex; flex-direction: column; height: 320px; }
-        .card-tall { height: 500px; } /* 下面两张卡片高一点 */
+        .card-tall { height: 500px; }
 
         .card-header { border-bottom: 2px solid #f57c00; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
         .card-header h3 { margin: 0; color: #333; font-size: 16px; }
         
-        /* 管理区域内部样式 */
         .manage-box { text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100%; gap: 15px; }
         .manage-desc { font-size: 13px; color: #666; margin: 0; }
         .file-input { border: 1px dashed #ccc; padding: 10px; border-radius: 4px; width: 80%; margin: 0 auto; }
         
-        /* 按钮组 */
-        .btn-group { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
         .btn-primary { background: #004080; color: white; padding: 8px 15px; border-radius: 4px; text-decoration: none; font-size: 13px; border: none; cursor: pointer; }
-        .btn-danger { background: #dc3545; color: white; padding: 8px 15px; border-radius: 4px; font-size: 13px; border: none; cursor: pointer; }
-        .btn-danger:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-danger { background: #dc3545; color: white; padding: 8px 15px; border-radius: 4px; font-size: 13px; border: none; cursor: pointer; transition: all 0.2s; }
+        .btn-danger:hover { background: #c82333; transform: translateY(-1px); }
+        .btn-danger:disabled { background: #ccc; cursor: not-allowed; transform: none; }
 
-        /* 日志和文件列表样式 */
         .scroll-area { flex: 1; overflow-y: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
@@ -48,16 +47,15 @@
         .btn-download-sm { background: #28a745; color: white; text-decoration: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
         .download-bar { display: flex; gap: 5px; }
         .month-input { padding: 4px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
+        .btn-excel { background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
         .empty-tip { text-align: center; color: #999; margin-top: 30px; }
 
-        /* 右下角版本号 */
         #version-tag {
             position: fixed; bottom: 20px; right: 20px;
             background: rgba(0, 64, 128, 0.9); color: white;
             padding: 10px 15px; border-radius: 4px; font-size: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 9999; display: none;
         }
-        #version-tag strong { color: #f57c00; }
     </style>
 </head>
 <body>
@@ -73,11 +71,11 @@
             <h3>🗄️ 核心数据源 (Map Data)</h3>
         </div>
         <div class="manage-box">
-            <p class="manage-desc">管理地图底层的 data.xlsx 文件</p>
+            <p class="manage-desc">覆盖更新 data.xlsx (支持大文件)</p>
             <a href="./data.xlsx" class="btn-primary" download style="width:fit-content; margin:0 auto;">⬇️ 备份当前数据</a>
             <hr style="width:80%; border:0; border-top:1px solid #eee; margin:5px auto;">
             <input type="file" id="source-file" accept=".xlsx" class="file-input">
-            <button class="btn-danger" id="btn-upload-source" onclick="uploadSourceData()">🚀 覆盖更新 Excel</button>
+            <button class="btn-danger" id="btn-upload-source" onclick="directUpload('source-file', 'data.xlsx', 'btn-upload-source')">🚀 覆盖更新 Excel</button>
         </div>
     </div>
 
@@ -86,11 +84,11 @@
             <h3>📄 市场季报 (Report PDF)</h3>
         </div>
         <div class="manage-box">
-            <p class="manage-desc">更新 sample_report.pdf (建议 < 4MB)</p>
+            <p class="manage-desc">覆盖更新 sample_report.pdf (支持 >5MB)</p>
             <a href="./sample_report.pdf" target="_blank" class="btn-primary" style="width:fit-content; margin:0 auto;">👁️ 预览当前季报</a>
             <hr style="width:80%; border:0; border-top:1px solid #eee; margin:5px auto;">
             <input type="file" id="report-file" accept=".pdf" class="file-input">
-            <button class="btn-danger" id="btn-upload-report" onclick="uploadReport()">🚀 覆盖更新 PDF</button>
+            <button class="btn-danger" id="btn-upload-report" onclick="directUpload('report-file', 'sample_report.pdf', 'btn-upload-report')">🚀 覆盖更新 PDF</button>
         </div>
     </div>
 
@@ -99,7 +97,7 @@
             <h3>👥 用户搜索日志</h3>
             <div class="download-bar">
                 <input type="month" id="log-month" class="month-input">
-                <button class="btn-primary" onclick="downloadLogExcel()" style="padding:4px 8px;">📥 导出</button>
+                <button class="btn-excel" onclick="downloadLogExcel()">📥 导出</button>
             </div>
         </div>
         <div class="scroll-area">
@@ -132,6 +130,13 @@
     const today = new Date();
     document.getElementById('log-month').value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
 
+    // --- 配置信息 (必须与你的仓库一致) ---
+    const CONFIG = {
+        owner: 'wateryh2004-beep', // ★★★ 你的 GitHub 用户名 ★★★
+        repo: 'office-map',        // ★★★ 你的仓库名 ★★★
+        branch: 'main'
+    };
+
     window.onload = function() {
         const userStr = localStorage.getItem('colliers_user');
         if (!userStr) { alert("请先登录"); window.location.href = 'index.html'; return; }
@@ -143,66 +148,85 @@
         loadVersionInfo();
     };
 
-    // --- 核心功能 1：上传 Source Excel ---
-    async function uploadSourceData() {
-        await handleFileUpload('source-file', 'btn-upload-source', '/api/update-source', 'Excel', () => {
-            setTimeout(loadVersionInfo, 2000); // 成功后刷新时间
-        });
-    }
-
-    // --- 核心功能 2：上传 Report PDF (新增) ---
-    async function uploadReport() {
-        await handleFileUpload('report-file', 'btn-upload-report', '/api/update-report', 'PDF', null);
-    }
-
-    // --- 通用上传逻辑封装 ---
-    async function handleFileUpload(inputId, btnId, apiUrl, typeName, onSuccess) {
+    // --- ★★★ 核心：前端直传 GitHub (无视 Vercel 大小限制) ★★★ ---
+    async function directUpload(inputId, targetFileName, btnId) {
         const fileInput = document.getElementById(inputId);
         const file = fileInput.files[0];
-        if (!file) { alert(`请先选择一个 ${typeName} 文件！`); return; }
-        
-        // Vercel 限制 Payload 4.5MB，安全起见限制 4MB
-        if (file.size > 4 * 1024 * 1024) { 
-            alert("❌ 文件过大！\n由于 Vercel 限制，上传文件不能超过 4MB。\n请压缩 PDF 或 Excel 后再试。");
-            return;
-        }
+        if (!file) { alert("请先选择文件！"); return; }
 
-        if (!confirm(`⚠️ 确认要覆盖更新现有的 ${typeName} 吗？\n\n更新后需要 1-2 分钟生效。`)) return;
+        if (!confirm(`⚠️ 确认要覆盖更新 ${targetFileName} 吗？\n文件大小: ${(file.size/1024/1024).toFixed(2)} MB\n\n更新后需要 1-2 分钟生效。`)) return;
 
         const btn = document.getElementById(btnId);
         const originalText = btn.innerText;
         btn.disabled = true;
-        btn.innerText = "正在上传...";
+        btn.innerText = "正在获取密钥...";
 
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = async function () {
-            const base64Content = reader.result.split(',')[1];
-            try {
-                const res = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content: base64Content, user: currentUser.name })
-                });
-                const result = await res.json();
-                if (result.status === 'success') {
-                    alert(`✅ ${typeName} 更新成功！\n请等待几分钟让服务器重新构建。`);
-                    fileInput.value = ''; // 清空选择
-                    if(onSuccess) onSuccess();
-                } else {
-                    alert("更新失败: " + result.message);
+        try {
+            // 1. 从后端获取 Token (钥匙)
+            const tokenRes = await fetch('/api/get-token');
+            const tokenData = await tokenRes.json();
+            if (!tokenData.token) throw new Error("无法获取上传权限");
+
+            btn.innerText = "读取文件中...";
+            
+            // 2. 读取文件并转为 Base64
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            
+            reader.onload = async function() {
+                try {
+                    const base64Content = reader.result.split(',')[1];
+                    btn.innerText = "正在上传 GitHub...";
+
+                    // 3. 初始化 Octokit (使用刚才拿到的 Token)
+                    const octokit = new window.Octokit({ auth: tokenData.token });
+
+                    // 4. 获取旧文件的 SHA (覆盖更新必须步骤)
+                    let sha = null;
+                    try {
+                        const { data: existingFile } = await octokit.repos.getContent({
+                            owner: CONFIG.owner,
+                            repo: CONFIG.repo,
+                            path: targetFileName,
+                            ref: CONFIG.branch
+                        });
+                        sha = existingFile.sha;
+                    } catch (e) { /* 文件不存在，无视 */ }
+
+                    // 5. 推送文件到 GitHub (支持 100MB)
+                    await octokit.repos.createOrUpdateFileContents({
+                        owner: CONFIG.owner,
+                        repo: CONFIG.repo,
+                        path: targetFileName,
+                        message: `feat: Admin ${currentUser.name} updated ${targetFileName}`,
+                        content: base64Content,
+                        sha: sha,
+                        branch: CONFIG.branch,
+                        committer: { name: "Admin Browser", email: "browser@vercel.app" }
+                    });
+
+                    alert("✅ 上传成功！\nGitHub 已接收文件，Vercel 将在后台自动部署，请耐心等待 2 分钟。");
+                    fileInput.value = '';
+                    setTimeout(loadVersionInfo, 2000);
+
+                } catch (uploadErr) {
+                    console.error(uploadErr);
+                    alert("上传失败: " + uploadErr.message);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = originalText;
                 }
-            } catch (e) {
-                console.error(e);
-                alert("网络错误");
-            } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
-            }
-        };
+            };
+
+        } catch (e) {
+            console.error(e);
+            alert("系统错误: " + e.message);
+            btn.disabled = false;
+            btn.innerText = originalText;
+        }
     }
 
-    // --- 加载右下角版本 ---
+    // --- 其他原有功能 ---
     async function loadVersionInfo() {
         try {
             const res = await fetch('/api/get-source-meta');
@@ -214,7 +238,6 @@
         } catch (e) { console.error(e); }
     }
 
-    // --- 日志与文件列表 (保持不变) ---
     async function loadLogs() {
         try {
             const res = await fetch('/api/get-logs');
@@ -222,11 +245,7 @@
             const tbody = document.getElementById('log-body');
             if (result.data && result.data.length > 0) {
                 tbody.innerHTML = result.data.map(log => `
-                    <tr>
-                        <td style="color:#999;font-size:12px;">${log.time}</td>
-                        <td class="log-user">${log.user}</td>
-                        <td><span class="log-keyword">${log.details.keyword}</span> ${log.details.filter!=='无'?`<br><span style="color:#999;font-size:11px;">${log.details.filter}</span>`:''}</td>
-                    </tr>`).join('');
+                    <tr><td style="color:#999;font-size:12px;">${log.time}</td><td class="log-user">${log.user}</td><td><span class="log-keyword">${log.details.keyword}</span></td></tr>`).join('');
             } else { tbody.innerHTML = '<tr><td colspan="3" class="empty-tip">暂无记录</td></tr>'; }
         } catch (e) { console.error(e); }
     }
@@ -245,11 +264,7 @@
             if (result.data && result.data.length > 0) {
                 result.data.sort((a, b) => b.name.localeCompare(a.name));
                 tbody.innerHTML = result.data.map(file => `
-                    <tr>
-                        <td style="font-weight:500;font-size:12px;">${file.name}</td>
-                        <td style="color:#666;font-size:12px;">${file.size}</td>
-                        <td><a href="${file.download_url}" class="btn-download-sm" target="_blank">⬇ 下载</a></td>
-                    </tr>`).join('');
+                    <tr><td style="font-weight:500;font-size:12px;">📄 ${file.name}</td><td style="color:#666;font-size:12px;">${file.size}</td><td><a href="${file.download_url}" class="btn-download-sm" target="_blank">⬇ 下载</a></td></tr>`).join('');
             } else { tbody.innerHTML = '<tr><td colspan="3" class="empty-tip">暂无文件</td></tr>'; }
         } catch (e) { console.error(e); }
     }
