@@ -3,14 +3,14 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>高力国际Colliers | 写字楼数据库查询</title>
+    <title>高力国际Colliers | 内部数据系统</title>
     
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <script type="text/javascript">
         window._AMapSecurityConfig = {
-            securityJsCode: '你的安全密钥', // 【请在此处填入你的高德安全密钥】
+            securityJsCode: '你的安全密钥', 
         }
     </script>
     <script src="https://webapi.amap.com/maps?v=2.0&key=52a4c9550fbf0eb95da83d2fbbb72b41"></script>
@@ -18,74 +18,122 @@
     <style>
         /* --- 基础布局 --- */
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; overflow: hidden; display: flex; height: 100vh; background: #f0f2f5; }
+        
+        /* 登录遮罩层 */
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 64, 128, 0.95); z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .login-box {
+            background: white; padding: 40px; border-radius: 8px; width: 320px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center;
+        }
+        .login-box h2 { margin: 0 0 20px 0; color: #004080; }
+        .login-input {
+            width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd;
+            border-radius: 4px; box-sizing: border-box; font-size: 14px;
+        }
+        .login-btn {
+            width: 100%; padding: 12px; background: #004080; color: white;
+            border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px;
+        }
+        .login-btn:hover { background: #003366; }
+        .login-error { color: red; font-size: 12px; margin-top: 10px; display: none; }
+
+        /* 主界面 */
         #sidebar { width: 350px; background: #fff; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; z-index: 200; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
         .brand-header { padding: 20px; background: #004080; color: white; }
         .brand-header h2 { margin: 0; font-size: 20px; font-weight: 700; }
         .brand-header p { margin: 5px 0 0; opacity: 0.8; font-size: 12px; }
         
-        /* 统计区 */
+        .user-info-bar { background: #e3f2fd; padding: 10px 20px; font-size: 12px; color: #004080; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #bbdefb; }
+        .logout-link { cursor: pointer; text-decoration: underline; }
+
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; }
         .stat-card { background: #fff; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #eee; }
         .stat-value { font-size: 16px; font-weight: 800; color: #004080; margin-bottom: 2px; }
         .stat-label { font-size: 11px; color: #888; }
         
-        /* 搜索区 */
         .controls { flex: 1; padding: 15px; overflow-y: auto; }
-        .control-group { margin-bottom: 20px; }
         .control-title { font-weight: bold; font-size: 13px; margin-bottom: 8px; display: block; color: #333; }
         .search-box { display: flex; gap: 5px; margin-bottom: 20px; }
         #search-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; outline: none; }
         #search-btn { padding: 0 15px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
         
-        /* 复选框样式 */
+        /* 下载与更新按钮区 */
+        .feature-links { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+        .btn-feature { 
+            display: block; width: 100%; padding: 10px; margin-bottom: 8px; 
+            text-align: left; background: #fff; border: 1px solid #ddd; 
+            border-radius: 4px; cursor: pointer; font-size: 13px; color: #333;
+            transition: all 0.2s;
+        }
+        .btn-feature:hover { background: #f5f5f5; border-color: #ccc; }
+        .btn-feature.admin-btn { border-left: 4px solid #f57c00; background: #fff3e0; }
+
         .checkbox-group label { display: flex; align-items: center; margin-bottom: 8px; font-size: 13px; color: #555; cursor: pointer; }
         .checkbox-group input { margin-right: 8px; }
-        /* 全选按钮特殊样式 */
         .check-all-label { border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 8px !important; font-weight: bold; color: #004080 !important; }
-        
-        /* 底部按钮 */
+
         .actions { padding: 15px; border-top: 1px solid #eee; background: white; }
         .btn-mode { width: 100%; padding: 10px; margin-bottom: 5px; border: 1px solid #e0e0e0; background: white; color: #555; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.2s; text-align: left; }
         .btn-mode.active { background: #e6f0fa; color: #004080; border-color: #004080; }
         
-        /* 地图与弹窗 */
         #map-container { flex: 1; position: relative; }
         #status-bar { position: absolute; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px; display: none; }
+        
         .info-window-card { width: 340px; font-family: sans-serif; }
         .chart-container { height: 160px; width: 100%; margin-top: 10px; }
-        
         .tag-row { display: flex; gap: 5px; margin-top: 6px; }
         .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; }
-        
-        /* 颜色定义 */
-        .badge-pa { background: #1a237e; } 
-        .badge-a { background: #2979ff; } 
-        .badge-b { background: #40c4ff; } 
-        .badge-platinum { background: #004d40; } 
-        .badge-gold { background: #fbc02d; color: #333; } 
-        .badge-silver { background: #9e9e9e; color: #333; } 
-        .badge-none { background: #eeeeee; color: #999; } 
+        .badge-pa { background: #1a237e; } .badge-a { background: #2979ff; } .badge-b { background: #40c4ff; } 
+        .badge-platinum { background: #004d40; } .badge-gold { background: #fbc02d; color: #333; } 
+        .badge-silver { background: #9e9e9e; color: #333; } .badge-none { background: #eeeeee; color: #999; } 
 
         .btn-plan-b { width: 100%; margin-top: 10px; padding: 8px; background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%); border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 4px 10px rgba(56, 239, 125, 0.3); transition: transform 0.1s; }
-        .btn-plan-b:active { transform: scale(0.98); }
         .btn-reset { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: white; padding: 10px 20px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-weight: bold; cursor: pointer; z-index: 999; display: none; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
+
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2>COLLIERS DATA</h2>
+            <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据查询系统 v2.0</p>
+            <input type="text" id="login-name" class="login-input" placeholder="姓名 (Name)">
+            <input type="text" id="login-id" class="login-input" placeholder="工号 (Employee ID)">
+            <input type="text" id="login-phone" class="login-input" placeholder="手机号 (Phone)">
+            <button class="login-btn" onclick="handleLogin()">认证进入</button>
+            <div id="login-msg" class="login-error">认证失败</div>
+        </div>
+    </div>
 
     <div id="sidebar">
         <div class="brand-header">
             <h2>COLLIERS DATA</h2>
             <p>办公楼市场监测系统 v5.5</p>
         </div>
+        
+        <div class="user-info-bar">
+            <span id="user-display">未登录</span>
+            <span class="logout-link" onclick="logout()">退出</span>
+        </div>
+
         <div class="stat-grid">
             <div class="stat-card"><div class="stat-value" id="stat-count">-</div><div class="stat-label">视野项目</div></div>
             <div class="stat-card"><div class="stat-value" id="stat-price">-</div><div class="stat-label">平均租金</div></div>
-            <div class="stat-card"><div class="stat-value" id="stat-grade">-</div><div class="stat-label">甲级占比</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-grade">-</div><div class="stat-label">A级及以上</div></div>
             <div class="stat-card"><div class="stat-value" id="stat-leed">-</div><div class="stat-label">LEED认证数</div></div>
             <div class="stat-card" style="grid-column: span 2; border-top: 2px solid #eee;"><div class="stat-value" id="stat-vacancy" style="color:#d32f2f">-</div><div class="stat-label">平均空置率</div></div>
         </div>
         <div class="controls">
+            <div class="feature-links">
+                <button class="btn-feature" onclick="alert('即将下载最新季报...')">📄 下载最新季报 (Report)</button>
+                <button id="btn-update" class="btn-feature admin-btn" style="display:none;" onclick="alert('进入季报填报系统...')">✏️ 季报更新 (Update)</button>
+                <button id="btn-analysis" class="btn-feature admin-btn" style="display:none;" onclick="alert('进入管理员看板...')">📊 行为分析 (Admin)</button>
+            </div>
+
             <div class="search-box">
                 <input type="text" id="search-input" placeholder="🔍 搜项目名..." onkeydown="if(event.key==='Enter') executeSearch()">
                 <button id="search-btn" onclick="executeSearch()">查询</button>
@@ -110,7 +158,84 @@
     </div>
 
 <script>
-    // 内置备份数据 (保证不白屏)
+    // --- 认证模块 ---
+    const CURRENT_USER = { name: '', role: 'viewer' };
+
+    // 页面加载时检查登录状态
+    window.onload = function() {
+        const cachedUser = localStorage.getItem('colliers_user');
+        if (cachedUser) {
+            const user = JSON.parse(cachedUser);
+            loginSuccess(user);
+            init(); // 登录过直接加载地图
+        } else {
+            // 没登录，显示遮罩，暂不加载地图
+        }
+    };
+
+    async function handleLogin() {
+        const name = document.getElementById('login-name').value.trim();
+        const id = document.getElementById('login-id').value.trim();
+        const phone = document.getElementById('login-phone').value.trim();
+        const msg = document.getElementById('login-msg');
+
+        if (!name || !id || !phone) {
+            msg.innerText = "请填写完整信息";
+            msg.style.display = 'block';
+            return;
+        }
+
+        msg.style.display = 'none';
+        
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, id, phone })
+            });
+            
+            const data = await res.json();
+            
+            if (data.status === 'success') {
+                localStorage.setItem('colliers_user', JSON.stringify(data.data));
+                loginSuccess(data.data);
+                init(); // 认证成功后才开始加载数据
+            } else {
+                msg.innerText = data.message || "认证失败";
+                msg.style.display = 'block';
+            }
+        } catch (e) {
+            console.error(e);
+            msg.innerText = "系统连接错误";
+            msg.style.display = 'block';
+        }
+    }
+
+    function loginSuccess(user) {
+        CURRENT_USER.name = user.name;
+        CURRENT_USER.role = user.role;
+
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('user-display').innerText = `${user.name} (${user.role})`;
+
+        // 权限控制：根据角色显示按钮
+        if (user.role === 'editor' || user.role === 'admin') {
+            document.getElementById('btn-update').style.display = 'block';
+        }
+        if (user.role === 'admin') {
+            document.getElementById('btn-analysis').style.display = 'block';
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('colliers_user');
+        location.reload();
+    }
+
+    // --- 下面是地图核心逻辑 (复用之前的，稍作变量适配) ---
+    // ... 原有的地图代码保持不变 ...
+    
+    // 内置备份数据 
     const DEMO_DATA = [
         {"Project Name CN": "国贸写字楼1座", "SUBMARKET": "CBD", "grades": "A", "Completion Date": "1990 Q3", "Net Effective Rent": 288.75, "Vacancy Rate": "13.0%", "LEEDS": "", "经纬度": "116.458363,39.909473"},
         {"Project Name CN": "国贸写字楼2座", "SUBMARKET": "CBD", "grades": "A", "Completion Date": "1999 Q4", "Net Effective Rent": 307.08, "Vacancy Rate": "2.0%", "LEEDS": "Gold", "经纬度": "116.460469,39.910838"}
@@ -120,9 +245,18 @@
     let map, infoWindow, chartInstance;
     let rawData = [], markers = [], circleOverlay = null;
     let activeDistricts = new Set();
-    let allDistrictsList = []; // 存储所有商圈列表，方便全选
+    let allDistrictsList = []; 
     let currentMode = 'price';
     let isCompareMode = false;
+
+    // init 被移到 loginSuccess 后调用，这里声明一下即可
+    // function init() { ... } 
+
+    // --- 为了避免代码过长，请把 v5.5 的剩余JS逻辑粘贴在这里 ---
+    // 包括 loadExcel, processData, renderMap 等所有函数
+    // 注意：window.onload 已经在上面定义了，不要重复定义。
+    
+    // ↓↓↓↓↓ 将 v5.5 版本的 init 及之后的所有函数粘贴在这里 ↓↓↓↓↓
 
     function init() {
         map = new AMap.Map('map-container', { zoom: 11, center: [116.460787, 39.905477], viewMode: '2D', mapStyle: 'amap://styles/whitesmoke' });
@@ -207,21 +341,18 @@
         setTimeout(() => document.getElementById('status-bar').style.display = 'none', 3000);
     }
 
-    // --- ★★★ 新增：全选功能 ★★★ ---
     function initFilters() {
         allDistrictsList = [...new Set(rawData.map(d => d.district))].sort();
-        allDistrictsList.forEach(d => activeDistricts.add(d)); // 默认全选
+        allDistrictsList.forEach(d => activeDistricts.add(d)); 
 
         const container = document.getElementById('district-filters');
         
-        // 1. 添加全选按钮
         let html = `
             <label class="check-all-label">
                 <input type="checkbox" id="check-all" checked onchange="toggleAllDistricts(this.checked)"> 全选 (Select All)
             </label>
         `;
 
-        // 2. 添加单个商圈按钮
         html += allDistrictsList.map(d => `
             <label><input type="checkbox" class="district-checkbox" value="${d}" checked onchange="toggleDistrict('${d}')">${d}</label>
         `).join('');
@@ -229,28 +360,20 @@
         container.innerHTML = html;
     }
 
-    // 全选/反选 逻辑
     function toggleAllDistricts(isChecked) {
-        // 更新 Set
         if (isChecked) {
             allDistrictsList.forEach(d => activeDistricts.add(d));
         } else {
             activeDistricts.clear();
         }
-
-        // 更新 UI 上的所有小勾选框
         const checkboxes = document.querySelectorAll('.district-checkbox');
         checkboxes.forEach(cb => cb.checked = isChecked);
-
-        // 刷新地图
         if (!isCompareMode) renderMap(rawData.filter(item => activeDistricts.has(item.district)));
     }
 
-    // 单个勾选/取消 逻辑
     function toggleDistrict(d) {
         if (activeDistricts.has(d)) activeDistricts.delete(d); else activeDistricts.add(d);
         
-        // 联动更新“全选”按钮的状态
         const checkAllBox = document.getElementById('check-all');
         if (activeDistricts.size === allDistrictsList.length) {
             checkAllBox.checked = true;
@@ -259,9 +382,8 @@
             checkAllBox.checked = false;
             checkAllBox.indeterminate = false;
         } else {
-            // 半选状态 (可选，这里简化为不勾选)
             checkAllBox.checked = false;
-            checkAllBox.indeterminate = true; // 视觉上的半选横杠
+            checkAllBox.indeterminate = true; 
         }
 
         if (!isCompareMode) renderMap(rawData.filter(item => activeDistricts.has(item.district)));
@@ -472,7 +594,6 @@
         }
     }
 
-    init();
 </script>
 </body>
 </html>
