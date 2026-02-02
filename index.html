@@ -71,9 +71,34 @@
         .filter-btn { width: 100%; padding: 8px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
         .filter-btn:hover { background: #003366; }
 
-        .checkbox-group label { display: flex; align-items: center; margin-bottom: 8px; font-size: 13px; color: #555; cursor: pointer; }
-        .checkbox-group input { margin-right: 8px; }
-        .check-all-label { border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 8px !important; font-weight: bold; color: #004080 !important; }
+        /* --- ★★★ 核心修改：商圈筛选改为 2列网格 ★★★ --- */
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 两列等宽 */
+            gap: 8px 10px; /* 行间距8px，列间距10px */
+        }
+        .checkbox-group label { 
+            display: flex; 
+            align-items: center; 
+            font-size: 12px; /* 字体稍微调小一点适应两列 */
+            color: #555; 
+            cursor: pointer; 
+            white-space: nowrap; /* 防止文字换行 */
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .checkbox-group input { margin-right: 6px; }
+        
+        /* 全选按钮横跨两列 */
+        .check-all-label { 
+            grid-column: span 2; 
+            border-bottom: 1px solid #eee; 
+            padding-bottom: 8px; 
+            margin-bottom: 0 !important; /* gap已经处理了间距 */
+            font-weight: bold; 
+            color: #004080 !important; 
+            font-size: 13px !important;
+        }
 
         /* 左下角 2x2 网格布局 */
         .actions { 
@@ -150,9 +175,9 @@
         .top-btn:hover { background: #f9f9f9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .top-btn.admin-btn { border-left: 4px solid #f57c00; } /* 橙色边框区分管理功能 */
         
-        /* --- ★★★ 右下角悬浮版本号 (新增) ★★★ --- */
+        /* 右下角悬浮版本号 */
         #version-tag {
-            position: absolute; /* 相对于 map-container */
+            position: absolute; 
             bottom: 20px;
             right: 20px;
             background: rgba(0, 64, 128, 0.9);
@@ -162,8 +187,8 @@
             font-size: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             z-index: 999;
-            display: none; /* 初始隐藏，加载后显示 */
-            pointer-events: none; /* 让它不影响鼠标点击地图 */
+            display: none; 
+            pointer-events: none; 
         }
         #version-tag strong { color: #f57c00; margin-left: 5px; }
 
@@ -187,7 +212,7 @@
     <div id="login-overlay">
         <div class="login-box">
             <h2>COLLIERS DATA</h2>
-            <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据查询系统 v6.1</p>
+            <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据查询系统 v6.2</p>
             <input type="text" id="login-name" class="login-input" placeholder="姓名 (Name)">
             <input type="text" id="login-id" class="login-input" placeholder="工号 (Employee ID)">
             <input type="text" id="login-phone" class="login-input" placeholder="手机号 (Phone)">
@@ -199,7 +224,7 @@
     <div id="sidebar">
         <div class="brand-header">
             <h2>COLLIERS DATA</h2>
-            <p>办公楼市场监测系统 v6.1</p>
+            <p>办公楼市场监测系统 v6.2</p>
         </div>
         
         <div class="user-info-bar">
@@ -258,7 +283,7 @@
         <div id="top-right-panel">
             <button class="top-btn" onclick="downloadReport()">📄 下载季报</button>
             <button id="btn-update" class="top-btn admin-btn" style="display:none;" onclick="window.location.href='update.html'">✏️ 季度数据更新</button>
-            <button id="btn-analysis" class="top-btn admin-btn" style="display:none;" onclick="window.location.href='admin.html'">📊 行为分析</button>
+            <button id="btn-analysis" class="top-btn admin-btn" style="display:none;" onclick="window.location.href='admin.html'">🛠️ 管理后台</button>
         </div>
 
         <div id="status-bar"></div>
@@ -319,16 +344,15 @@
         if (user.role === 'editor' || user.role === 'admin') document.getElementById('btn-update').style.display = 'flex';
         if (user.role === 'admin') document.getElementById('btn-analysis').style.display = 'flex';
 
-        // ★★★ 登录成功后，加载版本信息 ★★★
+        // 加载版本信息
         loadVersionInfo();
     }
 
     function logout() { localStorage.removeItem('colliers_user'); location.reload(); }
 
-    // --- ★★★ 新功能：加载数据版本信息 ★★★ ---
+    // --- 加载数据版本信息 ---
     async function loadVersionInfo() {
         try {
-            // 调用之前在 admin 步骤创建的 API
             const res = await fetch('/api/get-source-meta');
             const data = await res.json();
             if (data.status === 'success') {
@@ -499,7 +523,7 @@
             }
         }
 
-        // ★★★ 记录日志 ★★★
+        // 记录日志
         logSearchAction(keyword, advMetric, advOp, advValRaw);
 
         const filtered = rawData.filter(item => {
