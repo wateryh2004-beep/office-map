@@ -6,6 +6,15 @@
       "keyword": "无",
       "filter": "vCurrent < 3%"
     },
+    "time": "2026/2/2 23:29:59"
+  },
+  {
+    "user": "李四",
+    "action": "search",
+    "details": {
+      "keyword": "无",
+      "filter": "vCurrent < 3%"
+    },
     "time": "2026/2/2 23:29:58"
   },
   {
