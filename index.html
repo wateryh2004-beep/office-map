@@ -57,44 +57,49 @@
         .stat-label { font-size: 11px; color: #888; }
         
         /* 中间滚动控制区 */
-        .controls { flex: 1; padding: 15px; overflow-y: auto; }
+        .controls { flex: 1; padding: 15px; overflow-y: auto; overflow-x: hidden; /* 强制隐藏横向滚动条 */ }
         .control-group { margin-bottom: 20px; }
         .control-title { font-weight: bold; font-size: 13px; margin-bottom: 8px; display: block; color: #333; }
         
         .search-box { display: flex; gap: 5px; margin-bottom: 20px; }
-        #search-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; outline: none; }
+        #search-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; outline: none; box-sizing: border-box; }
         #search-btn { padding: 0 15px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
         
         /* 高级筛选样式 */
         .filter-row { display: flex; gap: 5px; margin-bottom: 8px; }
-        .filter-select, .filter-val-input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; outline: none; }
+        .filter-select, .filter-val-input { 
+            padding: 8px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+            font-size: 12px; 
+            outline: none; 
+            box-sizing: border-box; /* ★★★ 关键修复：防止 padding 撑大宽度 ★★★ */
+        }
         .filter-btn { width: 100%; padding: 8px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
         .filter-btn:hover { background: #003366; }
 
-        /* --- ★★★ 核心修改：商圈筛选改为 2列网格 ★★★ --- */
+        /* 商圈筛选 2列网格 */
         .checkbox-group {
             display: grid;
-            grid-template-columns: 1fr 1fr; /* 两列等宽 */
-            gap: 8px 10px; /* 行间距8px，列间距10px */
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 10px;
         }
         .checkbox-group label { 
             display: flex; 
             align-items: center; 
-            font-size: 12px; /* 字体稍微调小一点适应两列 */
+            font-size: 12px; 
             color: #555; 
             cursor: pointer; 
-            white-space: nowrap; /* 防止文字换行 */
+            white-space: nowrap; 
             overflow: hidden;
             text-overflow: ellipsis;
         }
         .checkbox-group input { margin-right: 6px; }
-        
-        /* 全选按钮横跨两列 */
         .check-all-label { 
             grid-column: span 2; 
             border-bottom: 1px solid #eee; 
             padding-bottom: 8px; 
-            margin-bottom: 0 !important; /* gap已经处理了间距 */
+            margin-bottom: 0 !important; 
             font-weight: bold; 
             color: #004080 !important; 
             font-size: 13px !important;
@@ -125,70 +130,40 @@
             align-items: center;
             justify-content: center;
             gap: 4px;
+            box-sizing: border-box;
         }
         .btn-mode.active { background: #e6f0fa; color: #004080; border-color: #004080; }
         
         /* 地图区 */
         #map-container { flex: 1; position: relative; }
         
-        /* 状态条移到顶部正中 */
+        /* 状态条 */
         #status-bar { 
-            position: absolute; 
-            top: 20px; 
-            left: 50%; 
-            transform: translateX(-50%);
-            z-index: 1000; 
-            background: rgba(0,0,0,0.8); 
-            color: white; 
-            padding: 10px 20px; 
-            border-radius: 30px; 
-            font-size: 13px; 
-            display: none; 
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; background: rgba(0,0,0,0.8); color: white; 
+            padding: 10px 20px; border-radius: 30px; font-size: 13px; display: none; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
 
         /* 右上角悬浮功能区 */
         #top-right-panel {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            display: flex;
-            flex-direction: row; 
-            gap: 10px;
+            position: absolute; top: 20px; right: 20px; z-index: 1000;
+            display: flex; flex-direction: row; gap: 10px;
         }
         .top-btn {
-            padding: 10px 15px;
-            background: white;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 13px;
-            color: #333;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            padding: 10px 15px; background: white; border: 1px solid #ccc; border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; font-weight: bold; font-size: 13px;
+            color: #333; transition: all 0.2s; display: flex; align-items: center; gap: 5px;
         }
         .top-btn:hover { background: #f9f9f9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .top-btn.admin-btn { border-left: 4px solid #f57c00; } /* 橙色边框区分管理功能 */
+        .top-btn.admin-btn { border-left: 4px solid #f57c00; }
         
-        /* 右下角悬浮版本号 */
+        /* 右下角版本号 */
         #version-tag {
-            position: absolute; 
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0, 64, 128, 0.9);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 4px;
-            font-size: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            z-index: 999;
-            display: none; 
-            pointer-events: none; 
+            position: absolute; bottom: 20px; right: 20px;
+            background: rgba(0, 64, 128, 0.9); color: white;
+            padding: 8px 15px; border-radius: 4px; font-size: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 999; display: none; pointer-events: none; 
         }
         #version-tag strong { color: #f57c00; margin-left: 5px; }
 
@@ -198,7 +173,6 @@
         .tag-row { display: flex; gap: 5px; margin-top: 6px; }
         .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; }
         
-        /* 标签颜色 */
         .badge-pa { background: #1a237e; } .badge-a { background: #2979ff; } .badge-b { background: #40c4ff; } 
         .badge-platinum { background: #004d40; } .badge-gold { background: #fbc02d; color: #333; } 
         .badge-silver { background: #9e9e9e; color: #333; } .badge-none { background: #eeeeee; color: #999; } 
@@ -212,7 +186,7 @@
     <div id="login-overlay">
         <div class="login-box">
             <h2>COLLIERS DATA</h2>
-            <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据查询系统 v6.2</p>
+            <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据查询系统 v6.3</p>
             <input type="text" id="login-name" class="login-input" placeholder="姓名 (Name)">
             <input type="text" id="login-id" class="login-input" placeholder="工号 (Employee ID)">
             <input type="text" id="login-phone" class="login-input" placeholder="手机号 (Phone)">
@@ -224,7 +198,7 @@
     <div id="sidebar">
         <div class="brand-header">
             <h2>COLLIERS DATA</h2>
-            <p>办公楼市场监测系统 v6.2</p>
+            <p>办公楼市场监测系统 v6.3</p>
         </div>
         
         <div class="user-info-bar">
@@ -260,7 +234,7 @@
                         <option value=">=">≥</option>
                         <option value="<=">≤</option>
                     </select>
-                    <input type="text" id="adv-val" class="filter-val-input" style="flex:1;" placeholder="数值/百分比">
+                    <input type="text" id="adv-val" class="filter-val-input" style="width:80px;" placeholder="数值/百分比">
                 </div>
                 <button class="filter-btn" onclick="executeFilters()">执行筛选 (Apply)</button>
             </div>
@@ -340,17 +314,14 @@
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('user-display').innerText = `${user.name} (${user.role})`;
         
-        // 权限控制：右上角按钮显示
         if (user.role === 'editor' || user.role === 'admin') document.getElementById('btn-update').style.display = 'flex';
         if (user.role === 'admin') document.getElementById('btn-analysis').style.display = 'flex';
 
-        // 加载版本信息
         loadVersionInfo();
     }
 
     function logout() { localStorage.removeItem('colliers_user'); location.reload(); }
 
-    // --- 加载数据版本信息 ---
     async function loadVersionInfo() {
         try {
             const res = await fetch('/api/get-source-meta');
@@ -362,7 +333,6 @@
         } catch (e) { console.error("版本获取失败", e); }
     }
 
-    // --- 日志记录模块 (自动埋点) ---
     async function logSearchAction(keyword, metric, op, val) {
         if (CURRENT_USER.role === 'admin') return; 
         if (!keyword && !val) return; 
@@ -385,7 +355,6 @@
     }
 
     // --- 地图与数据核心逻辑 ---
-    // 备份数据
     const DEMO_DATA = [
         {"写字楼名称": "国贸写字楼1座", "子市场": "CBD", "写字楼等级": "A", "竣工时间": "1990 Q3", "净有效租金": 288.75, "空置率": "13.0%", "LEEDS": "", "经纬度": "116.458363,39.909473", "空置面积": 9400, "总面积": 72308},
         {"写字楼名称": "国贸写字楼2座", "子市场": "CBD", "写字楼等级": "A", "竣工时间": "1999 Q4", "净有效租金": 307.08, "空置率": "2.0%", "LEEDS": "Gold", "经纬度": "116.460469,39.910838", "空置面积": 1450, "总面积": 72308}
@@ -431,7 +400,6 @@
         return null;
     }
 
-    // 数据处理核心
     function processData(json) {
         rawData = json.map(item => {
             const posRaw = findVal(item, ['经纬度', 'Position']);
@@ -504,7 +472,6 @@
         executeFilters(); 
     }
 
-    // 综合筛选：关键词 + 数值 + 商圈
     function executeFilters() {
         if(isCompareMode) resetMapState();
 
@@ -523,7 +490,6 @@
             }
         }
 
-        // 记录日志
         logSearchAction(keyword, advMetric, advOp, advValRaw);
 
         const filtered = rawData.filter(item => {
