@@ -30,8 +30,8 @@ export default async function handler(req, res) {
         });
 
         // ★★★ 请务必确认这里的用户名和仓库名是正确的 ★★★
-        const OWNER = 'wateryh2004'; // 你的 GitHub 用户名
-        const REPO = 'beep';              // 你的仓库名
+        const OWNER = 'wateryh2004-beep'; // 你的 GitHub 用户名
+        const REPO = 'office-map';              // 你的仓库名
         const BRANCH = 'main';            // 分支名
 
         // 4. 上传文件
