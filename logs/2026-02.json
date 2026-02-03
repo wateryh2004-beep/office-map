@@ -3,6 +3,15 @@
     "user": "张三",
     "action": "search",
     "details": {
+      "keyword": "中信大厦",
+      "filter": "vacArea > 10000"
+    },
+    "time": "2/3/2026, 2:10:35 PM"
+  },
+  {
+    "user": "张三",
+    "action": "search",
+    "details": {
       "keyword": "无",
       "filter": "vacArea > 10000"
     },
