@@ -1,5 +1,14 @@
 [
   {
+    "user": "张三",
+    "action": "search",
+    "details": {
+      "keyword": "无",
+      "filter": "vacArea > 10000"
+    },
+    "time": "2/3/2026, 2:09:49 PM"
+  },
+  {
     "user": "Iris",
     "action": "search",
     "details": {
