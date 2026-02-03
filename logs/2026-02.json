@@ -1,5 +1,14 @@
 [
   {
+    "user": "Iris",
+    "action": "search",
+    "details": {
+      "keyword": "北投大厦",
+      "filter": "无"
+    },
+    "time": "2026/2/3 09:33:00"
+  },
+  {
     "user": "李四",
     "action": "search",
     "details": {
