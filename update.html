@@ -12,27 +12,31 @@
         
         /* 复杂表格样式 */
         .table-wrapper { overflow-x: auto; margin-top: 20px; border: 1px solid #ddd; }
-        .data-table { border-collapse: collapse; font-size: 12px; min-width: 1800px; width: 100%; }
+        .data-table { border-collapse: collapse; font-size: 12px; min-width: 1900px; width: 100%; }
         
         /* 单元格通用 */
-        .data-table th, .data-table td { border: 1px solid #e0e0e0; padding: 8px 6px; text-align: center; vertical-align: middle; }
+        .data-table th, .data-table td { border: 1px solid #e0e0e0; padding: 8px 4px; text-align: center; vertical-align: middle; }
         
         /* 表头分组颜色 */
         .th-group-base { background: #f0f4f8; color: #333; border-bottom: 2px solid #d1d9e6 !important; }
         .th-group-last { background: #e3f2fd; color: #0277bd; border-bottom: 2px solid #81d4fa !important; }
         .th-group-curr { background: #fff3e0; color: #ef6c00; border-bottom: 2px solid #ffcc80 !important; }
         
-        /* 列头具体样式 */
+        /* 列头具体样式 - 宽度调整 */
         .th-base { background: #f8f9fa; color: #555; font-weight: 600; position: sticky; top: 0; z-index: 10; }
-        .th-last { background: #f1f8e9; color: #558b2f; font-weight: 600; position: sticky; top: 0; z-index: 10; } /* 上季度列改为淡绿色区分 */
-        .th-curr { background: #fff8e1; color: #e65100; font-weight: 600; position: sticky; top: 0; z-index: 10; }
+        
+        /* 上季度：收窄 */
+        .th-last { background: #f1f8e9; color: #558b2f; font-weight: 600; position: sticky; top: 0; z-index: 10; width: 60px; } 
+        
+        /* 本季度：加宽 */
+        .th-curr { background: #fff8e1; color: #e65100; font-weight: 600; position: sticky; top: 0; z-index: 10; width: 85px; }
 
         /* 冻结首列 */
         .col-fixed { position: sticky; left: 0; z-index: 20; background: #fff; border-right: 2px solid #ddd !important; }
         th.col-fixed { z-index: 30; }
 
         /* 输入框样式 */
-        .input-cell input { width: 100%; padding: 4px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-family: inherit; font-size: 12px; text-align: center; }
+        .input-cell input { width: 100%; padding: 6px 2px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-family: inherit; font-size: 12px; text-align: center; }
         .input-cell input:focus { border-color: #f57c00; outline: none; background: #fffde7; box-shadow: 0 0 0 2px rgba(245, 124, 0, 0.2); }
         
         /* 自动计算列 (只读) */
@@ -61,7 +65,7 @@
                 <tr>
                     <th colspan="3" class="th-group-base">🏢 基础信息</th>
                     <th colspan="7" class="th-group-last">📉 上季度数据 (Reference)</th>
-                    <th colspan="9" class="th-group-curr">✏️ 本季度更新 (Current)</th>
+                    <th colspan="10" class="th-group-curr">✏️ 本季度更新 (Current)</th>
                 </tr>
                 <tr>
                     <th class="th-base col-fixed" style="width:120px;">写字楼名称</th>
@@ -76,19 +80,19 @@
                     <th class="th-last">空置㎡</th>
                     <th class="th-last">空置率</th>
 
-                    <th class="th-curr" style="width:70px;">报价</th>
-                    <th class="th-curr" style="width:60px;">物业费</th>
-                    <th class="th-curr" style="width:70px;">表面</th>
-                    <th class="th-curr" style="width:50px;">免租期</th>
-                    <th class="th-curr" style="width:70px; background:#ffe0b2;">★净有效</th>
-                    <th class="th-curr" style="width:60px; background:#ffe0b2;">变化率</th>
-                    <th class="th-curr" style="width:70px;">空置㎡</th>
-                    <th class="th-curr" style="width:60px; background:#ffe0b2;">面积变化</th>
-                    <th class="th-curr" style="width:60px; background:#ffe0b2;">空置率</th>
-                </tr>
+                    <th class="th-curr">报价</th>
+                    <th class="th-curr">物业费</th>
+                    <th class="th-curr">表面</th>
+                    <th class="th-curr" style="width:60px;">免租期</th>
+                    <th class="th-curr" style="background:#ffe0b2;">★净有效</th>
+                    <th class="th-curr" style="background:#ffe0b2;">变化率</th>
+                    <th class="th-curr">空置㎡</th>
+                    <th class="th-curr" style="background:#ffe0b2;">面积变化</th>
+                    <th class="th-curr" style="background:#ffe0b2;">空置率</th>
+                    <th class="th-curr" style="width:120px;">备注</th> </tr>
             </thead>
             <tbody id="table-body">
-                <tr><td colspan="19" style="text-align:center; padding: 30px; color:#888;">正在加载您的数据...</td></tr>
+                <tr><td colspan="20" style="text-align:center; padding: 30px; color:#888;">正在加载您的数据...</td></tr>
             </tbody>
         </table>
     </div>
@@ -117,18 +121,17 @@
                 myBuildings = data.data;
                 renderTable(myBuildings);
             } else {
-                document.getElementById('table-body').innerHTML = `<tr><td colspan="19" style="color:red;">${data.message}</td></tr>`;
+                document.getElementById('table-body').innerHTML = `<tr><td colspan="20" style="color:red;">${data.message}</td></tr>`;
             }
         } catch (e) {
             console.error(e);
-            document.getElementById('table-body').innerHTML = `<tr><td colspan="19" style="color:red;">数据加载失败</td></tr>`;
+            document.getElementById('table-body').innerHTML = `<tr><td colspan="20" style="color:red;">数据加载失败</td></tr>`;
         }
     };
 
     // 辅助函数：安全解析数字
     const safeNum = (val) => {
         if(!val && val !== 0) return 0;
-        // 如果是百分比字符串，转小数
         if(String(val).includes('%')) return parseFloat(val)/100;
         return parseFloat(val) || 0;
     };
@@ -136,7 +139,7 @@
     function renderTable(list) {
         const tbody = document.getElementById('table-body');
         if (list.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="19" style="text-align:center; padding:30px;">无负责项目</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="20" style="text-align:center; padding:30px;">无负责项目</td></tr>`;
             return;
         }
 
@@ -151,7 +154,7 @@
             const lastPropFee = safeNum(item['上季度物业费']);
             const lastFace = safeNum(item['上季度表面租金']);
             const lastFree = safeNum(item['上季度免租期']);
-            const lastNet = safeNum(item['净有效租金']); // 注意：底表里的"净有效租金"其实是上季度的
+            const lastNet = safeNum(item['净有效租金']); // 底表"净有效租金"为上季度
             const lastVacArea = safeNum(item['空置面积']);
             const lastVacRate = safeNum(item['空置率']);
 
@@ -181,6 +184,8 @@
                 
                 <td class="calc-cell area-change">-</td>
                 <td class="calc-cell vac-rate">-</td>
+                
+                <td class="input-cell"><input type="text" class="curr-remark"></td>
             </tr>
         `}).join('');
     }
@@ -194,13 +199,12 @@
         const freeMonth = parseFloat(row.querySelector('.curr-free').value) || 0;
         const vacArea = parseFloat(row.querySelector('.curr-vac-area').value) || 0;
 
-        // 2. 获取隐藏的参考值 (底表数据)
-        const totalArea = parseFloat(row.dataset.totalArea) || 1; // 防止除以0
+        // 2. 获取隐藏的参考值
+        const totalArea = parseFloat(row.dataset.totalArea) || 1;
         const lastNet = parseFloat(row.dataset.lastNet) || 0;
         const lastVacArea = parseFloat(row.dataset.lastVacArea) || 0;
 
-        // 3. 计算净有效租金 = 表面 * (36-免租)/36
-        // 前提：表面租金必须有值
+        // 3. 计算净有效租金
         let currentNet = 0;
         if (faceRent > 0) {
             currentNet = faceRent * (36 - freeMonth) / 36;
@@ -209,28 +213,27 @@
             row.querySelector('.net-rent').innerText = '-';
         }
 
-        // 4. 计算租金变化率 = (本季净有效 - 上季) / 上季
+        // 4. 计算租金变化率
         if (currentNet > 0 && lastNet > 0) {
             const change = (currentNet - lastNet) / lastNet;
             const cell = row.querySelector('.rent-change');
             cell.innerText = (change * 100).toFixed(1) + '%';
-            cell.style.color = change > 0 ? 'red' : (change < 0 ? 'green' : '#666'); // 红涨绿跌
+            cell.style.color = change > 0 ? 'red' : (change < 0 ? 'green' : '#666');
         } else {
             row.querySelector('.rent-change').innerText = '-';
         }
 
-        // 5. 计算空置面积变化 = 本季 - 上季
-        // 只要输入了空置面积就算
+        // 5. 计算空置面积变化
         if (row.querySelector('.curr-vac-area').value !== '') {
             const areaDiff = vacArea - lastVacArea;
             const cell = row.querySelector('.area-change');
             cell.innerText = (areaDiff > 0 ? '+' : '') + areaDiff.toLocaleString();
-            cell.style.color = areaDiff > 0 ? 'red' : (areaDiff < 0 ? 'green' : '#666'); // 面积增加显示红色(警告)
+            cell.style.color = areaDiff > 0 ? 'red' : (areaDiff < 0 ? 'green' : '#666');
         } else {
             row.querySelector('.area-change').innerText = '-';
         }
 
-        // 6. 计算空置率 = 本季空置 / 总面积
+        // 6. 计算空置率
         if (row.querySelector('.curr-vac-area').value !== '') {
             const rate = vacArea / totalArea;
             row.querySelector('.vac-rate').innerText = (rate * 100).toFixed(1) + '%';
@@ -246,6 +249,8 @@
         const rows = document.querySelectorAll('#table-body tr');
         const submission = [];
         
+        let hasEdits = false;
+
         rows.forEach((row, index) => {
             const building = myBuildings[index];
             if(!building) return;
@@ -256,42 +261,60 @@
             const qFace = row.querySelector('.curr-face').value;
             const qFree = row.querySelector('.curr-free').value;
             const qVacArea = row.querySelector('.curr-vac-area').value;
+            const qRemark = row.querySelector('.curr-remark').value;
 
-            // 获取计算值 (innerText)
+            // 获取计算值
             const cNet = row.querySelector('.net-rent').innerText;
             const cRateChange = row.querySelector('.rent-change').innerText;
             const cAreaChange = row.querySelector('.area-change').innerText;
             const cVacRate = row.querySelector('.vac-rate').innerText;
 
-            // 只要填了任意一项，就视为有效更新
-            if(qQuote || qProp || qFace || qFree || qVacArea) {
+            // 只要填了任意一项，就记录该行
+            if(qQuote || qProp || qFace || qFree || qVacArea || qRemark) {
+                hasEdits = true;
+                
+                // ★★★ 核心修改：构建全量数据对象 ★★★
                 submission.push({
+                    // 1. 基础信息
                     "写字楼名称": building['写字楼名称'] || building['Project Name CN'],
                     "子市场": building['子市场'],
-                    
-                    // 填报数据
+                    "总面积": building['总面积'],
+
+                    // 2. 上季度数据 (保留原样)
+                    "上季度租金报价": building['上季度租金报价'],
+                    "上季度物业费": building['上季度物业费'],
+                    "上季度表面租金": building['上季度表面租金'],
+                    "上季度免租期": building['上季度免租期'],
+                    "上季度净有效租金": building['净有效租金'], // 对应底表字段
+                    "上季度空置面积": building['空置面积'],
+                    "上季度空置率": building['空置率'],
+
+                    // 3. 本季度数据 (Editor填写)
                     "本季度租金报价": qQuote,
                     "本季度物业费": qProp,
                     "本季度表面租金": qFace,
                     "本季度免租期": qFree,
                     "本季度空置面积": qVacArea,
                     
-                    // 自动计算数据 (存入Excel)
+                    // 4. 自动计算数据
                     "本季度净有效租金": cNet !== '-' ? cNet : '',
                     "租金环比变化": cRateChange !== '-' ? cRateChange : '',
                     "空置面积变化": cAreaChange !== '-' ? cAreaChange : '',
                     "本季度空置率": cVacRate !== '-' ? cVacRate : '',
+                    "备注": qRemark,
                     
+                    // 5. 元数据
+                    "填报人": currentUser.name,
                     "填报时间": new Date().toLocaleString()
                 });
             }
         });
 
-        if (submission.length === 0) { alert("请至少填写一行数据"); return; }
+        if (!hasEdits) { alert("请至少填写一行数据"); return; }
 
         btn.disabled = true;
         btn.innerText = "正在上传...";
-        msg.innerText = "正在生成报表...";
+        msg.innerText = "正在打包全量数据并上传...";
 
         try {
             const res = await fetch('/api/submit-update', {
@@ -302,7 +325,7 @@
             const result = await res.json();
             
             if (result.status === 'success') {
-                alert(`✅ 提交成功！\n文件已保存: ${result.filename}`);
+                alert(`✅ 提交成功！\n数据已保存至: ${result.filename}`);
                 window.location.href = 'index.html'; 
             } else {
                 alert("提交失败: " + result.message);
