@@ -13,30 +13,35 @@
         .header h1 { margin: 0; font-size: 20px; }
         .back-link { color: white; text-decoration: none; font-size: 14px; opacity: 0.8; }
         
+        /* 布局：自动适应卡片数量 */
         .container { 
             max-width: 1200px; 
             margin: 20px auto; 
             padding: 0 20px; 
             display: grid; 
-            grid-template-columns: 1fr 1fr; 
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); /* 更加灵活的网格 */
             gap: 20px; 
         }
         
         .card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 20px; display: flex; flex-direction: column; height: 320px; }
-        .card-tall { height: 500px; }
+        .card-tall { height: 500px; } /* 日志和文件列表高一些 */
 
+        /* 标题栏 */
         .card-header { border-bottom: 2px solid #f57c00; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
         .card-header h3 { margin: 0; color: #333; font-size: 16px; }
         
-        .manage-box { text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100%; gap: 15px; }
+        /* 管理区域 */
+        .manage-box { text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100%; gap: 12px; }
         .manage-desc { font-size: 13px; color: #666; margin: 0; }
-        .file-input { border: 1px dashed #ccc; padding: 10px; border-radius: 4px; width: 80%; margin: 0 auto; }
+        .file-input { border: 1px dashed #ccc; padding: 10px; border-radius: 4px; width: 80%; margin: 0 auto; font-size: 12px; }
         
+        /* 按钮 */
         .btn-primary { background: #004080; color: white; padding: 8px 15px; border-radius: 4px; text-decoration: none; font-size: 13px; border: none; cursor: pointer; }
         .btn-danger { background: #dc3545; color: white; padding: 8px 15px; border-radius: 4px; font-size: 13px; border: none; cursor: pointer; transition: all 0.2s; }
         .btn-danger:hover { background: #c82333; transform: translateY(-1px); }
         .btn-danger:disabled { background: #ccc; cursor: not-allowed; transform: none; }
 
+        /* 表格区 */
         .scroll-area { flex: 1; overflow-y: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
@@ -50,12 +55,14 @@
         .btn-excel { background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
         .empty-tip { text-align: center; color: #999; margin-top: 30px; }
 
+        /* 版本号悬浮 */
         #version-tag {
             position: fixed; bottom: 20px; right: 20px;
             background: rgba(0, 64, 128, 0.9); color: white;
             padding: 10px 15px; border-radius: 4px; font-size: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 9999; display: none;
         }
+        #version-tag strong { color: #f57c00; }
     </style>
 </head>
 <body>
@@ -71,7 +78,7 @@
             <h3>🗄️ 核心数据源 (Map Data)</h3>
         </div>
         <div class="manage-box">
-            <p class="manage-desc">覆盖更新 data.xlsx (支持大文件)</p>
+            <p class="manage-desc">覆盖更新 data.xlsx (地图底表)</p>
             <a href="./data.xlsx" class="btn-primary" download style="width:fit-content; margin:0 auto;">⬇️ 备份当前数据</a>
             <hr style="width:80%; border:0; border-top:1px solid #eee; margin:5px auto;">
             <input type="file" id="source-file" accept=".xlsx" class="file-input">
@@ -81,10 +88,23 @@
 
     <div class="card">
         <div class="card-header">
+            <h3>🔐 账号权限管理 (Users)</h3>
+        </div>
+        <div class="manage-box">
+            <p class="manage-desc">更新 users.xlsx (登录白名单)</p>
+            <a href="./users.xlsx" class="btn-primary" download style="width:fit-content; margin:0 auto;">⬇️ 备份名单</a>
+            <hr style="width:80%; border:0; border-top:1px solid #eee; margin:5px auto;">
+            <input type="file" id="user-file" accept=".xlsx" class="file-input">
+            <button class="btn-danger" id="btn-upload-user" onclick="directUpload('user-file', 'users.xlsx', 'btn-upload-user')">🚀 更新名单 Excel</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
             <h3>📄 市场季报 (Report PDF)</h3>
         </div>
         <div class="manage-box">
-            <p class="manage-desc">覆盖更新 sample_report.pdf (支持 >5MB)</p>
+            <p class="manage-desc">更新 sample_report.pdf (支持大文件)</p>
             <a href="./sample_report.pdf" target="_blank" class="btn-primary" style="width:fit-content; margin:0 auto;">👁️ 预览当前季报</a>
             <hr style="width:80%; border:0; border-top:1px solid #eee; margin:5px auto;">
             <input type="file" id="report-file" accept=".pdf" class="file-input">
@@ -148,7 +168,7 @@
         loadVersionInfo();
     };
 
-    // --- ★★★ 核心：前端直传 GitHub (无视 Vercel 大小限制) ★★★ ---
+    // --- ★★★ 通用直传函数 (无需修改，支持所有文件) ★★★ ---
     async function directUpload(inputId, targetFileName, btnId) {
         const fileInput = document.getElementById(inputId);
         const file = fileInput.files[0];
@@ -162,14 +182,14 @@
         btn.innerText = "正在获取密钥...";
 
         try {
-            // 1. 从后端获取 Token (钥匙)
+            // 1. 从后端获取 Token
             const tokenRes = await fetch('/api/get-token');
             const tokenData = await tokenRes.json();
             if (!tokenData.token) throw new Error("无法获取上传权限");
 
             btn.innerText = "读取文件中...";
             
-            // 2. 读取文件并转为 Base64
+            // 2. 读取文件
             const reader = new FileReader();
             reader.readAsDataURL(file);
             
@@ -178,10 +198,9 @@
                     const base64Content = reader.result.split(',')[1];
                     btn.innerText = "正在上传 GitHub...";
 
-                    // 3. 初始化 Octokit (使用刚才拿到的 Token)
                     const octokit = new window.Octokit({ auth: tokenData.token });
 
-                    // 4. 获取旧文件的 SHA (覆盖更新必须步骤)
+                    // 3. 获取旧 SHA (为了覆盖)
                     let sha = null;
                     try {
                         const { data: existingFile } = await octokit.repos.getContent({
@@ -191,9 +210,9 @@
                             ref: CONFIG.branch
                         });
                         sha = existingFile.sha;
-                    } catch (e) { /* 文件不存在，无视 */ }
+                    } catch (e) { /* 文件不存在 */ }
 
-                    // 5. 推送文件到 GitHub (支持 100MB)
+                    // 4. 推送
                     await octokit.repos.createOrUpdateFileContents({
                         owner: CONFIG.owner,
                         repo: CONFIG.repo,
@@ -207,7 +226,7 @@
 
                     alert("✅ 上传成功！\nGitHub 已接收文件，Vercel 将在后台自动部署，请耐心等待 2 分钟。");
                     fileInput.value = '';
-                    setTimeout(loadVersionInfo, 2000);
+                    if(targetFileName === 'data.xlsx') setTimeout(loadVersionInfo, 2000);
 
                 } catch (uploadErr) {
                     console.error(uploadErr);
@@ -226,7 +245,7 @@
         }
     }
 
-    // --- 其他原有功能 ---
+    // --- 其他辅助功能 ---
     async function loadVersionInfo() {
         try {
             const res = await fetch('/api/get-source-meta');
