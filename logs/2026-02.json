@@ -3,6 +3,15 @@
     "user": "李四",
     "action": "search",
     "details": {
+      "keyword": "无",
+      "filter": "vCurrent < 10%"
+    },
+    "time": "2026/2/26 10:46:21"
+  },
+  {
+    "user": "李四",
+    "action": "search",
+    "details": {
       "keyword": "环球贸易中心",
       "filter": "无"
     },
