@@ -19,7 +19,7 @@
         /* --- 基础布局 --- */
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; overflow: hidden; display: flex; height: 100vh; background: #f0f2f5; }
         
-        /* 登录遮罩层 */
+        /* 登录遮罩层 (保留给直接访问map页面的用户使用) */
         #login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 64, 128, 0.95); z-index: 9999;
@@ -99,11 +99,10 @@
         /* 状态条 */
         #status-bar { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
 
-        /* 右上角悬浮功能区 */
+        /* 右上角悬浮功能区 - 已清理冗余按钮，保留返回门户 */
         #top-right-panel { position: absolute; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: row; gap: 10px; }
-        .top-btn { padding: 10px 15px; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; font-weight: bold; font-size: 13px; color: #333; transition: all 0.2s; display: flex; align-items: center; gap: 5px; }
+        .top-btn { padding: 10px 15px; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-decoration: none; font-weight: bold; font-size: 13px; color: #333; transition: all 0.2s; display: flex; align-items: center; gap: 5px; }
         .top-btn:hover { background: #f9f9f9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .top-btn.admin-btn { border-left: 4px solid #f57c00; }
         
         /* 右下角版本号 */
         #version-tag { position: absolute; bottom: 20px; right: 20px; background: rgba(0, 64, 128, 0.9); color: white; padding: 8px 15px; border-radius: 4px; font-size: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 999; display: none; pointer-events: none; }
@@ -128,7 +127,7 @@
     <div id="login-overlay">
         <div class="login-box">
             <h2>COLLIERS DATA</h2>
-            <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据查询系统 v6.4</p>
+            <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据查询系统 v6.5</p>
             <input type="text" id="login-name" class="login-input" placeholder="姓名 (Name)">
             <input type="text" id="login-id" class="login-input" placeholder="工号 (Employee ID)">
             <input type="text" id="login-phone" class="login-input" placeholder="手机号 (Phone)">
@@ -140,7 +139,7 @@
     <div id="sidebar">
         <div class="brand-header">
             <h2>COLLIERS DATA</h2>
-            <p>办公楼市场监测系统 v6.4</p>
+            <p>办公楼市场监测系统 v6.5</p>
         </div>
         
         <div class="user-info-bar">
@@ -198,9 +197,7 @@
 
     <div id="map-container">
         <div id="top-right-panel">
-            <button class="top-btn" onclick="downloadReport()">📄 下载季报</button>
-            <button id="btn-update" class="top-btn admin-btn" style="display:none;" onclick="window.location.href='update.html'">✏️ 季度数据更新</button>
-            <button id="btn-analysis" class="top-btn admin-btn" style="display:none;" onclick="window.location.href='admin.html'">🛠️ 管理后台</button>
+            <a href="index.html" class="top-btn">🏠 返回门户大厅</a>
         </div>
 
         <div id="status-bar"></div>
@@ -213,9 +210,6 @@
     </div>
 
 <script>
-    // --- 下载季报函数 ---
-    function downloadReport() { window.open('./sample_report.pdf', '_blank'); }
-
     // --- 认证模块 ---
     const CURRENT_USER = { name: '', role: 'viewer' };
 
@@ -257,9 +251,6 @@
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('user-display').innerText = `${user.name} (${user.role})`;
         
-        if (user.role === 'editor' || user.role === 'admin') document.getElementById('btn-update').style.display = 'flex';
-        if (user.role === 'admin') document.getElementById('btn-analysis').style.display = 'flex';
-
         loadVersionInfo();
     }
 
@@ -297,30 +288,23 @@
         } catch (e) { console.error(e); }
     }
 
-    // --- ★★★ 修复18：重置一键清空函数 ★★★ ---
     function clearAllFilters() {
-        // 清空搜索框
         document.getElementById('search-input').value = '';
-        // 清空高级数值筛选
         document.getElementById('adv-metric').value = 'pCurrent';
         document.getElementById('adv-op').value = '>';
         document.getElementById('adv-val').value = '';
         
-        // 重置商圈为全选状态
         const checkAllBox = document.getElementById('check-all');
         if (checkAllBox) {
             checkAllBox.checked = true;
             checkAllBox.indeterminate = false;
-            // 恢复集合并勾选所有单选框
             allDistrictsList.forEach(d => activeDistricts.add(d));
             document.querySelectorAll('.district-checkbox').forEach(cb => cb.checked = true);
         }
 
-        // 退出竞品对比模式(如果有)
         isCompareMode = false;
         document.getElementById('reset-map-btn').style.display = 'none';
 
-        // 重新执行渲染
         executeFilters();
         showStatus("🔄 地图及筛选已重置");
     }
@@ -399,7 +383,6 @@
             const gRaw = String(findVal(item, ['写字楼等级', 'grades', 'Grade']) || "-").trim().toUpperCase();
             const grade = (gRaw === 'PA' || gRaw === 'PREMIUM A') ? 'PA' : (gRaw.includes('A') ? 'A' : gRaw);
 
-            // ★★★ 修复6：LEED 标签智能处理规范化格式 ★★★
             const lRaw = String(findVal(item, ['LEEDS', 'LEED']) || "").trim();
             let leed = "无";
             if (lRaw && lRaw !== 'N' && lRaw !== 'No' && lRaw !== '-') {
@@ -521,7 +504,6 @@
             } else if (currentMode === 'grade') {
                 if (item.grade === 'PA') color = '#1a237e'; else if (item.grade === 'A') color = '#2979ff'; else color = '#b0bec5'; label = 'G';
             } else if (currentMode === 'leed') {
-                // ★★★ 同步升级这里的判定条件，抓取关键词 ★★★
                 const l = item.leed.toLowerCase();
                 if (l.includes('platinum') || l.includes('铂金')) color = '#004d40'; 
                 else if (l.includes('gold') || l.includes('金')) color = '#fbc02d'; 
@@ -545,10 +527,8 @@
             if(btn) btn.onclick = () => findPlanB(item);
         }, 0);
 
-        // 获取标签颜色类
         let gradeClass = item.grade === 'PA' ? 'badge-pa' : (item.grade === 'A' ? 'badge-a' : 'badge-none');
         
-        // ★★★ 兼容新的中文或英文写法提取颜色类 ★★★
         let leedClass = 'badge-silver';
         let lCheck = item.leed.toLowerCase();
         if (lCheck.includes('铂金') || lCheck.includes('platinum')) leedClass = 'badge-platinum';
