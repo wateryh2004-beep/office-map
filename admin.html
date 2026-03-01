@@ -39,13 +39,13 @@
         }
         .card-header h3 { margin: 0; color: #004080; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
         
-        /* --- 第一层：资源管理 (三列布局) --- */
+        /* --- 第一层：资源管理 (四列布局) --- */
         .resources-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr; /* 三等分 */
-            divide-x: 1px solid #e9ecef; /* 列之间的分割线 (需要配合下面的CSS) */
+            grid-template-columns: 1fr 1fr 1fr 1fr; /* ★四等分★ */
+            divide-x: 1px solid #e9ecef; 
         }
-        /* 为了实现分割线，我们给 grid item 加右边框，但要把最后一个去掉 */
+        
         .resource-item {
             padding: 25px 20px;
             display: flex;
@@ -91,7 +91,7 @@
         /* 表格区域 */
         .scroll-area { flex: 1; overflow-y: auto; padding: 0; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { background: #f8f9fa; color: #666; font-weight: 600; padding: 12px 15px; text-align: left; position: sticky; top: 0; border-bottom: 1px solid #e9ecef; }
+        th { background: #f8f9fa; color: #666; font-weight: 600; padding: 12px 15px; text-align: left; position: sticky; top: 0; border-bottom: 1px solid #e9ecef; z-index:10; }
         td { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; color: #444; }
         tr:hover { background: #fcfcfc; }
         
@@ -121,7 +121,11 @@
 
 <div class="header">
     <h1>📊 管理员控制台 (Admin Console)</h1>
-    <a href="index.html" class="back-link">← 返回首页</a>
+    <div>
+        <a href="map.html" class="back-link">← 返回地图</a>
+        <span style="color:rgba(255,255,255,0.3); margin:0 10px;">|</span>
+        <a href="index.html" class="back-link">🏠 门户首页</a>
+    </div>
 </div>
 
 <div class="container">
@@ -158,6 +162,14 @@
                 <a href="./sample_report.pdf" target="_blank" class="btn-link">👁️ 预览当前季报</a>
                 <div class="file-input-wrapper"><input type="file" id="report-file" accept=".pdf" class="file-input"></div>
                 <button class="btn-action btn-red" id="btn-upload-report" onclick="directUpload('report-file', 'sample_report.pdf', 'btn-upload-report')">🚀 覆盖更新 PDF</button>
+            </div>
+
+            <div class="resource-item" style="border-right: none;">
+                <div class="item-icon">📢</div>
+                <div class="item-title">系统公告 (Notice)</div>
+                <div class="item-desc">修改首页底部滚动播报</div>
+                <div style="height:24px;"></div> <input type="text" id="notice-input" class="file-input" placeholder="输入新的重要通知..." style="border:1px solid #ccc; padding:8px; width:90%; box-sizing:border-box;">
+                <button class="btn-action btn-blue" id="btn-update-notice" onclick="updateNotice()">✅ 发布新公告</button>
             </div>
 
         </div>
@@ -226,7 +238,7 @@
         loadVersionInfo();
     };
 
-    // --- 前端直传核心逻辑 (复用之前的稳健代码) ---
+    // --- 前端直传核心逻辑 ---
     async function directUpload(inputId, targetFileName, btnId) {
         const fileInput = document.getElementById(inputId);
         const file = fileInput.files[0];
@@ -240,12 +252,10 @@
         btn.innerText = "⏳ 正在上传...";
 
         try {
-            // 1. 获取 Token
             const tokenRes = await fetch('/api/get-token');
             const tokenData = await tokenRes.json();
             if (!tokenData.token) throw new Error("无法获取上传权限");
 
-            // 2. 读取文件
             const reader = new FileReader();
             reader.readAsDataURL(file);
             
@@ -254,7 +264,6 @@
                     const base64Content = reader.result.split(',')[1];
                     const octokit = new window.Octokit({ auth: tokenData.token });
 
-                    // 3. 获取旧 SHA
                     let sha = null;
                     try {
                         const { data: existingFile } = await octokit.repos.getContent({
@@ -266,7 +275,6 @@
                         sha = existingFile.sha;
                     } catch (e) { }
 
-                    // 4. 推送
                     await octokit.repos.createOrUpdateFileContents({
                         owner: CONFIG.owner,
                         repo: CONFIG.repo,
@@ -296,6 +304,33 @@
             alert("系统错误: " + e.message);
             btn.disabled = false;
             btn.innerText = originalText;
+        }
+    }
+
+    // --- 更新系统公告 ---
+    async function updateNotice() {
+        const text = document.getElementById('notice-input').value.trim();
+        if (!text) { alert("通知内容不能为空！"); return; }
+        
+        const btn = document.getElementById('btn-update-notice');
+        btn.disabled = true; btn.innerText = "⏳ 发布中...";
+        
+        try {
+            const res = await fetch('/api/update-notice', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text, user: currentUser.name })
+            });
+            const result = await res.json();
+            if (result.status === 'success') {
+                alert("✅ 公告已发布！Vercel正在同步，大约1分钟后所有用户可见。");
+                document.getElementById('notice-input').value = '';
+            } else { alert("发布失败: " + result.message); }
+        } catch (e) { 
+            console.error(e);
+            alert("网络错误"); 
+        } finally {
+            btn.disabled = false; btn.innerText = "✅ 发布新公告";
         }
     }
 
