@@ -57,13 +57,17 @@
         .stat-label { font-size: 11px; color: #888; }
         
         /* 中间滚动控制区 */
-        .controls { flex: 1; padding: 15px; overflow-y: auto; overflow-x: hidden; /* 强制隐藏横向滚动条 */ }
+        .controls { flex: 1; padding: 15px; overflow-y: auto; overflow-x: hidden; }
         .control-group { margin-bottom: 20px; }
         .control-title { font-weight: bold; font-size: 13px; margin-bottom: 8px; display: block; color: #333; }
         
+        /* 搜索框及重置按钮 */
         .search-box { display: flex; gap: 5px; margin-bottom: 20px; }
-        #search-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; outline: none; box-sizing: border-box; }
-        #search-btn { padding: 0 15px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        #search-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; outline: none; box-sizing: border-box; }
+        #search-btn { padding: 0 12px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        #search-btn:hover { background: #003366; }
+        .btn-clear { padding: 0 10px; background: #9e9e9e; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; transition: background 0.2s; }
+        .btn-clear:hover { background: #757575; }
         
         /* 高级筛选样式 */
         .filter-row { display: flex; gap: 5px; margin-bottom: 8px; }
@@ -73,98 +77,36 @@
             border-radius: 4px; 
             font-size: 12px; 
             outline: none; 
-            box-sizing: border-box; /* ★★★ 关键修复：防止 padding 撑大宽度 ★★★ */
+            box-sizing: border-box;
         }
         .filter-btn { width: 100%; padding: 8px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
         .filter-btn:hover { background: #003366; }
 
         /* 商圈筛选 2列网格 */
-        .checkbox-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px 10px;
-        }
-        .checkbox-group label { 
-            display: flex; 
-            align-items: center; 
-            font-size: 12px; 
-            color: #555; 
-            cursor: pointer; 
-            white-space: nowrap; 
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        .checkbox-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+        .checkbox-group label { display: flex; align-items: center; font-size: 12px; color: #555; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .checkbox-group input { margin-right: 6px; }
-        .check-all-label { 
-            grid-column: span 2; 
-            border-bottom: 1px solid #eee; 
-            padding-bottom: 8px; 
-            margin-bottom: 0 !important; 
-            font-weight: bold; 
-            color: #004080 !important; 
-            font-size: 13px !important;
-        }
+        .check-all-label { grid-column: span 2; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 0 !important; font-weight: bold; color: #004080 !important; font-size: 13px !important; }
 
         /* 左下角 2x2 网格布局 */
-        .actions { 
-            padding: 15px; 
-            border-top: 1px solid #eee; 
-            background: white; 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 8px; 
-        }
-        .btn-mode { 
-            width: 100%; 
-            padding: 10px 5px;
-            border: 1px solid #e0e0e0; 
-            background: white; 
-            color: #555; 
-            border-radius: 4px; 
-            cursor: pointer; 
-            font-weight: 600; 
-            font-size: 12px; 
-            transition: all 0.2s; 
-            text-align: center; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            box-sizing: border-box;
-        }
+        .actions { padding: 15px; border-top: 1px solid #eee; background: white; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .btn-mode { width: 100%; padding: 10px 5px; border: 1px solid #e0e0e0; background: white; color: #555; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 12px; transition: all 0.2s; text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px; box-sizing: border-box; }
         .btn-mode.active { background: #e6f0fa; color: #004080; border-color: #004080; }
         
         /* 地图区 */
         #map-container { flex: 1; position: relative; }
         
         /* 状态条 */
-        #status-bar { 
-            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 1000; background: rgba(0,0,0,0.8); color: white; 
-            padding: 10px 20px; border-radius: 30px; font-size: 13px; display: none; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        }
+        #status-bar { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
 
         /* 右上角悬浮功能区 */
-        #top-right-panel {
-            position: absolute; top: 20px; right: 20px; z-index: 1000;
-            display: flex; flex-direction: row; gap: 10px;
-        }
-        .top-btn {
-            padding: 10px 15px; background: white; border: 1px solid #ccc; border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; font-weight: bold; font-size: 13px;
-            color: #333; transition: all 0.2s; display: flex; align-items: center; gap: 5px;
-        }
+        #top-right-panel { position: absolute; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: row; gap: 10px; }
+        .top-btn { padding: 10px 15px; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; font-weight: bold; font-size: 13px; color: #333; transition: all 0.2s; display: flex; align-items: center; gap: 5px; }
         .top-btn:hover { background: #f9f9f9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .top-btn.admin-btn { border-left: 4px solid #f57c00; }
         
         /* 右下角版本号 */
-        #version-tag {
-            position: absolute; bottom: 20px; right: 20px;
-            background: rgba(0, 64, 128, 0.9); color: white;
-            padding: 8px 15px; border-radius: 4px; font-size: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 999; display: none; pointer-events: none; 
-        }
+        #version-tag { position: absolute; bottom: 20px; right: 20px; background: rgba(0, 64, 128, 0.9); color: white; padding: 8px 15px; border-radius: 4px; font-size: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 999; display: none; pointer-events: none; }
         #version-tag strong { color: #f57c00; margin-left: 5px; }
 
         /* 弹窗样式 */
@@ -186,7 +128,7 @@
     <div id="login-overlay">
         <div class="login-box">
             <h2>COLLIERS DATA</h2>
-            <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据查询系统 v6.3</p>
+            <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据查询系统 v6.4</p>
             <input type="text" id="login-name" class="login-input" placeholder="姓名 (Name)">
             <input type="text" id="login-id" class="login-input" placeholder="工号 (Employee ID)">
             <input type="text" id="login-phone" class="login-input" placeholder="手机号 (Phone)">
@@ -198,7 +140,7 @@
     <div id="sidebar">
         <div class="brand-header">
             <h2>COLLIERS DATA</h2>
-            <p>办公楼市场监测系统 v6.3</p>
+            <p>办公楼市场监测系统 v6.4</p>
         </div>
         
         <div class="user-info-bar">
@@ -217,6 +159,7 @@
             <div class="search-box">
                 <input type="text" id="search-input" placeholder="🔍 搜项目名..." onkeydown="if(event.key==='Enter') executeFilters()">
                 <button id="search-btn" onclick="executeFilters()">查询</button>
+                <button class="btn-clear" onclick="clearAllFilters()" title="清除筛选条件">🔄 重置</button>
             </div>
 
             <div class="control-group">
@@ -354,6 +297,34 @@
         } catch (e) { console.error(e); }
     }
 
+    // --- ★★★ 修复18：重置一键清空函数 ★★★ ---
+    function clearAllFilters() {
+        // 清空搜索框
+        document.getElementById('search-input').value = '';
+        // 清空高级数值筛选
+        document.getElementById('adv-metric').value = 'pCurrent';
+        document.getElementById('adv-op').value = '>';
+        document.getElementById('adv-val').value = '';
+        
+        // 重置商圈为全选状态
+        const checkAllBox = document.getElementById('check-all');
+        if (checkAllBox) {
+            checkAllBox.checked = true;
+            checkAllBox.indeterminate = false;
+            // 恢复集合并勾选所有单选框
+            allDistrictsList.forEach(d => activeDistricts.add(d));
+            document.querySelectorAll('.district-checkbox').forEach(cb => cb.checked = true);
+        }
+
+        // 退出竞品对比模式(如果有)
+        isCompareMode = false;
+        document.getElementById('reset-map-btn').style.display = 'none';
+
+        // 重新执行渲染
+        executeFilters();
+        showStatus("🔄 地图及筛选已重置");
+    }
+
     // --- 地图与数据核心逻辑 ---
     const DEMO_DATA = [
         {"写字楼名称": "国贸写字楼1座", "子市场": "CBD", "写字楼等级": "A", "竣工时间": "1990 Q3", "净有效租金": 288.75, "空置率": "13.0%", "LEEDS": "", "经纬度": "116.458363,39.909473", "空置面积": 9400, "总面积": 72308},
@@ -428,9 +399,17 @@
             const gRaw = String(findVal(item, ['写字楼等级', 'grades', 'Grade']) || "-").trim().toUpperCase();
             const grade = (gRaw === 'PA' || gRaw === 'PREMIUM A') ? 'PA' : (gRaw.includes('A') ? 'A' : gRaw);
 
+            // ★★★ 修复6：LEED 标签智能处理规范化格式 ★★★
             const lRaw = String(findVal(item, ['LEEDS', 'LEED']) || "").trim();
             let leed = "无";
-            if (lRaw && lRaw !== 'N' && lRaw !== 'No' && lRaw !== '-') leed = lRaw;
+            if (lRaw && lRaw !== 'N' && lRaw !== 'No' && lRaw !== '-') {
+                let lLower = lRaw.toLowerCase();
+                if (lLower.includes('platinum') || lLower.includes('铂金')) leed = 'LEED 铂金级';
+                else if (lLower.includes('gold') || lLower.includes('金')) leed = 'LEED 金级';
+                else if (lLower.includes('silver') || lLower.includes('银')) leed = 'LEED 银级';
+                else if (lLower.includes('cert') || lLower.includes('认证')) leed = 'LEED 认证级';
+                else leed = lRaw.toUpperCase().includes('LEED') ? lRaw : `LEED ${lRaw}`;
+            }
 
             return {
                 name, district, built_year, grade, leed,
@@ -542,8 +521,13 @@
             } else if (currentMode === 'grade') {
                 if (item.grade === 'PA') color = '#1a237e'; else if (item.grade === 'A') color = '#2979ff'; else color = '#b0bec5'; label = 'G';
             } else if (currentMode === 'leed') {
+                // ★★★ 同步升级这里的判定条件，抓取关键词 ★★★
                 const l = item.leed.toLowerCase();
-                if (l.includes('platinum')) color = '#004d40'; else if (l.includes('gold')) color = '#fbc02d'; else if (l.includes('cert')) color = '#81c784'; else color = '#eeeeee'; label = 'L';
+                if (l.includes('platinum') || l.includes('铂金')) color = '#004d40'; 
+                else if (l.includes('gold') || l.includes('金')) color = '#fbc02d'; 
+                else if (l.includes('cert') || l.includes('认证')) color = '#81c784'; 
+                else color = '#eeeeee'; 
+                label = 'L';
             }
             const zIndex = (currentMode === 'leed' && color === '#eeeeee') ? 50 : 100;
             const textColor = (color==='#fbc02d'||color==='#eeeeee') ? '#555' : 'white';
@@ -561,8 +545,15 @@
             if(btn) btn.onclick = () => findPlanB(item);
         }, 0);
 
+        // 获取标签颜色类
         let gradeClass = item.grade === 'PA' ? 'badge-pa' : (item.grade === 'A' ? 'badge-a' : 'badge-none');
-        let leedClass = item.leed.toLowerCase().includes('gold') ? 'badge-gold' : item.leed === '无' ? 'badge-none' : 'badge-silver';
+        
+        // ★★★ 兼容新的中文或英文写法提取颜色类 ★★★
+        let leedClass = 'badge-silver';
+        let lCheck = item.leed.toLowerCase();
+        if (lCheck.includes('铂金') || lCheck.includes('platinum')) leedClass = 'badge-platinum';
+        else if (lCheck.includes('金') || lCheck.includes('gold')) leedClass = 'badge-gold';
+        else if (item.leed === '无') leedClass = 'badge-none';
 
         const content = `
             <div class="info-window-card">
@@ -570,7 +561,6 @@
                     <h3 style="margin:0;font-size:18px;">${item.name}</h3>
                     <div style="color:#666;font-size:12px;margin-top:4px;">${item.district} | ${item.built_year}</div>
                     <div class="tag-row">
-                        <span class="badge ${gradeClass}">${item.grade}级</span>
                         <span class="badge ${leedClass}">${item.leed}</span>
                     </div>
                 </div>
