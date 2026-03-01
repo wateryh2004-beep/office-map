@@ -42,7 +42,8 @@
         /* --- 第一层：资源管理 (四列布局) --- */
         .resources-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr; /* ★四等分★ */
+            /* ★★★ 关键：这里必须是 4 个 1fr ★★★ */
+            grid-template-columns: 1fr 1fr 1fr 1fr; 
             divide-x: 1px solid #e9ecef; 
         }
         
@@ -58,8 +59,8 @@
         .resource-item:last-child { border-right: none; }
 
         .item-icon { font-size: 28px; margin-bottom: 5px; }
-        .item-title { font-weight: bold; color: #333; font-size: 15px; }
-        .item-desc { font-size: 12px; color: #888; margin-top: -10px; margin-bottom: 5px; }
+        .item-title { font-weight: bold; color: #333; font-size: 15px; text-align: center; }
+        .item-desc { font-size: 12px; color: #888; margin-top: -10px; margin-bottom: 5px; text-align: center; }
         
         .file-input-wrapper { width: 100%; display: flex; justify-content: center; }
         .file-input { width: 90%; font-size: 12px; color: #666; }
@@ -167,7 +168,7 @@
             <div class="resource-item" style="border-right: none;">
                 <div class="item-icon">📢</div>
                 <div class="item-title">系统公告 (Notice)</div>
-                <div class="item-desc">修改首页底部滚动播报</div>
+                <div class="item-desc">修改门户底部滚动播报</div>
                 <div style="height:24px;"></div> <input type="text" id="notice-input" class="file-input" placeholder="输入新的重要通知..." style="border:1px solid #ccc; padding:8px; width:90%; box-sizing:border-box;">
                 <button class="btn-action btn-blue" id="btn-update-notice" onclick="updateNotice()">✅ 发布新公告</button>
             </div>
