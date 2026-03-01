@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高力国际 | 办公楼市场监测系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8f9fa; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
+        
+        /* --- 登录遮罩层 (与之前一致) --- */
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 64, 128, 0.95); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: white; padding: 40px; border-radius: 8px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
+        .login-box h2 { margin: 0 0 20px 0; color: #004080; }
+        .login-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        .login-btn { width: 100%; padding: 12px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        .login-btn:hover { background: #003366; }
+        .login-error { color: red; font-size: 12px; margin-top: 10px; display: none; }
+
+        /* --- 顶部导航栏 --- */
+        .header { background: #004080; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header h1 { margin: 0; font-size: 20px; }
+        .user-info { font-size: 14px; display: flex; gap: 15px; align-items: center; }
+        .logout-btn { color: white; text-decoration: underline; cursor: pointer; font-size: 12px; opacity: 0.8; }
+        .logout-btn:hover { opacity: 1; }
+
+        /* --- 主体导航区 --- */
+        .main-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
+        .welcome-text { text-align: center; color: #333; margin-bottom: 40px; max-width: 800px; font-size: 15px; line-height: 1.6; }
+        
+        /* 八宫格布局 */
+        .grid-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px 40px; max-width: 900px; width: 100%; }
+        
+        /* 单个模块卡片 */
+        .nav-card { background: white; padding: 30px 20px; border-radius: 12px; text-align: center; text-decoration: none; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; gap: 15px; border: 1px solid #eee; }
+        .nav-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); border-color: #ddd; }
+        
+        /* 图标样式定制 (完全还原图片颜色) */
+        .icon-box { font-size: 50px; }
+        .c-blue { color: #3498db; }    /* 项目地图 */
+        .c-purple { color: #8e44ad; }  /* 季度报告 */
+        .c-red { color: #c0392b; }     /* 数据收集 */
+        .c-green { color: #27ae60; }   /* 租赁成交 */
+        .c-yellow { color: #f1c40f; }  /* 租金评估 */
+        .c-grey { color: #95a5a6; }    /* 价值评估 */
+        .c-orange { color: #e67e22; }  /* 分析图表 */
+        .c-dark { color: #2c3e50; }    /* 知识库 */
+        
+        .card-title { font-size: 16px; font-weight: bold; }
+
+        /* 未开放的模块变灰 */
+        .nav-card.disabled { opacity: 0.6; cursor: not-allowed; }
+        .nav-card.disabled:hover { transform: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-color: #eee; }
+
+        /* --- 底部滚动通知条 --- */
+        .notice-bar { background: #fff3cd; color: #856404; padding: 12px 20px; display: flex; align-items: center; border-top: 1px solid #ffeeba; }
+        .notice-title { font-weight: bold; margin-right: 15px; white-space: nowrap; }
+        .marquee-wrapper { flex: 1; overflow: hidden; position: relative; }
+        .marquee-text { display: inline-block; white-space: nowrap; animation: marquee 20s linear infinite; font-size: 14px; }
+        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        
+        /* 仅管理员可见的设置按钮 */
+        #admin-settings-btn { display: none; margin-left: 15px; font-size: 12px; background: #004080; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2>COLLIERS DATA</h2>
+            <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据系统门户 v7.0</p>
+            <input type="text" id="login-name" class="login-input" placeholder="姓名 (Name)">
+            <input type="text" id="login-id" class="login-input" placeholder="工号 (Employee ID)">
+            <input type="text" id="login-phone" class="login-input" placeholder="手机号 (Phone)">
+            <button class="login-btn" onclick="handleLogin()">认证进入</button>
+            <div id="login-msg" class="login-error">认证失败</div>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1>高力国际内部数据平台</h1>
+        <div class="user-info">
+            <span id="user-display">未登录</span>
+            <span class="logout-btn" onclick="logout()">退出登录</span>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="welcome-text">
+            <strong>欢迎来到系统门户。</strong><br>
+            请根据您的业务需求选择进入对应的功能模块。目前“项目地图”、“季度报告”和“数据收集”功能已开放，其他模块正在规划拓展中。
+        </div>
+
+        <div class="grid-container">
+            <a href="map.html" class="nav-card">
+                <div class="icon-box c-blue"><i class="fas fa-map-marked-alt"></i></div>
+                <div class="card-title">项目地图</div>
+            </a>
+            
+            <a href="sample_report.pdf" target="_blank" class="nav-card">
+                <div class="icon-box c-purple"><i class="fas fa-newspaper"></i></div>
+                <div class="card-title">季度报告</div>
+            </a>
+
+            <a href="update.html" class="nav-card" id="btn-data-collect">
+                <div class="icon-box c-red"><i class="fas fa-chart-line"></i></div>
+                <div class="card-title">数据收集</div>
+            </a>
+
+            <a href="javascript:alert('该功能正在拓展中，敬请期待！');" class="nav-card disabled">
+                <div class="icon-box c-green"><i class="fas fa-handshake"></i></div>
+                <div class="card-title">租赁成交收集</div>
+            </a>
+
+            <a href="javascript:alert('该功能正在拓展中，敬请期待！');" class="nav-card disabled">
+                <div class="icon-box c-yellow"><i class="fas fa-coins"></i></div>
+                <div class="card-title">租金评估</div>
+            </a>
+
+            <a href="javascript:alert('该功能正在拓展中，敬请期待！');" class="nav-card disabled">
+                <div class="icon-box c-grey"><i class="fas fa-gem"></i></div>
+                <div class="card-title">价值评估</div>
+            </a>
+
+            <a href="javascript:alert('该功能正在拓展中，敬请期待！');" class="nav-card disabled">
+                <div class="icon-box c-orange"><i class="fas fa-chart-pie"></i></div>
+                <div class="card-title">分析图表</div>
+            </a>
+
+            <a href="javascript:alert('该功能正在拓展中，敬请期待！');" class="nav-card disabled">
+                <div class="icon-box c-dark"><i class="fas fa-brain"></i></div>
+                <div class="card-title">知识库</div>
+            </a>
+        </div>
+    </div>
+
+    <div class="notice-bar">
+        <div class="notice-title">📢 重要通知：</div>
+        <div class="marquee-wrapper">
+            <div class="marquee-text" id="marquee-content">正在获取最新通知...</div>
+        </div>
+        <button id="admin-settings-btn" onclick="window.location.href='admin.html'">⚙️ 进入后台</button>
+    </div>
+
+    <script>
+        let currentUser = null;
+
+        window.onload = function() {
+            const cachedUser = localStorage.getItem('colliers_user');
+            if (cachedUser) {
+                currentUser = JSON.parse(cachedUser);
+                loginSuccess(currentUser);
+            }
+            loadNotice(); // 加载通知
+        };
+
+        async function handleLogin() {
+            const name = document.getElementById('login-name').value.trim();
+            const id = document.getElementById('login-id').value.trim();
+            const phone = document.getElementById('login-phone').value.trim();
+            const msg = document.getElementById('login-msg');
+
+            if (!name || !id || !phone) { msg.innerText = "请填写完整信息"; msg.style.display = 'block'; return; }
+            msg.style.display = 'none';
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, id, phone })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    localStorage.setItem('colliers_user', JSON.stringify(data.data));
+                    loginSuccess(data.data);
+                } else { msg.innerText = data.message || "认证失败"; msg.style.display = 'block'; }
+            } catch (e) { console.error(e); msg.innerText = "系统连接错误"; msg.style.display = 'block'; }
+        }
+
+        function loginSuccess(user) {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('user-display').innerText = `${user.name} (${user.role})`;
+            
+            // 权限控制：如果是 viewer，无法进入数据收集
+            if (user.role === 'viewer') {
+                const btnData = document.getElementById('btn-data-collect');
+                btnData.classList.add('disabled');
+                btnData.href = "javascript:alert('您没有数据填报权限，请联系管理员。');";
+            }
+
+            // 权限控制：如果是 Admin，显示进入后台按钮
+            if (user.role === 'admin') {
+                document.getElementById('admin-settings-btn').style.display = 'block';
+            }
+        }
+
+        function logout() { localStorage.removeItem('colliers_user'); location.reload(); }
+
+        // 获取滚动通知
+        async function loadNotice() {
+            try {
+                const res = await fetch('/api/get-notice');
+                const data = await res.json();
+                document.getElementById('marquee-content').innerText = data.text || "欢迎使用高力国际办公楼市场监测系统！如遇问题请联系管理员。";
+            } catch (e) {
+                document.getElementById('marquee-content').innerText = "欢迎使用高力国际办公楼市场监测系统！目前系统运行正常。";
+            }
+        }
+    </script>
+</body>
+</html>
