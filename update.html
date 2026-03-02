@@ -7,14 +7,19 @@
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; padding: 20px; }
         .container { max-width: 98%; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        h2 { border-bottom: 2px solid #f57c00; padding-bottom: 10px; color: #333; display: flex; justify-content: space-between; align-items: center; }
+        h2 { border-bottom: 2px solid #f57c00; padding-bottom: 10px; color: #333; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .back-link { font-size: 14px; color: #004080; text-decoration: none; font-weight: normal; }
         
+        /* ★★★ 新增 Tab 切换栏样式 ★★★ */
+        .tab-container { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; border-bottom: 1px solid #e0e0e0; padding-bottom: 15px; }
+        .tab-btn { padding: 10px 20px; border: none; background: #f0f2f5; color: #555; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; transition: all 0.2s; }
+        .tab-btn:hover { background: #e0e0e0; }
+        .tab-btn.active { background: #004080; color: white; }
+        .draft-status { margin-left: auto; font-size: 13px; color: #28a745; font-weight: bold; }
+
         /* 复杂表格样式 */
-        .table-wrapper { overflow-x: auto; margin-top: 20px; border: 1px solid #ddd; }
+        .table-wrapper { overflow-x: auto; margin-top: 10px; border: 1px solid #ddd; }
         .data-table { border-collapse: collapse; font-size: 12px; min-width: 1900px; width: 100%; }
-        
-        /* 单元格通用 */
         .data-table th, .data-table td { border: 1px solid #e0e0e0; padding: 8px 4px; text-align: center; vertical-align: middle; }
         
         /* 表头分组颜色 */
@@ -22,32 +27,25 @@
         .th-group-last { background: #e3f2fd; color: #0277bd; border-bottom: 2px solid #81d4fa !important; }
         .th-group-curr { background: #fff3e0; color: #ef6c00; border-bottom: 2px solid #ffcc80 !important; }
         
-        /* 列头具体样式 - 宽度调整 */
         .th-base { background: #f8f9fa; color: #555; font-weight: 600; position: sticky; top: 0; z-index: 10; }
-        
-        /* 上季度：收窄 */
         .th-last { background: #f1f8e9; color: #558b2f; font-weight: 600; position: sticky; top: 0; z-index: 10; width: 60px; } 
-        
-        /* 本季度：加宽 */
         .th-curr { background: #fff8e1; color: #e65100; font-weight: 600; position: sticky; top: 0; z-index: 10; width: 85px; }
-
-        /* 冻结首列 */
         .col-fixed { position: sticky; left: 0; z-index: 20; background: #fff; border-right: 2px solid #ddd !important; }
         th.col-fixed { z-index: 30; }
 
         /* 输入框样式 */
-        .input-cell input { width: 100%; padding: 6px 2px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-family: inherit; font-size: 12px; text-align: center; }
+        .input-cell input { width: 100%; padding: 6px 2px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-family: inherit; font-size: 12px; text-align: center; transition: border 0.2s; }
         .input-cell input:focus { border-color: #f57c00; outline: none; background: #fffde7; box-shadow: 0 0 0 2px rgba(245, 124, 0, 0.2); }
-        
-        /* 自动计算列 (只读) */
         .calc-cell { background: #f5f5f5; color: #666; font-weight: bold; }
         
-        /* 按钮 */
-        .btn-submit { background: #f57c00; color: white; border: none; padding: 12px 30px; font-size: 15px; font-weight: bold; border-radius: 4px; cursor: pointer; float: right; margin-top: 20px; box-shadow: 0 4px 6px rgba(245, 124, 0, 0.2); transition: all 0.2s; }
+        /* ★★★ 新增 底部操作栏 ★★★ */
+        .action-bar { display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-top: 20px; }
+        .btn-save { background: white; color: #004080; border: 1px solid #004080; padding: 12px 25px; font-size: 15px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,64,128,0.1); }
+        .btn-save:hover { background: #f0f8ff; transform: translateY(-1px); }
+        .btn-submit { background: #f57c00; color: white; border: none; padding: 12px 30px; font-size: 15px; font-weight: bold; border-radius: 4px; cursor: pointer; box-shadow: 0 4px 6px rgba(245, 124, 0, 0.2); transition: all 0.2s; }
         .btn-submit:hover { background: #ef6c00; transform: translateY(-1px); }
-        .btn-submit:disabled { background: #ccc; cursor: not-allowed; }
-        
-        .status-msg { float: right; margin-top: 32px; margin-right: 15px; font-size: 13px; color: #666; }
+        .btn-submit:disabled { background: #ccc; cursor: not-allowed; box-shadow: none; }
+        .status-msg { font-size: 13px; color: #666; }
     </style>
 </head>
 <body>
@@ -55,10 +53,19 @@
 <div class="container">
     <h2>
         <span id="page-title">季度数据填报 (Pro)</span>
-        <a href="index.html" class="back-link">← 返回首页</a>
+        <a href="index.html" class="back-link">← 返回门户</a>
     </h2>
-    <p style="color:#666; font-size:12px;">说明：请在橙色区域填写本季度数据。净有效租金、变化率及空置率将自动计算。</p>
+
+    <div class="tab-container">
+        <button class="tab-btn active" data-tab="GradeA" onclick="switchTab('GradeA')">🏢 甲级写字楼 (Grade A)</button>
+        <button class="tab-btn" data-tab="GradeB" onclick="switchTab('GradeB')">🏢 乙级写字楼 (Grade B)</button>
+        <button class="tab-btn" data-tab="BP" onclick="switchTab('BP')">🏭 产业园 (BP)</button>
+        
+        <span id="draft-status" class="draft-status"></span>
+    </div>
     
+    <p style="color:#666; font-size:12px; margin-bottom: 5px;">说明：切换上方类别即可填写对应数据。系统每隔 10 秒会自动保存草稿，防止数据丢失。</p>
+
     <div class="table-wrapper">
         <table class="data-table">
             <thead>
@@ -89,7 +96,8 @@
                     <th class="th-curr">空置㎡</th>
                     <th class="th-curr" style="background:#ffe0b2;">面积变化</th>
                     <th class="th-curr" style="background:#ffe0b2;">空置率</th>
-                    <th class="th-curr" style="width:120px;">备注</th> </tr>
+                    <th class="th-curr" style="width:120px;">备注</th> 
+                </tr>
             </thead>
             <tbody id="table-body">
                 <tr><td colspan="20" style="text-align:center; padding: 30px; color:#888;">正在加载您的数据...</td></tr>
@@ -97,14 +105,18 @@
         </table>
     </div>
 
-    <div class="status-msg" id="status-msg"></div>
-    <button class="btn-submit" onclick="submitData()">🚀 提交并上传云端 (Submit)</button>
-    <div style="clear:both;"></div>
+    <div class="action-bar">
+        <span class="status-msg" id="status-msg"></span>
+        <button class="btn-save" onclick="manualSave()">💾 暂存草稿</button>
+        <button class="btn-submit" onclick="submitData()">🚀 提交并上传本页 (Submit)</button>
+    </div>
 </div>
 
 <script>
     let currentUser = null;
     let myBuildings = [];
+    let currentTab = 'GradeA'; // 默认当前选中甲级
+    let autoSaveTimer = null;
 
     window.onload = async function() {
         const userStr = localStorage.getItem('colliers_user');
@@ -119,7 +131,19 @@
             
             if (data.status === 'success') {
                 myBuildings = data.data;
-                renderTable(myBuildings);
+                // ★★★ 步骤1：为每一栋楼打上分类标签 ★★★
+                myBuildings.forEach(b => {
+                    const g = String(b['写字楼等级'] || b['Grade'] || '').toUpperCase().trim();
+                    if (g.includes('BP') || g === 'BUSINESS PARK') b._category = 'BP';
+                    else if (g.includes('B')) b._category = 'GradeB';
+                    else b._category = 'GradeA'; // A, P 统统归入甲级
+                });
+
+                renderTable();
+                
+                // 开启 10秒/次 的自动保存定时器
+                autoSaveTimer = setInterval(saveDraft, 10000);
+
             } else {
                 document.getElementById('table-body').innerHTML = `<tr><td colspan="20" style="color:red;">${data.message}</td></tr>`;
             }
@@ -129,6 +153,11 @@
         }
     };
 
+    // 获取当前用户、当前Tab对应的本地存储 Key
+    function getDraftKey() {
+        return `colliers_draft_${currentUser.name}_${currentTab}`;
+    }
+
     // 辅助函数：安全解析数字
     const safeNum = (val) => {
         if(!val && val !== 0) return 0;
@@ -136,14 +165,37 @@
         return parseFloat(val) || 0;
     };
 
-    function renderTable(list) {
-        const tbody = document.getElementById('table-body');
-        if (list.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="20" style="text-align:center; padding:30px;">无负责项目</td></tr>`;
-            return;
-        }
+    // ★★★ Tab 切换逻辑 ★★★
+    window.switchTab = function(tabName) {
+        if (currentTab === tabName) return; // 重复点击无效
+        
+        saveDraft(); // 切换前，先把刚才写的存入当前 Tab 的草稿箱
+        
+        currentTab = tabName;
+        // 样式切换
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if(btn.dataset.tab === tabName) btn.classList.add('active');
+        });
+        
+        document.getElementById('draft-status').innerText = ''; // 清空保存提示
+        renderTable(); // 重新渲染表格
+    };
 
-        tbody.innerHTML = list.map((item, i) => {
+    function renderTable() {
+        const tbody = document.getElementById('table-body');
+        
+        // 读取当前 Tab 的草稿数据
+        const draftData = JSON.parse(localStorage.getItem(getDraftKey()) || '{}');
+
+        let html = '';
+        let count = 0;
+
+        myBuildings.forEach((item, originalIndex) => {
+            // 只渲染属于当前 Tab 的楼宇
+            if (item._category !== currentTab) return;
+            count++;
+
             // 基础信息
             const name = item['写字楼名称'] || item['Project Name CN'] || item['name'];
             const district = item['子市场'] || item['SUBMARKET'];
@@ -158,8 +210,11 @@
             const lastVacArea = safeNum(item['空置面积']);
             const lastVacRate = safeNum(item['空置率']);
 
-            return `
-            <tr data-id="${i}" data-total-area="${totalArea}" data-last-net="${lastNet}" data-last-vac-area="${lastVacArea}">
+            // ★★★ 尝试从草稿箱恢复该行的数据 ★★★
+            const d = draftData[originalIndex] || {};
+
+            html += `
+            <tr data-id="${originalIndex}" data-total-area="${totalArea}" data-last-net="${lastNet}" data-last-vac-area="${lastVacArea}">
                 <td class="col-fixed" style="text-align:left; font-weight:bold;">${name}</td>
                 <td>${district}</td>
                 <td>${totalArea.toLocaleString()}</td>
@@ -172,39 +227,51 @@
                 <td style="color:#666;">${lastVacArea.toLocaleString()}</td>
                 <td style="color:#666;">${(lastVacRate*100).toFixed(1)}%</td>
 
-                <td class="input-cell"><input type="number" class="curr-quote" oninput="calcRow(${i})"></td>
-                <td class="input-cell"><input type="number" class="curr-prop" oninput="calcRow(${i})"></td>
-                <td class="input-cell"><input type="number" class="curr-face" oninput="calcRow(${i})"></td>
-                <td class="input-cell"><input type="number" class="curr-free" oninput="calcRow(${i})"></td>
+                <td class="input-cell"><input type="number" class="curr-quote" value="${d.qQuote || ''}" oninput="calcRow(${originalIndex})"></td>
+                <td class="input-cell"><input type="number" class="curr-prop" value="${d.qProp || ''}" oninput="calcRow(${originalIndex})"></td>
+                <td class="input-cell"><input type="number" class="curr-face" value="${d.qFace || ''}" oninput="calcRow(${originalIndex})"></td>
+                <td class="input-cell"><input type="number" class="curr-free" value="${d.qFree || ''}" oninput="calcRow(${originalIndex})"></td>
                 
                 <td class="calc-cell net-rent">-</td>
                 <td class="calc-cell rent-change">-</td>
                 
-                <td class="input-cell"><input type="number" class="curr-vac-area" oninput="calcRow(${i})"></td>
+                <td class="input-cell"><input type="number" class="curr-vac-area" value="${d.qVacArea || ''}" oninput="calcRow(${originalIndex})"></td>
                 
                 <td class="calc-cell area-change">-</td>
                 <td class="calc-cell vac-rate">-</td>
                 
-                <td class="input-cell"><input type="text" class="curr-remark"></td>
+                <td class="input-cell"><input type="text" class="curr-remark" value="${d.qRemark || ''}" oninput="calcRow(${originalIndex})"></td>
             </tr>
-        `}).join('');
+            `;
+        });
+
+        if (count === 0) {
+            tbody.innerHTML = `<tr><td colspan="20" style="text-align:center; padding:30px;">您名下暂无该类别 (${currentTab}) 的负责项目</td></tr>`;
+        } else {
+            tbody.innerHTML = html;
+            // 渲染完毕后，遍历所有行，触发一次自动计算 (以便草稿恢复后，净有效租金等数字能显示出来)
+            setTimeout(() => {
+                document.querySelectorAll('#table-body tr[data-id]').forEach(row => {
+                    calcRow(row.dataset.id);
+                });
+            }, 0);
+        }
     }
 
-    // ★★★ 核心：自动计算逻辑 ★★★
+    // 核心：自动计算逻辑
     window.calcRow = function(index) {
         const row = document.querySelector(`tr[data-id="${index}"]`);
-        
-        // 1. 获取输入值
+        if (!row) return;
+
         const faceRent = parseFloat(row.querySelector('.curr-face').value) || 0;
         const freeMonth = parseFloat(row.querySelector('.curr-free').value) || 0;
         const vacArea = parseFloat(row.querySelector('.curr-vac-area').value) || 0;
 
-        // 2. 获取隐藏的参考值
         const totalArea = parseFloat(row.dataset.totalArea) || 1;
         const lastNet = parseFloat(row.dataset.lastNet) || 0;
         const lastVacArea = parseFloat(row.dataset.lastVacArea) || 0;
 
-        // 3. 计算净有效租金
+        // 净有效租金
         let currentNet = 0;
         if (faceRent > 0) {
             currentNet = faceRent * (36 - freeMonth) / 36;
@@ -213,7 +280,7 @@
             row.querySelector('.net-rent').innerText = '-';
         }
 
-        // 4. 计算租金变化率
+        // 租金变化率
         if (currentNet > 0 && lastNet > 0) {
             const change = (currentNet - lastNet) / lastNet;
             const cell = row.querySelector('.rent-change');
@@ -223,7 +290,7 @@
             row.querySelector('.rent-change').innerText = '-';
         }
 
-        // 5. 计算空置面积变化
+        // 空置面积变化
         if (row.querySelector('.curr-vac-area').value !== '') {
             const areaDiff = vacArea - lastVacArea;
             const cell = row.querySelector('.area-change');
@@ -233,7 +300,7 @@
             row.querySelector('.area-change').innerText = '-';
         }
 
-        // 6. 计算空置率
+        // 空置率
         if (row.querySelector('.curr-vac-area').value !== '') {
             const rate = vacArea / totalArea;
             row.querySelector('.vac-rate').innerText = (rate * 100).toFixed(1) + '%';
@@ -242,20 +309,16 @@
         }
     };
 
-    // 提交数据
-    async function submitData() {
-        const btn = document.querySelector('.btn-submit');
-        const msg = document.getElementById('status-msg');
-        const rows = document.querySelectorAll('#table-body tr');
-        const submission = [];
-        
-        let hasEdits = false;
+    // ★★★ 保存草稿到本地存储 ★★★
+    window.saveDraft = function() {
+        const rows = document.querySelectorAll('#table-body tr[data-id]');
+        if (rows.length === 0) return;
 
-        rows.forEach((row, index) => {
-            const building = myBuildings[index];
-            if(!building) return;
+        const draft = {};
+        let hasData = false;
 
-            // 获取输入值
+        rows.forEach(row => {
+            const id = row.dataset.id;
             const qQuote = row.querySelector('.curr-quote').value;
             const qProp = row.querySelector('.curr-prop').value;
             const qFace = row.querySelector('.curr-face').value;
@@ -263,70 +326,120 @@
             const qVacArea = row.querySelector('.curr-vac-area').value;
             const qRemark = row.querySelector('.curr-remark').value;
 
-            // 获取计算值
+            // 只要填了一项，就把这行存草稿
+            if(qQuote || qProp || qFace || qFree || qVacArea || qRemark) {
+                hasData = true;
+                draft[id] = { qQuote, qProp, qFace, qFree, qVacArea, qRemark };
+            }
+        });
+
+        if (hasData) {
+            localStorage.setItem(getDraftKey(), JSON.stringify(draft));
+            const timeStr = new Date().toTimeString().substring(0, 8); // 获取 HH:MM:SS
+            document.getElementById('draft-status').innerText = `✅ 草稿已自动保存 (${timeStr})`;
+        } else {
+            // 如果全清空了，就删除草稿
+            localStorage.removeItem(getDraftKey());
+            document.getElementById('draft-status').innerText = '';
+        }
+    };
+
+    // 手动点击暂存按钮
+    window.manualSave = function() {
+        saveDraft();
+        alert(`已为您保存当前 [${currentTab}] 标签页的数据草稿！\n即使关闭网页，下次打开也会恢复。`);
+    };
+
+    // 提交数据
+    async function submitData() {
+        // 提交前，强行保存一次草稿防丢失
+        saveDraft();
+
+        const btn = document.querySelector('.btn-submit');
+        const msg = document.getElementById('status-msg');
+        const rows = document.querySelectorAll('#table-body tr[data-id]');
+        const submission = [];
+        
+        let hasEdits = false;
+
+        rows.forEach((row) => {
+            const originalIndex = row.dataset.id;
+            const building = myBuildings[originalIndex];
+            if(!building) return;
+
+            const qQuote = row.querySelector('.curr-quote').value;
+            const qProp = row.querySelector('.curr-prop').value;
+            const qFace = row.querySelector('.curr-face').value;
+            const qFree = row.querySelector('.curr-free').value;
+            const qVacArea = row.querySelector('.curr-vac-area').value;
+            const qRemark = row.querySelector('.curr-remark').value;
+
             const cNet = row.querySelector('.net-rent').innerText;
             const cRateChange = row.querySelector('.rent-change').innerText;
             const cAreaChange = row.querySelector('.area-change').innerText;
             const cVacRate = row.querySelector('.vac-rate').innerText;
 
-            // 只要填了任意一项，就记录该行
             if(qQuote || qProp || qFace || qFree || qVacArea || qRemark) {
                 hasEdits = true;
                 
-                // ★★★ 核心修改：构建全量数据对象 ★★★
                 submission.push({
-                    // 1. 基础信息
                     "写字楼名称": building['写字楼名称'] || building['Project Name CN'],
                     "子市场": building['子市场'],
                     "总面积": building['总面积'],
+                    "物业分类": currentTab, // 记录这是什么类型的楼
 
-                    // 2. 上季度数据 (保留原样)
                     "上季度租金报价": building['上季度租金报价'],
                     "上季度物业费": building['上季度物业费'],
                     "上季度表面租金": building['上季度表面租金'],
                     "上季度免租期": building['上季度免租期'],
-                    "上季度净有效租金": building['净有效租金'], // 对应底表字段
+                    "上季度净有效租金": building['净有效租金'],
                     "上季度空置面积": building['空置面积'],
                     "上季度空置率": building['空置率'],
 
-                    // 3. 本季度数据 (Editor填写)
                     "本季度租金报价": qQuote,
                     "本季度物业费": qProp,
                     "本季度表面租金": qFace,
                     "本季度免租期": qFree,
                     "本季度空置面积": qVacArea,
                     
-                    // 4. 自动计算数据
                     "本季度净有效租金": cNet !== '-' ? cNet : '',
                     "租金环比变化": cRateChange !== '-' ? cRateChange : '',
                     "空置面积变化": cAreaChange !== '-' ? cAreaChange : '',
                     "本季度空置率": cVacRate !== '-' ? cVacRate : '',
                     "备注": qRemark,
                     
-                    // 5. 元数据
                     "填报人": currentUser.name,
                     "填报时间": new Date().toLocaleString()
                 });
             }
         });
 
-        if (!hasEdits) { alert("请至少填写一行数据"); return; }
+        if (!hasEdits) { alert("当前页面没有填写任何新数据。"); return; }
 
         btn.disabled = true;
         btn.innerText = "正在上传...";
         msg.innerText = "正在打包全量数据并上传...";
 
         try {
+            // ★★★ 核心技巧：通过拼接 user 字段，控制后端生成的文件名 ★★★
+            // 后端原逻辑是：`${user}-${timestamp}.xlsx`
+            // 这里我们传：`Iris_GradeA`
+            // 后端就会生成：`Iris_GradeA-1770086693753.xlsx`，完美符合规范！
+            const pseudoUser = `${currentUser.name}_${currentTab}`;
+
             const res = await fetch('/api/submit-update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user: currentUser.name, data: submission })
+                body: JSON.stringify({ user: pseudoUser, data: submission })
             });
             const result = await res.json();
             
             if (result.status === 'success') {
+                // 上传成功后，清空该分类的本地草稿
+                localStorage.removeItem(getDraftKey());
                 alert(`✅ 提交成功！\n数据已保存至: ${result.filename}`);
-                window.location.href = 'index.html'; 
+                // 刷新当前页面，继续填写
+                location.reload(); 
             } else {
                 alert("提交失败: " + result.message);
                 btn.disabled = false;
