@@ -1,3 +1,15 @@
+没问题，这是一个很好的产品迭代思路——**“先跑通核心主线，再逐步灰度开放新功能”**，这样用户界面也会更加清爽，不会被不能点的灰色按钮干扰。
+
+为了让界面在只有 3 个功能的情况下依然**美观且居中**，我做了两件事：
+
+1. 将后面 5 个功能的代码用 HTML 注释 `` 隐藏了起来。等你以后想用的时候，直接把注释删掉就能瞬间复活。
+2. 把原来的 `4列` 排版，改成了 **`3列` (repeat(3, 1fr))**，这样剩下的三个图标就会完美、均匀地铺满并居中显示，不会因为右边空着一块而显得奇怪。
+
+### 🚀 完整代码 (`index.html` 隐藏预留功能版)
+
+请全选复制，覆盖你的 `index.html`：
+
+```html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -28,14 +40,14 @@
         .main-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
         .welcome-text { text-align: center; color: #333; margin-bottom: 40px; max-width: 800px; font-size: 15px; line-height: 1.6; }
         
-        /* 八宫格布局 */
-        .grid-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px 40px; max-width: 900px; width: 100%; }
+        /* ★★★ 布局修改：由于目前只有3个模块，改为 repeat(3, 1fr) 完美居中对齐 ★★★ */
+        .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px 40px; max-width: 800px; width: 100%; }
         
         /* 单个模块卡片 */
         .nav-card { background: white; padding: 30px 20px; border-radius: 12px; text-align: center; text-decoration: none; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; gap: 15px; border: 1px solid #eee; }
         .nav-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); border-color: #ddd; }
         
-        /* 图标样式定制 (完全还原图片颜色) */
+        /* 图标样式定制 */
         .icon-box { font-size: 50px; }
         .c-blue { color: #3498db; }    /* 项目地图 */
         .c-purple { color: #8e44ad; }  /* 季度报告 */
@@ -107,31 +119,7 @@
                 <div class="card-title">数据收集</div>
             </a>
 
-            <a href="javascript:alert('该功能正在拓展中，敬请期待！');" class="nav-card disabled">
-                <div class="icon-box c-green"><i class="fas fa-handshake"></i></div>
-                <div class="card-title">租赁成交收集</div>
-            </a>
-
-            <a href="javascript:alert('该功能正在拓展中，敬请期待！');" class="nav-card disabled">
-                <div class="icon-box c-yellow"><i class="fas fa-coins"></i></div>
-                <div class="card-title">租金评估</div>
-            </a>
-
-            <a href="javascript:alert('该功能正在拓展中，敬请期待！');" class="nav-card disabled">
-                <div class="icon-box c-grey"><i class="fas fa-gem"></i></div>
-                <div class="card-title">价值评估</div>
-            </a>
-
-            <a href="javascript:alert('该功能正在拓展中，敬请期待！');" class="nav-card disabled">
-                <div class="icon-box c-orange"><i class="fas fa-chart-pie"></i></div>
-                <div class="card-title">分析图表</div>
-            </a>
-
-            <a href="javascript:alert('该功能正在拓展中，敬请期待！');" class="nav-card disabled">
-                <div class="icon-box c-dark"><i class="fas fa-brain"></i></div>
-                <div class="card-title">知识库</div>
-            </a>
-        </div>
+            </div>
     </div>
 
     <div class="notice-bar">
@@ -208,3 +196,5 @@
     </script>
 </body>
 </html>
+
+```
