@@ -3,6 +3,15 @@
     "user": "Iris",
     "action": "search",
     "details": {
+      "keyword": "新时代大厦",
+      "filter": "无"
+    },
+    "time": "3/2/2026, 10:51:13 AM"
+  },
+  {
+    "user": "Iris",
+    "action": "search",
+    "details": {
       "keyword": "合景国际金融广场",
       "filter": "无"
     },
