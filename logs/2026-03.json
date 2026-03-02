@@ -3,6 +3,15 @@
     "user": "Iris",
     "action": "search",
     "details": {
+      "keyword": "合景国际金融广场",
+      "filter": "无"
+    },
+    "time": "3/2/2026, 10:50:59 AM"
+  },
+  {
+    "user": "Iris",
+    "action": "search",
+    "details": {
       "keyword": "国家会议中心",
       "filter": "无"
     },
