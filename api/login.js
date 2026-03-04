@@ -4,8 +4,7 @@ import { Octokit } from "@octokit/rest";
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
-    
-    // 获取动作指令：如果是 'check' 就是查岗，否则就是默认的登录
+
     const action = req.query.action || (req.body && req.body.action);
 
     try {
@@ -16,9 +15,12 @@ export default async function handler(req, res) {
             const { username, token } = req.body;
             if (!username || !token) return res.status(400).json({ status: 'invalid' });
             
-            // 从 Vercel KV 里查出该用户当前合法的 Token
-            const activeToken = await kv.get(`session_${username}`);
+            // 💡 诊断拦截：检查 KV 数据库是否挂载
+            if (!process.env.KV_REST_API_URL) {
+                throw new Error("Vercel KV 数据库未连接！请去 Vercel 的 Storage 重新 Connect。");
+            }
             
+            const activeToken = await kv.get(`session_${username}`);
             if (activeToken === token) {
                 return res.status(200).json({ status: 'valid' });
             } else {
@@ -33,13 +35,24 @@ export default async function handler(req, res) {
             const { name, id, phone } = req.body;
             if (!name || !id || !phone) return res.status(400).json({ status: 'fail', message: '参数缺失' });
 
+            // 💡 诊断拦截：检查 GitHub Token
+            if (!process.env.GITHUB_TOKEN) throw new Error("环境变量 GITHUB_TOKEN 丢失！");
+
             const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
-            const { data } = await octokit.repos.getContent({
-                owner: 'wateryh2004-beep', // 你的 GitHub 用户名
-                repo: 'office-map',
-                path: 'users.xlsx',
-                ref: 'main'
-            });
+            let data;
+            
+            // 💡 诊断拦截：检查能否读到 users.xlsx
+            try {
+                const response = await octokit.repos.getContent({
+                    owner: 'wateryh2004-beep', // 你的 GitHub 用户名
+                    repo: 'office-map',
+                    path: 'users.xlsx',
+                    ref: 'main'
+                });
+                data = response.data;
+            } catch (githubErr) {
+                throw new Error("无法读取 GitHub 中的 users.xlsx，请检查路径或 Token：" + githubErr.message);
+            }
 
             const buffer = Buffer.from(data.content, 'base64');
             const workbook = XLSX.read(buffer, { type: 'buffer' });
@@ -53,10 +66,12 @@ export default async function handler(req, res) {
             );
 
             if (matchedUser) {
-                // 生成唯一的 Token (房卡)
+                // 💡 诊断拦截：检查 KV 数据库是否挂载
+                if (!process.env.KV_REST_API_URL) {
+                    throw new Error("Vercel KV 数据库未连接！无法生成动态房卡。");
+                }
+
                 const sessionToken = Date.now().toString(36) + Math.random().toString(36).substring(2);
-                
-                // 将 Token 存入 Vercel KV，有效期 24 小时 (86400秒)
                 await kv.set(`session_${name}`, sessionToken, { ex: 86400 });
 
                 return res.status(200).json({ 
@@ -65,11 +80,12 @@ export default async function handler(req, res) {
                     token: sessionToken 
                 });
             } else {
-                return res.status(401).json({ status: 'fail', message: '信息不匹配' });
+                return res.status(401).json({ status: 'fail', message: '姓名、工号或手机号不匹配' });
             }
         }
     } catch (e) {
-        console.error(e);
-        return res.status(500).json({ status: 'error', message: '服务器验证失败' });
+        console.error("Login API Error:", e.message);
+        // ★★★ 核心改动：把真实的病因直接抛给前端显示 ★★★
+        return res.status(500).json({ status: 'error', message: e.message });
     }
 }
