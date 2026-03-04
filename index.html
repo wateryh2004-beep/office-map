@@ -215,7 +215,7 @@
                 const user = JSON.parse(userStr);
                 
                 try {
-                    const res = await fetch('/api/check-session', {
+                    cconst res = await fetch('/api/login?action=check', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username: user.name, token: currentToken })
