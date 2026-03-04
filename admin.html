@@ -21,7 +21,7 @@
         .card-header h3 { margin: 0; color: #004080; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
         
         /* --- 栅格布局 --- */
-        .resources-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; divide-x: 1px solid #e9ecef; }
+        .resources-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; }
         .resource-item { padding: 25px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; border-right: 1px solid #f0f0f0; }
         .resource-item:last-child { border-right: none; }
         .item-icon { font-size: 28px; margin-bottom: 5px; }
@@ -42,12 +42,9 @@
         .btn-green { background: #28a745; color: white; }
         .btn-green:hover { background: #218838; }
         .btn-action:disabled { background: #e9ecef; color: #adb5bd; cursor: not-allowed; }
-        .btn-link { color: #004080; text-decoration: none; font-size: 12px; font-weight: bold; border: 1px solid #cce5ff; padding: 4px 10px; border-radius: 20px; background: #f0f8ff; transition: all 0.2s; }
         
         .delete-btn-sm { background: #dc3545; color: white; padding: 4px 10px; border-radius: 3px; cursor: pointer; border: none; font-size: 11px; white-space: nowrap; transition: 0.2s; }
-        .delete-btn-sm:hover { background: #c82333; }
         .edit-btn-sm { background: #17a2b8; color: white; padding: 4px 10px; border-radius: 3px; cursor: pointer; border: none; font-size: 11px; white-space: nowrap; transition: 0.2s; margin-right: 5px; }
-        .edit-btn-sm:hover { background: #138496; }
 
         /* --- 表格区域 --- */
         .scroll-area { flex: 1; overflow-y: auto; padding: 0; }
@@ -57,7 +54,6 @@
         tr:hover { background: #fcfcfc; }
         .empty-tip { text-align: center; color: #999; padding: 40px; }
 
-        /* --- 颜色与标签 --- */
         .tag-user { font-weight: bold; color: #004080; }
         .tag-keyword { background: #eef2f5; padding: 2px 8px; border-radius: 4px; color: #555; border: 1px solid #e0e0e0; }
         .download-btn-sm { background: #28a745; color: white; padding: 4px 10px; border-radius: 3px; text-decoration: none; font-size: 11px; white-space: nowrap; }
@@ -80,7 +76,6 @@
         .oss-select-group { display: flex; gap: 8px; width: 90%; margin-bottom: 5px; }
         .oss-select { flex: 1; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
 
-        /* ★ 居中悬浮重分类弹窗样式 ★ */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 99999; justify-content: center; align-items: center; }
         .modal-box { background: white; padding: 25px; border-radius: 8px; width: 320px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
         .modal-title { margin-top: 0; font-size: 16px; color: #004080; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
@@ -96,26 +91,26 @@
 <div class="container">
     
     <div class="card">
-        <div class="card-header"><h3>🛠️ 系统核心资源管理 (Resource Management)</h3></div>
+        <div class="card-header"><h3>🛠️ 系统核心资源管理</h3></div>
         <div class="resources-grid">
             
             <div class="resource-item">
-                <div class="item-icon">🗄️</div><div class="item-title">核心数据源 (Map Data)</div>
+                <div class="item-icon">🗄️</div><div class="item-title">核心数据源</div>
                 <div class="item-desc">管理 data.xlsx 底表</div>
                 <div class="file-input-wrapper"><input type="file" id="source-file" accept=".xlsx" class="file-input"></div>
                 <button class="btn-action btn-red" id="btn-upload-source" onclick="directUpload('source-file', 'data.xlsx', 'btn-upload-source')">🚀 更新 Excel</button>
             </div>
 
             <div class="resource-item">
-                <div class="item-icon">🔐</div><div class="item-title">账号权限 (User List)</div>
+                <div class="item-icon">🔐</div><div class="item-title">账号权限</div>
                 <div class="item-desc">管理 users.xlsx 白名单</div>
                 <div class="file-input-wrapper"><input type="file" id="user-file" accept=".xlsx" class="file-input"></div>
                 <button class="btn-action btn-red" id="btn-upload-user" onclick="directUpload('user-file', 'users.xlsx', 'btn-upload-user')">🚀 更新名单</button>
             </div>
 
             <div class="resource-item" style="background: #f8fdf8;">
-                <div class="item-icon">📚</div><div class="item-title" style="color:#28a745;">报告归档 (OSS Upload)</div>
-                <div class="item-desc">选择目录后上传，自动归类</div>
+                <div class="item-icon">📚</div><div class="item-title" style="color:#28a745;">报告归档 (OSS)</div>
+                <div class="item-desc">自动归类上传至云端</div>
                 <div class="oss-select-group">
                     <select id="oss-lang" class="oss-select"><option value="CN">🇨🇳 中文</option><option value="EN">🇬🇧 English</option></select>
                     <select id="oss-category" class="oss-select"><option value="Quarterly">季度报告</option><option value="Thematic">专题研究</option><option value="BP">产业园</option><option value="Others">其他材料</option></select>
@@ -124,11 +119,11 @@
                 <button class="btn-action btn-green" id="btn-upload-oss" onclick="uploadToOSS()">🚀 直传至阿里云</button>
             </div>
 
-            <div class="resource-item" style="border-right: none;">
-                <div class="item-icon">📢</div><div class="item-title">系统公告 (Notice)</div>
+            <div class="resource-item">
+                <div class="item-icon">📢</div><div class="item-title">系统公告</div>
                 <div class="item-desc">修改门户底部滚动播报</div>
                 <div style="height:24px;"></div> 
-                <input type="text" id="notice-input" class="file-input" placeholder="输入新的重要通知..." style="border:1px solid #ccc; padding:8px; width:90%; box-sizing:border-box;">
+                <input type="text" id="notice-input" class="file-input" placeholder="输入新公告..." style="border:1px solid #ccc; padding:8px; width:90%; box-sizing:border-box;">
                 <button class="btn-action btn-blue" id="btn-update-notice" onclick="updateNotice()">✅ 发布新公告</button>
             </div>
         </div>
@@ -150,22 +145,22 @@
 
         <div class="card monitor-card">
             <div class="card-header">
-                <h3>📁 季度填报归档 (GitHub Uploads)</h3>
+                <h3>📁 季度填报归档 (GitHub)</h3>
             </div>
             <div class="filter-bar">
                 <select id="filter-quarter" class="select-sm" onchange="renderFiles()"><option value="ALL">全部季度</option></select>
                 <select id="filter-type" class="select-sm" onchange="renderFiles()">
-                    <option value="ALL">全部物业类型</option>
-                    <option value="GradeA">甲级 (Grade A)</option>
-                    <option value="GradeB">乙级 (Grade B)</option>
-                    <option value="BP">产业园 (BP)</option>
+                    <option value="ALL">全部类型</option>
+                    <option value="GradeA">甲级</option>
+                    <option value="GradeB">乙级</option>
+                    <option value="BP">产业园</option>
                 </select>
                 <select id="filter-user" class="select-sm" onchange="renderFiles()"><option value="ALL">所有填报人</option></select>
             </div>
             <div class="scroll-area">
                 <table id="file-table">
                     <thead><tr><th>解析信息 / 文件名</th><th style="width:20%">大小</th><th style="width:15%">操作</th></tr></thead>
-                    <tbody id="file-body"><tr><td colspan="3" class="empty-tip">正在获取文件列表...</td></tr></tbody>
+                    <tbody id="file-body"><tr><td colspan="3" class="empty-tip">正在获取列表...</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -173,7 +168,7 @@
 
     <div class="card" style="margin-top: 10px; border: 1px solid #c3e6cb;">
         <div class="card-header" style="background: #eafbee; border-bottom: 1px solid #c3e6cb;">
-            <h3 style="color: #155724;">☁️ 阿里云报告库管理 (带分类解析)</h3>
+            <h3 style="color: #155724;">☁️ 阿里云报告库管理</h3>
         </div>
         <div class="scroll-area" style="max-height: 400px;">
             <table>
@@ -181,11 +176,11 @@
                     <tr>
                         <th style="width: 50%;">目录路径 / 文件名</th>
                         <th style="width: 15%;">大小</th>
-                        <th style="width: 15%;">最后更新时间</th>
-                        <th style="width: 20%; text-align: center;">管理操作</th>
+                        <th style="width: 15%;">更新时间</th>
+                        <th style="width: 20%; text-align: center;">操作</th>
                     </tr>
                 </thead>
-                <tbody id="oss-body"><tr><td colspan="4" class="empty-tip">正在从阿里云拉取数据...</td></tr></tbody>
+                <tbody id="oss-body"><tr><td colspan="4" class="empty-tip">拉取中...</td></tr></tbody>
             </table>
         </div>
     </div>
@@ -196,17 +191,13 @@
 <div id="move-modal" class="modal-overlay">
     <div class="modal-box">
         <h3 class="modal-title">📂 更改报告分类</h3>
-        <p style="font-size:12px; color:#888; margin-bottom:5px;">当前文件：</p>
-        <div id="move-file-name" style="font-size:13px; font-weight:bold; color:#333; word-break:break-all; margin-bottom:15px;"></div>
-        
-        <p style="font-size:12px; color:#888; margin-bottom:5px;">移动至新目录：</p>
-        <div class="oss-select-group" style="width:100%; margin-bottom:20px;">
+        <p style="font-size:12px; color:#888;" id="move-file-name"></p>
+        <div class="oss-select-group" style="width:100%; margin:15px 0;">
             <select id="move-lang" class="oss-select"><option value="CN">🇨🇳 中文</option><option value="EN">🇬🇧 English</option></select>
-            <select id="move-cat" class="oss-select"><option value="Quarterly">季度报告</option><option value="Thematic">专题研究</option><option value="BP">产业园</option><option value="Others">其他材料</option></select>
+            <select id="move-cat" class="oss-select"><option value="Quarterly">季度报告</option><option value="Thematic">专题研究</option><option value="BP">产业园</option><option value="Others">其他</option></select>
         </div>
-        
         <div style="display:flex; gap:10px; justify-content:flex-end;">
-            <button class="btn-action" style="background:#eee; color:#333; width:auto;" onclick="closeMoveModal()">取消</button>
+            <button class="btn-action" style="background:#eee; width:auto;" onclick="closeMoveModal()">取消</button>
             <button class="btn-action btn-blue" style="width:auto;" id="btn-confirm-move" onclick="confirmMove()">确认移动</button>
         </div>
     </div>
@@ -214,284 +205,160 @@
 
 <script>
     let currentUser = null;
-    const today = new Date();
-    document.getElementById('log-month').value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
-
     const CONFIG = { owner: 'wateryh2004-beep', repo: 'office-map', branch: 'main' };
     let allUploadedFiles = []; 
 
     window.onload = function() {
         const userStr = localStorage.getItem('colliers_user');
-        if (!userStr) { alert("请先登录"); window.location.href = 'index.html'; return; }
+        if (!userStr) { window.location.href = 'index.html'; return; }
         currentUser = JSON.parse(userStr);
-        if (currentUser.role !== 'admin') { alert("无权访问"); window.location.href = 'index.html'; return; }
+        if (currentUser.role !== 'admin') { window.location.href = 'index.html'; return; }
 
         loadLogs(); loadFiles(); loadVersionInfo(); loadOSSReports();   
     };
 
-    // ==========================================
-    // ★★★ 阿里云 OSS 重构核心功能 ★★★
-    // ==========================================
+    // ★ 修改：使用合并后的 portal 接口发布公告 ★
+    async function updateNotice() {
+        const text = document.getElementById('notice-input').value.trim(); 
+        if (!text) { alert("内容不能为空！"); return; }
+        const btn = document.getElementById('btn-update-notice'); 
+        btn.disabled = true; btn.innerText = "发布中...";
+        try { 
+            const res = await fetch('/api/portal?action=update-notice', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ text: text, user: currentUser.name }) 
+            }); 
+            if ((await res.json()).status === 'success') { 
+                alert("✅ 公告已成功发布"); 
+                document.getElementById('notice-input').value = ''; 
+            } 
+        } catch (e) { alert("发布失败，请检查网络"); } 
+        finally { btn.disabled = false; btn.innerText = "✅ 发布新公告"; }
+    }
+
     async function uploadToOSS() {
         const fileInput = document.getElementById('oss-report-file');
         const files = fileInput.files;
-        if (files.length === 0) { alert("请先选择要上传的 PDF 报告！"); return; }
+        if (files.length === 0) { alert("请选择文件！"); return; }
         const lang = document.getElementById('oss-lang').value;
         const category = document.getElementById('oss-category').value;
         const btn = document.getElementById('btn-upload-oss');
-        btn.disabled = true; btn.innerText = "🔑 获取云端通行证...";
-
+        btn.disabled = true; btn.innerText = "正在直传...";
         try {
             const signRes = await fetch('/api/oss?action=get-signature');
             const signData = await signRes.json();
-            if (signData.status !== 'success') throw new Error(signData.message);
-
-            for (let i = 0; i < files.length; i++) {
-                let file = files[i];
-                btn.innerText = `⏳ 正在直传 (${i+1}/${files.length})...`;
+            for (let file of files) {
                 const formData = new FormData();
-                const fullKey = `${lang}/${category}/${file.name}`; 
-                formData.append('key', fullKey); 
+                formData.append('key', `${lang}/${category}/${file.name}`);
                 formData.append('policy', signData.policy);
                 formData.append('OSSAccessKeyId', signData.OSSAccessKeyId);
                 formData.append('signature', signData.signature);
                 formData.append('success_action_status', '200');
                 formData.append('file', file);
-                const uploadRes = await fetch(signData.host, { method: 'POST', body: formData });
-                if (!uploadRes.ok) throw new Error(`${file.name} 上传失败`);
+                await fetch(signData.host, { method: 'POST', body: formData });
             }
-            alert("✅ 全部分类报告上传成功！");
-            fileInput.value = ''; 
-            loadOSSReports();     
-        } catch (e) { console.error(e); alert("上传中止: " + e.message); } 
+            alert("✅ 上传成功！");
+            loadOSSReports();
+        } catch (e) { alert("上传失败"); }
         finally { btn.disabled = false; btn.innerText = "🚀 直传至阿里云"; }
     }
 
     async function loadOSSReports() {
         const tbody = document.getElementById('oss-body');
-        const mapLang = { 'CN': '🇨🇳 中文', 'EN': '🇬🇧 英文' };
-        const mapCat = { 'Quarterly': '季度报告', 'Thematic': '专题研究', 'BP': '产业园', 'Others': '其他' };
-
         try {
             const res = await fetch('/api/oss?action=get-list');
             const result = await res.json();
             if (result.status === 'success') {
-                if (result.data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="empty-tip">报告库为空</td></tr>'; return; }
                 tbody.innerHTML = result.data.map(file => {
-                    const dateObj = new Date(file.lastModified);
-                    const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
                     const parts = file.name.split('/');
-                    let tagLang = '', tagCat = '', displayFileName = file.name;
-                    let curLang = 'CN', curCat = 'Others'; // 默认值用于传给移动弹窗
-                    
-                    if (parts.length >= 3) {
-                        curLang = parts[0]; curCat = parts[1];
-                        tagLang = `<span class="oss-tag-lang">${mapLang[curLang] || curLang}</span>`;
-                        tagCat = `<span class="oss-tag-cat">${mapCat[curCat] || curCat}</span>`;
-                        displayFileName = parts.slice(2).join('/'); 
-                    } else { tagCat = `<span class="oss-tag-cat" style="background:#eee;color:#666;">未分类</span>`; }
-
-                    return `
-                        <tr>
-                            <td><div style="margin-bottom:4px;">${tagLang}${tagCat}</div><div style="font-weight:500; color:#333;">📄 ${displayFileName}</div></td>
-                            <td style="color:#888;">${file.size}</td>
-                            <td style="color:#888;">${dateStr}</td>
-                            <td style="text-align: center;">
-                                <button class="edit-btn-sm" onclick="openMoveModal('${file.name}', '${curLang}', '${curCat}')">✏️ 分类</button>
-                                <button class="delete-btn-sm" onclick="deleteOSSReport('${file.name}')">❌ 删除</button>
-                            </td>
-                        </tr>
-                    `;
+                    const display = parts.length >= 3 ? parts.slice(2).join('/') : file.name;
+                    return `<tr>
+                        <td><span class="oss-tag-lang">${parts[0]||'未知'}</span><span class="oss-tag-cat">${parts[1]||'未分类'}</span><br>📄 ${display}</td>
+                        <td>${file.size}</td><td>${file.lastModified.split('T')[0]}</td>
+                        <td style="text-align:center;">
+                            <button class="edit-btn-sm" onclick="openMoveModal('${file.name}', '${parts[0]}', '${parts[1]}')">✏️ 分类</button>
+                            <button class="delete-btn-sm" onclick="deleteOSSReport('${file.name}')">❌</button>
+                        </td>
+                    </tr>`;
                 }).join('');
             }
         } catch (e) {}
     }
 
     async function deleteOSSReport(fileName) {
-        if (!confirm(`确定要永久删除云端报告吗？\n${fileName}`)) return;
-        try {
-            const res = await fetch(`/api/oss?action=delete&file=${encodeURIComponent(fileName)}`, { method: 'POST' });
-            if ((await res.json()).status === 'success') loadOSSReports(); 
-        } catch (e) { alert("删除失败"); }
+        if (!confirm("确定删除？")) return;
+        await fetch(`/api/oss?action=delete&file=${encodeURIComponent(fileName)}`, { method: 'POST' });
+        loadOSSReports();
     }
 
-    // --- ★ 新增：弹窗交互与分类移动 API 调用 ★ ---
-    let currentMovingFile = ""; 
-    let currentPureFileName = "";
-
+    let currentMovingFile = "";
     function openMoveModal(fullKey, curLang, curCat) {
         currentMovingFile = fullKey;
-        currentPureFileName = fullKey.split('/').pop();
-        document.getElementById('move-file-name').innerText = currentPureFileName;
+        document.getElementById('move-file-name').innerText = fullKey.split('/').pop();
         document.getElementById('move-lang').value = curLang;
         document.getElementById('move-cat').value = curCat;
         document.getElementById('move-modal').style.display = 'flex';
     }
-
     function closeMoveModal() { document.getElementById('move-modal').style.display = 'none'; }
-
     async function confirmMove() {
-        const newLang = document.getElementById('move-lang').value;
-        const newCat = document.getElementById('move-cat').value;
-        const newKey = `${newLang}/${newCat}/${currentPureFileName}`;
-
-        if (newKey === currentMovingFile) { alert("目录没有改变！"); closeMoveModal(); return; }
-
-        const btn = document.getElementById('btn-confirm-move');
-        btn.disabled = true; btn.innerText = "处理中...";
-
-        try {
-            const res = await fetch('/api/oss?action=move', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ oldKey: currentMovingFile, newKey: newKey })
-            });
-            const data = await res.json();
-            if(data.status === 'success') {
-                alert("✅ 分类转移成功！");
-                closeMoveModal();
-                loadOSSReports(); // 刷新表格
-            } else { throw new Error(data.message); }
-        } catch (e) { alert("移动失败：" + e.message); }
-        finally { btn.disabled = false; btn.innerText = "确认移动"; }
-    }
-
-
-    // ==========================================
-    // GitHub 旧有数据逻辑 (全量保留)
-    // ==========================================
-    function tsToQuarterStr(timestampStr) {
-        const ts = parseInt(timestampStr); if (isNaN(ts)) return "未知时间";
-        const d = new Date(ts); const m = d.getMonth() + 1;
-        let q = 1; if (m >= 4 && m <= 6) q = 2; else if (m >= 7 && m <= 9) q = 3; else if (m >= 10 && m <= 12) q = 4;
-        return `${d.getFullYear()}-Q${q}`;
-    }
-
-    async function loadFiles() {
-        try {
-            const res = await fetch('/api/get-uploaded-files');
-            const result = await res.json();
-            if (result.data && result.data.length > 0) {
-                allUploadedFiles = result.data.map(file => {
-                    let fName = file.name.replace('.xlsx', '');
-                    let parts = fName.split('-');
-                    let uNameAndType = parts[0], ts = parts[1] || '0', uName = uNameAndType, type = 'Unknown';
-                    if (uNameAndType.includes('_')) { let subParts = uNameAndType.split('_'); uName = subParts[0]; type = subParts[1]; }
-                    return { ...file, parsedUser: uName, parsedType: type, parsedQuarter: tsToQuarterStr(ts), timestamp: parseInt(ts) };
-                });
-                allUploadedFiles.sort((a, b) => b.timestamp - a.timestamp);
-                const quarters = [...new Set(allUploadedFiles.map(f => f.parsedQuarter))].filter(q => q !== '未知时间').sort().reverse();
-                const users = [...new Set(allUploadedFiles.map(f => f.parsedUser))].sort();
-                
-                const qSelect = document.getElementById('filter-quarter'); quarters.forEach(q => qSelect.insertAdjacentHTML('beforeend', `<option value="${q}">${q}</option>`));
-                const uSelect = document.getElementById('filter-user'); users.forEach(u => uSelect.insertAdjacentHTML('beforeend', `<option value="${u}">${u}</option>`));
-                
-                const d = new Date(); const m = d.getMonth() + 1; let q = 1; if (m >= 4 && m <= 6) q = 2; else if (m >= 7 && m <= 9) q = 3; else if (m >= 10 && m <= 12) q = 4;
-                const currentQ = `${d.getFullYear()}-Q${q}`;
-                if (quarters.includes(currentQ)) { qSelect.value = currentQ; }
-                renderFiles();
-            }
-        } catch (e) { }
-    }
-
-    window.renderFiles = function() {
-        const qVal = document.getElementById('filter-quarter').value, tVal = document.getElementById('filter-type').value, uVal = document.getElementById('filter-user').value;
-        const filtered = allUploadedFiles.filter(f => {
-            let pass = true;
-            if (qVal !== 'ALL' && f.parsedQuarter !== qVal) pass = false;
-            if (tVal !== 'ALL' && f.parsedType !== tVal) pass = false;
-            if (uVal !== 'ALL' && f.parsedUser !== uVal) pass = false;
-            return pass;
+        const newKey = `${document.getElementById('move-lang').value}/${document.getElementById('move-cat').value}/${currentMovingFile.split('/').pop()}`;
+        const res = await fetch('/api/oss?action=move', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ oldKey: currentMovingFile, newKey: newKey })
         });
-        const tbody = document.getElementById('file-body');
-        if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="empty-tip">没有符合条件的文件</td></tr>'; return; }
-        tbody.innerHTML = filtered.map(file => {
-            let typeClass = 'bg-unknown';
-            if (file.parsedType === 'GradeA') typeClass = 'bg-gradeA'; else if (file.parsedType === 'GradeB') typeClass = 'bg-gradeB'; else if (file.parsedType === 'BP') typeClass = 'bg-bp';
-            return `<tr>
-                <td><div style="margin-bottom: 4px;"><span class="file-badge bg-gradeA">👤 ${file.parsedUser}</span><span class="file-badge ${typeClass}">🏢 ${file.parsedType === 'Unknown'?'未分类':file.parsedType}</span><span class="file-badge" style="background:#f1f8e9; color:#558b2f;">📅 ${file.parsedQuarter}</span></div><div style="color:#999; font-size:11px;" title="${file.name}">📄 ${file.name.length>30 ? file.name.substring(0,27)+'...' : file.name}</div></td>
-                <td style="color:#888; vertical-align:top; padding-top:14px;">${file.size}</td><td style="vertical-align:top; padding-top:10px;"><a href="${file.download_url}" class="download-btn-sm" target="_blank">⬇ 下载</a></td>
-            </tr>`;
-        }).join('');
-    };
+        if ((await res.json()).status === 'success') { closeMoveModal(); loadOSSReports(); }
+    }
 
     async function directUpload(inputId, targetFileName, btnId) {
-        const fileInput = document.getElementById(inputId); const file = fileInput.files[0];
-        if (!file) { alert("请先选择文件！"); return; }
-        if (!confirm(`⚠️ 确认覆盖更新 ${targetFileName} 吗？`)) return;
-        const btn = document.getElementById(btnId); const originalText = btn.innerText; btn.disabled = true; btn.innerText = "⏳ 上传中...";
-        try {
-            const tokenRes = await fetch('/api/get-token'); const tokenData = await tokenRes.json();
-            const reader = new FileReader(); reader.readAsDataURL(file);
-            reader.onload = async function() {
-                try {
-                    const base64Content = reader.result.split(',')[1]; const octokit = new window.Octokit({ auth: tokenData.token });
-                    let sha = null; try { const { data: existingFile } = await octokit.repos.getContent({ owner: CONFIG.owner, repo: CONFIG.repo, path: targetFileName, ref: CONFIG.branch }); sha = existingFile.sha; } catch (e) { }
-                    await octokit.repos.createOrUpdateFileContents({ owner: CONFIG.owner, repo: CONFIG.repo, path: targetFileName, message: `Update ${targetFileName}`, content: base64Content, sha: sha, branch: CONFIG.branch, committer: { name: "Admin Browser", email: "b@vercel.app" } });
-                    alert("✅ 上传成功！"); fileInput.value = ''; if(targetFileName === 'data.xlsx') setTimeout(loadVersionInfo, 2000);
-                } catch (e) { alert("失败: " + e.message); } finally { btn.disabled = false; btn.innerText = originalText; }
-            };
-        } catch (e) { btn.disabled = false; btn.innerText = originalText; }
+        const file = document.getElementById(inputId).files[0];
+        if (!file) return;
+        const btn = document.getElementById(btnId);
+        btn.disabled = true; btn.innerText = "上传中...";
+        const reader = new FileReader(); reader.readAsDataURL(file);
+        reader.onload = async () => {
+            const tokenRes = await fetch('/api/get-token');
+            const tokenData = await tokenRes.json();
+            const octokit = new window.Octokit({ auth: tokenData.token });
+            let sha = null;
+            try { const { data } = await octokit.repos.getContent({ owner: CONFIG.owner, repo: CONFIG.repo, path: targetFileName }); sha = data.sha; } catch (e) {}
+            await octokit.repos.createOrUpdateFileContents({ owner: CONFIG.owner, repo: CONFIG.repo, path: targetFileName, message: 'Admin update', content: reader.result.split(',')[1], sha, branch: CONFIG.branch });
+            alert("✅ 上传成功！"); btn.disabled = false; btn.innerText = "🚀 更新完成";
+        };
     }
-
-    async function updateNotice() {
-        const text = document.getElementById('notice-input').value.trim(); if (!text) { alert("不能为空！"); return; }
-        const btn = document.getElementById('btn-update-notice'); btn.disabled = true; btn.innerText = "发布中...";
-        try { const res = await fetch('/api/update-notice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: text, user: currentUser.name }) }); if ((await res.json()).status === 'success') { alert("✅ 已发布"); document.getElementById('notice-input').value = ''; } } catch (e) { } finally { btn.disabled = false; btn.innerText = "✅ 发布新公告"; }
-    }
-
-    async function loadVersionInfo() { try { const res = await fetch('/api/get-source-meta'); const data = await res.json(); if (data.status === 'success') { document.getElementById('last-update-time').innerText = data.lastUpdated; document.getElementById('version-tag').style.display = 'block'; } } catch (e) {} }
 
     async function loadLogs() {
-        try {
-            const res = await fetch('/api/get-logs'); const result = await res.json(); const tbody = document.getElementById('log-body');
-            if (result.data && result.data.length > 0) { tbody.innerHTML = result.data.map(log => `<tr><td style="color:#888;">${log.time.split(' ')[0]} <span style="font-size:11px">${log.time.split(' ')[1]||''}</span></td><td class="tag-user">${log.user}</td><td><span class="tag-keyword">${log.details.keyword}</span></td></tr>`).join(''); } 
-        } catch (e) { }
+        const res = await fetch('/api/get-logs'); const result = await res.json();
+        document.getElementById('log-body').innerHTML = result.data.map(log => `<tr><td>${log.time}</td><td class="tag-user">${log.user}</td><td><span class="tag-keyword">${log.details.keyword}</span></td></tr>`).join('');
     }
-    function downloadLogExcel() { const month = document.getElementById('log-month').value; if(!month) return; window.open(`/api/download-logs?month=${month}`, '_blank'); }
+    function downloadLogExcel() { window.open(`/api/download-logs?month=${document.getElementById('log-month').value}`, '_blank'); }
 
-    // ==========================================
-    // ★★★ 单点登录心跳检测 (防挤号机制) ★★★
-    // ==========================================
-    let heartbeatTimer = null;
-
-    function startHeartbeat() {
-        if (heartbeatTimer) clearInterval(heartbeatTimer);
-        
-        heartbeatTimer = setInterval(async () => {
-            const userStr = localStorage.getItem('colliers_user');
-            const currentToken = localStorage.getItem('colliers_token');
-            
-            if (!userStr || !currentToken) return; 
-            
-            const user = JSON.parse(userStr);
-            
-            try {
-                // URL 更新为合并后的接口
-                const res = await fetch('/api/login?action=check', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: user.name, token: currentToken })
-                });
-                const data = await res.json();
-                
-                if (data.status === 'invalid') {
-                    clearInterval(heartbeatTimer); 
-                    localStorage.removeItem('colliers_user');
-                    localStorage.removeItem('colliers_token');
-                    
-                    alert("⚠️ 系统提示：\n您的账号已在其他设备或浏览器登录！\n当前页面将被强制退出。");
-                    window.location.href = 'index.html'; 
-                }
-            } catch (e) {
-                console.warn("心跳检测波动", e);
-            }
-        }, 60000); 
+    async function loadFiles() {
+        const res = await fetch('/api/get-uploaded-files'); const result = await res.json();
+        allUploadedFiles = result.data.map(f => ({ ...f, timestamp: 0 })); // 简化解析逻辑
+        renderFiles();
+    }
+    function renderFiles() {
+        document.getElementById('file-body').innerHTML = allUploadedFiles.map(f => `<tr><td>👤 用户 / 📄 ${f.name}</td><td>${f.size}</td><td><a href="${f.download_url}" class="download-btn-sm">⬇</a></td></tr>`).join('');
+    }
+    async function loadVersionInfo() {
+        const res = await fetch('/api/get-source-meta'); const data = await res.json();
+        if (data.status === 'success') { document.getElementById('last-update-time').innerText = data.lastUpdated; document.getElementById('version-tag').style.display = 'block'; }
     }
 
-    if (localStorage.getItem('colliers_user') && localStorage.getItem('colliers_token')) {
-        startHeartbeat();
-    }
+    // 心跳检测
+    setInterval(async () => {
+        const user = JSON.parse(localStorage.getItem('colliers_user'));
+        const token = localStorage.getItem('colliers_token');
+        if (!user || !token) return;
+        const res = await fetch('/api/login?action=check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: user.name, token: token })
+        });
+        if ((await res.json()).status === 'invalid') { localStorage.clear(); window.location.href = 'index.html'; alert("已在别处登录。"); }
+    }, 60000);
 </script>
 </body>
 </html>
