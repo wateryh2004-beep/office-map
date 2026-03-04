@@ -13,27 +13,15 @@
         
         .container { max-width: 1000px; margin: 20px auto; padding: 0 20px; flex: 1; width: 100%; box-sizing: border-box; }
 
-        .tabs { display: flex; justify-content: center; margin-bottom: 25px; border-bottom: 2px solid #ddd; }
-        .tab-btn { background: none; border: none; padding: 12px 30px; font-size: 16px; font-weight: bold; color: #777; cursor: pointer; position: relative; transition: 0.3s; }
-        .tab-btn.active { color: #004080; }
-        .tab-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 3px; background: #004080; border-radius: 3px 3px 0 0; }
-        
         .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .breadcrumb { font-size: 14px; font-weight: 500; color: #555; display: flex; align-items: center; gap: 8px; }
-        .breadcrumb a { color: #004080; text-decoration: none; background: #e3f2fd; padding: 4px 10px; border-radius: 20px; transition: 0.2s; }
-        .breadcrumb a:hover { background: #004080; color: white; }
+        .breadcrumb span { transition: 0.2s; }
+        .breadcrumb span:hover { text-decoration: underline; }
         .search-box { position: relative; width: 250px; }
         .search-input { width: 100%; padding: 8px 15px 8px 30px; border: 1px solid #ddd; border-radius: 20px; font-size: 13px; outline: none; box-sizing: border-box; }
         .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #888; }
 
-        .folder-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
-        .folder-card { background: white; border-radius: 12px; padding: 30px 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.04); cursor: pointer; transition: all 0.2s; border: 1px solid #eee; position: relative; }
-        .folder-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); border-color: #004080; }
-        .folder-icon { font-size: 45px; margin-bottom: 15px; }
-        .folder-name { font-weight: 600; font-size: 15px; color: #333; }
-        .folder-count { position: absolute; top: 15px; right: 15px; background: #f0f0f0; color: #666; font-size: 11px; font-weight: bold; padding: 2px 8px; border-radius: 12px; }
-
-        .table-container { background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); overflow: hidden; display: none; }
+        .table-container { background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); overflow: hidden; }
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th { background: #f8f9fa; color: #555; font-weight: 600; padding: 15px 20px; border-bottom: 2px solid #eee; text-align: left; }
         td { padding: 15px 20px; border-bottom: 1px solid #f0f0f0; color: #444; }
@@ -53,142 +41,135 @@
 </div>
 
 <div class="container">
-    <div class="tabs">
-        <button class="tab-btn active" id="tab-CN" onclick="switchLang('CN')">🇨🇳 中文报告</button>
-        <button class="tab-btn" id="tab-EN" onclick="switchLang('EN')">🇬🇧 English Reports</button>
-    </div>
-
-    <div class="toolbar">
-        <div class="breadcrumb" id="breadcrumb"></div>
+    <div class="toolbar" style="margin-top: 15px;">
+        <div class="breadcrumb" id="breadcrumb">
+            <span style="cursor:pointer;" onclick="fetchReports('')">🏠 根目录</span>
+        </div>
         <div class="search-box">
             <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" class="search-input" placeholder="在当前语言库内搜索..." onkeyup="handleSearch()">
+            <input type="text" id="searchInput" class="search-input" placeholder="过滤当前目录内容..." onkeyup="filterCurrentView()">
         </div>
     </div>
 
-    <div class="folder-grid" id="folder-view"></div>
-
-    <div class="table-container" id="file-view">
+    <div class="table-container" style="display: block;">
         <table>
-            <thead><tr><th style="width: 55%;">报告名称</th><th style="width: 15%;">文件大小</th><th style="width: 15%;">发布日期</th><th style="width: 15%; text-align: center;">操作</th></tr></thead>
+            <thead>
+                <tr>
+                    <th style="width: 55%;">名称</th>
+                    <th style="width: 15%;">大小</th>
+                    <th style="width: 15%;">修改日期</th>
+                    <th style="width: 15%; text-align: center;">操作</th>
+                </tr>
+            </thead>
             <tbody id="report-list">
-                <tr><td colspan="4"><div class="status-message">正在从云端安全拉取...</div></td></tr>
+                <tr><td colspan="4"><div class="status-message">正在连接云端...</div></td></tr>
             </tbody>
         </table>
     </div>
 </div>
 
 <script>
-    let allReports = [];       
-    let currentLang = 'CN';    
-    let currentFolder = null;  
-
-    const FOLDER_MAP = {
-        'Quarterly': { icon: '📁', name: '季度报告' },
-        'Thematic':  { icon: '📂', name: '专题研究' },
-        'BP':        { icon: '🏭', name: '产业园专刊' },
-        'Others':    { icon: '🗂️', name: '其他参考材料' }
-    };
+    let currentPrefix = '';
+    let currentData = []; // 存放当前目录下的文件夹和文件
 
     window.onload = function() {
         const userStr = localStorage.getItem('colliers_user');
         if (!userStr) { alert("请先登录！"); window.location.href = 'index.html'; return; }
-        fetchReports(); 
+        fetchReports(''); // 初始加载根目录
+        
+        if (localStorage.getItem('colliers_user') && localStorage.getItem('colliers_token')) {
+            startHeartbeat();
+        }
     };
 
-    async function fetchReports() {
+    // 核心：基于 prefix 的动态层级拉取
+    async function fetchReports(prefix) {
+        currentPrefix = prefix;
+        document.getElementById('report-list').innerHTML = `<tr><td colspan="4" class="status-message">加载中...</td></tr>`;
         try {
-            const res = await fetch('/api/oss?action=get-list');
+            const res = await fetch(`/api/oss?action=get-list&prefix=${encodeURIComponent(prefix)}`);
             const result = await res.json();
             if (result.status === 'success') {
-                allReports = result.data.map(file => {
-                    const parts = file.name.split('/');
-                    return {
-                        ...file,
-                        parsedLang: parts.length >= 3 ? parts[0] : 'CN', 
-                        parsedFolder: parts.length >= 3 ? parts[1] : 'Others', 
-                        cleanName: parts.length >= 3 ? parts.slice(2).join('/') : file.name
-                    };
-                });
-                renderUI(); 
+                currentData = result.data;
+                renderBreadcrumb();
+                renderTable(currentData);
             }
-        } catch (e) { document.getElementById('report-list').innerHTML = `<tr><td colspan="4" class="status-message">加载失败，请刷新。</td></tr>`; }
-    }
-
-    function renderUI() {
-        const folderView = document.getElementById('folder-view');
-        const fileView = document.getElementById('file-view');
-        const breadcrumb = document.getElementById('breadcrumb');
-
-        document.getElementById('tab-CN').className = currentLang === 'CN' ? 'tab-btn active' : 'tab-btn';
-        document.getElementById('tab-EN').className = currentLang === 'EN' ? 'tab-btn active' : 'tab-btn';
-
-        if (currentFolder === null) {
-            folderView.style.display = 'grid';
-            fileView.style.display = 'none';
-            breadcrumb.innerHTML = currentLang === 'CN' ? '<span>📍 当前位置：中文字库</span>' : '<span>📍 Location：English DB</span>';
-            
-            let html = '';
-            for (const [key, meta] of Object.entries(FOLDER_MAP)) {
-                const count = allReports.filter(f => f.parsedLang === currentLang && f.parsedFolder === key).length;
-                html += `
-                    <div class="folder-card" onclick="openFolder('${key}')">
-                        <div class="folder-count">${count} 份</div>
-                        <div class="folder-icon">${meta.icon}</div>
-                        <div class="folder-name">${currentLang === 'EN' && key==='Quarterly'?'Quarterly':meta.name}</div>
-                    </div>
-                `;
-            }
-            folderView.innerHTML = html;
-        } 
-        else {
-            folderView.style.display = 'none';
-            fileView.style.display = 'block';
-            const folderName = FOLDER_MAP[currentFolder].name;
-            breadcrumb.innerHTML = `<a href="javascript:void(0)" onclick="closeFolder()">🔙 返回上级</a> <span> / ${folderName}</span>`;
-            
-            const targetFiles = allReports.filter(f => f.parsedLang === currentLang && f.parsedFolder === currentFolder);
-            renderTableData(targetFiles);
+        } catch (e) { 
+            document.getElementById('report-list').innerHTML = `<tr><td colspan="4" class="status-message">加载失败，请刷新。</td></tr>`; 
         }
     }
 
-    function switchLang(lang) {
-        currentLang = lang; currentFolder = null; 
-        document.getElementById('searchInput').value = ''; 
-        renderUI();
+    // 渲染动态面包屑
+    function renderBreadcrumb() {
+        const bc = document.getElementById('breadcrumb');
+        let html = `<span style="cursor:pointer; color:#004080;" onclick="fetchReports('')">🏠 根目录</span>`;
+        if (currentPrefix) {
+            const parts = currentPrefix.split('/').filter(p => p);
+            let cumulativePath = '';
+            parts.forEach((part, index) => {
+                cumulativePath += part + '/';
+                html += ` <span style="color:#888; text-decoration:none;">/</span> <span style="cursor:pointer; color:#004080;" onclick="fetchReports('${cumulativePath}')">${part}</span>`;
+            });
+        }
+        bc.innerHTML = html;
     }
-    function openFolder(folderKey) { currentFolder = folderKey; renderUI(); }
-    function closeFolder() { currentFolder = null; renderUI(); }
 
-    function renderTableData(files) {
+    // 渲染文件夹和文件混合列表
+    function renderTable(dataList) {
         const tbody = document.getElementById('report-list');
-        if (files.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" class="status-message">📭 此目录下暂无报告。</td></tr>`;
+        if (dataList.length === 0) {
+            let backHtml = currentPrefix ? `<tr style="cursor:pointer; background:#fdfdfd;" onclick="goUp()"><td colspan="4" style="color:#004080; font-weight:bold;">🔙 返回上一级...</td></tr>` : '';
+            tbody.innerHTML = backHtml + `<tr><td colspan="4" class="status-message">📭 当前目录为空</td></tr>`;
             return;
         }
 
-        tbody.innerHTML = files.map(file => {
-            const dateObj = new Date(file.lastModified);
-            const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
-            return `
+        let html = '';
+        // 如果不在根目录，提供返回上一级的快捷行
+        if (currentPrefix) {
+            html += `<tr style="cursor:pointer; background:#fdfdfd;" onclick="goUp()">
+                        <td colspan="4" style="color:#004080; font-weight:bold;">🔙 返回上一级...</td>
+                     </tr>`;
+        }
+
+        html += dataList.map(item => {
+            if (item.type === 'folder') {
+                const folderName = item.name.replace(currentPrefix, '').replace('/', '');
+                return `
+                <tr style="cursor:pointer;" onclick="fetchReports('${item.name}')">
+                    <td style="font-weight:bold; color:#333; font-size:15px;">📁 ${folderName}</td>
+                    <td style="color:#aaa;">-</td><td style="color:#aaa;">-</td><td style="text-align: center; color:#aaa;">进入</td>
+                </tr>`;
+            } else {
+                const dateObj = new Date(item.lastModified);
+                const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
+                return `
                 <tr>
-                    <td style="font-weight:500; color:#004080;">📄 ${file.cleanName}</td>
-                    <td style="color:#888;">${file.size}</td>
+                    <td style="font-weight:500; color:#004080;">📄 ${item.shortName}</td>
+                    <td style="color:#888;">${item.size}</td>
                     <td style="color:#888;">${dateStr}</td>
-                    <td style="text-align: center;"><a href="${file.downloadUrl}" class="btn-download">⬇ 下载</a></td>
-                </tr>
-            `;
+                    <td style="text-align: center;"><a href="${item.url}" class="btn-download" target="_blank">⬇ 下载</a></td>
+                </tr>`;
+            }
         }).join('');
+        tbody.innerHTML = html;
     }
 
-    function handleSearch() {
+    // 计算上一级目录路径
+    function goUp() {
+        const parts = currentPrefix.split('/').filter(p => p);
+        parts.pop(); // 移除最后一级
+        const newPrefix = parts.length > 0 ? parts.join('/') + '/' : '';
+        fetchReports(newPrefix);
+    }
+
+    // 仅在当前层级进行前端搜索过滤
+    function filterCurrentView() {
         const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
-        if (!keyword) { renderUI(); return; } 
-        document.getElementById('folder-view').style.display = 'none';
-        document.getElementById('file-view').style.display = 'block';
-        document.getElementById('breadcrumb').innerHTML = `<a href="javascript:void(0)" onclick="document.getElementById('searchInput').value=''; renderUI();">🔙 退出搜索</a> <span> / 搜索结果</span>`;
-        const resultFiles = allReports.filter(f => f.parsedLang === currentLang && f.cleanName.toLowerCase().includes(keyword));
-        renderTableData(resultFiles);
+        const filtered = currentData.filter(item => {
+            const name = item.type === 'folder' ? item.name : item.shortName;
+            return name.toLowerCase().includes(keyword);
+        });
+        renderTable(filtered);
     }
 
     // ==========================================
@@ -208,7 +189,6 @@
             const user = JSON.parse(userStr);
             
             try {
-                // 这里的 URL 已经更新为了合并后的 /api/login?action=check
                 const res = await fetch('/api/login?action=check', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -228,10 +208,6 @@
                 console.warn("心跳检测波动", e);
             }
         }, 60000); 
-    }
-
-    if (localStorage.getItem('colliers_user') && localStorage.getItem('colliers_token')) {
-        startHeartbeat();
     }
 </script>
 
