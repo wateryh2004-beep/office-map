@@ -8,7 +8,6 @@
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8f9fa; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
         
-        /* --- 登录遮罩层 --- */
         #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 64, 128, 0.95); z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .login-box { background: white; padding: 40px; border-radius: 8px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
         .login-box h2 { margin: 0 0 20px 0; color: #004080; }
@@ -17,48 +16,36 @@
         .login-btn:hover { background: #003366; }
         .login-error { color: red; font-size: 12px; margin-top: 10px; display: none; }
 
-        /* --- 顶部导航栏 --- */
         .header { background: #004080; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .header h1 { margin: 0; font-size: 20px; }
         .user-info { font-size: 14px; display: flex; gap: 15px; align-items: center; }
         .logout-btn { color: white; text-decoration: underline; cursor: pointer; font-size: 12px; opacity: 0.8; }
         .logout-btn:hover { opacity: 1; }
 
-        /* --- 主体导航区 --- */
         .main-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
         .welcome-text { text-align: center; color: #333; margin-bottom: 40px; max-width: 800px; font-size: 15px; line-height: 1.6; }
         
         .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px 40px; max-width: 800px; width: 100%; }
         
-        /* 单个模块卡片 */
         .nav-card { background: white; padding: 30px 20px; border-radius: 12px; text-align: center; text-decoration: none; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; gap: 15px; border: 1px solid #eee; }
         .nav-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); border-color: #ddd; }
         
-        /* 图标样式定制 */
         .icon-box { font-size: 50px; }
-        .c-blue { color: #3498db; }    /* 项目地图 */
-        .c-purple { color: #8e44ad; }  /* 季度报告 */
-        .c-red { color: #c0392b; }     /* 数据收集 */
-        .c-green { color: #27ae60; }   /* 租赁成交 */
-        .c-yellow { color: #f1c40f; }  /* 租金评估 */
-        .c-grey { color: #95a5a6; }    /* 价值评估 */
-        .c-orange { color: #e67e22; }  /* 分析图表 */
-        .c-dark { color: #2c3e50; }    /* 知识库 */
+        .c-blue { color: #3498db; }    
+        .c-purple { color: #8e44ad; }  
+        .c-red { color: #c0392b; }     
         
         .card-title { font-size: 16px; font-weight: bold; }
 
-        /* 未开放的模块变灰 */
         .nav-card.disabled { opacity: 0.6; cursor: not-allowed; }
         .nav-card.disabled:hover { transform: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-color: #eee; }
 
-        /* --- 底部滚动通知条 --- */
         .notice-bar { background: #fff3cd; color: #856404; padding: 12px 20px; display: flex; align-items: center; border-top: 1px solid #ffeeba; }
         .notice-title { font-weight: bold; margin-right: 15px; white-space: nowrap; }
         .marquee-wrapper { flex: 1; overflow: hidden; position: relative; }
         .marquee-text { display: inline-block; white-space: nowrap; animation: marquee 20s linear infinite; font-size: 14px; }
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
         
-        /* 仅管理员可见的设置按钮 */
         #admin-settings-btn { display: none; margin-left: 15px; font-size: 12px; background: #004080; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
@@ -67,7 +54,7 @@
     <div id="login-overlay">
         <div class="login-box">
             <h2>COLLIERS DATA</h2>
-            <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据系统门户 v7.5</p>
+            <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据系统门户 (SSO版)</p>
             <input type="text" id="login-name" class="login-input" placeholder="姓名 (Name)">
             <input type="text" id="login-id" class="login-input" placeholder="工号 (Employee ID)">
             <input type="text" id="login-phone" class="login-input" placeholder="手机号 (Phone)">
@@ -121,13 +108,13 @@
 
         window.onload = function() {
             const cachedUser = localStorage.getItem('colliers_user');
-            const cachedToken = localStorage.getItem('colliers_token'); // 新增Token校验
+            const cachedToken = localStorage.getItem('colliers_token'); 
             
             if (cachedUser && cachedToken) {
                 currentUser = JSON.parse(cachedUser);
                 loginSuccess(currentUser);
             }
-            loadNotice(); // 加载通知
+            loadNotice(); 
         };
 
         async function handleLogin() {
@@ -138,25 +125,37 @@
 
             if (!name || !id || !phone) { msg.innerText = "请填写完整信息"; msg.style.display = 'block'; return; }
             msg.style.display = 'none';
+            const btn = document.querySelector('.login-btn');
+            btn.innerText = "认证中...";
+            
             try {
+                // 调用默认的 login (因为没有带 action=check 参数)
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, id, phone })
                 });
+                
+                // 处理 Vercel 崩溃导致的 500 错误
+                if (!res.ok) {
+                    throw new Error("后端服务异常");
+                }
+
                 const data = await res.json();
                 
                 if (data.status === 'success') {
-                    // ★★★ 补全：保存用户信息，并保存后端发来的Token(房卡) ★★★
                     localStorage.setItem('colliers_user', JSON.stringify(data.data));
                     localStorage.setItem('colliers_token', data.token); 
-                    
                     loginSuccess(data.data);
                 } else { 
                     msg.innerText = data.message || "认证失败"; msg.style.display = 'block'; 
                 }
             } catch (e) { 
-                console.error(e); msg.innerText = "系统连接错误"; msg.style.display = 'block'; 
+                console.error(e); 
+                msg.innerText = "系统连接错误，请检查 Vercel 部署状态"; 
+                msg.style.display = 'block'; 
+            } finally {
+                btn.innerText = "认证进入";
             }
         }
 
@@ -164,19 +163,16 @@
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('user-display').innerText = `${user.name} (${user.role})`;
             
-            // 权限控制：如果是 viewer，无法进入数据收集
             if (user.role === 'viewer') {
                 const btnData = document.getElementById('btn-data-collect');
                 btnData.classList.add('disabled');
                 btnData.href = "javascript:alert('您没有数据填报权限，请联系管理员。');";
             }
 
-            // 权限控制：如果是 Admin，显示进入后台按钮
             if (user.role === 'admin') {
                 document.getElementById('admin-settings-btn').style.display = 'block';
             }
 
-            // ★★★ 补全：登录成功后立即启动防挤号心跳 ★★★
             startHeartbeat();
         }
 
@@ -186,14 +182,13 @@
             location.reload(); 
         }
 
-        // 获取滚动通知
         async function loadNotice() {
             try {
                 const res = await fetch('/api/get-notice');
                 const data = await res.json();
-                document.getElementById('marquee-content').innerText = data.text || "欢迎使用高力国际办公楼市场监测系统！如遇问题请联系管理员。";
+                document.getElementById('marquee-content').innerText = data.text || "欢迎使用系统门户！如遇问题请联系管理员。";
             } catch (e) {
-                document.getElementById('marquee-content').innerText = "欢迎使用高力国际办公楼市场监测系统！目前系统运行正常。";
+                document.getElementById('marquee-content').innerText = "欢迎使用系统门户！目前系统运行正常。";
             }
         }
 
@@ -205,7 +200,6 @@
         function startHeartbeat() {
             if (heartbeatTimer) clearInterval(heartbeatTimer);
             
-            // 每隔 60 秒查一次岗
             heartbeatTimer = setInterval(async () => {
                 const userStr = localStorage.getItem('colliers_user');
                 const currentToken = localStorage.getItem('colliers_token');
@@ -215,7 +209,8 @@
                 const user = JSON.parse(userStr);
                 
                 try {
-                    cconst res = await fetch('/api/login?action=check', {
+                    // ★ 这里的 URL 已更新为新的二合一接口 ★
+                    const res = await fetch('/api/login?action=check', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username: user.name, token: currentToken })
@@ -223,18 +218,17 @@
                     const data = await res.json();
                     
                     if (data.status === 'invalid') {
-                        // 发现被挤掉了
                         clearInterval(heartbeatTimer); 
                         localStorage.removeItem('colliers_user');
                         localStorage.removeItem('colliers_token');
                         
                         alert("⚠️ 系统提示：\n您的账号已在其他设备或浏览器登录！\n当前页面将被强制退出。");
-                        window.location.reload(); // 强制刷新回登录框
+                        window.location.reload(); 
                     }
                 } catch (e) {
                     console.warn("心跳检测波动", e);
                 }
-            }, 60000); // 60000 毫秒 = 1分钟
+            }, 60000); 
         }
     </script>
 </body>
