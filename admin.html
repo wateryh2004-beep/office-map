@@ -109,14 +109,11 @@
             </div>
 
             <div class="resource-item" style="background: #f8fdf8;">
-                <div class="item-icon">📚</div><div class="item-title" style="color:#28a745;">报告归档 (OSS)</div>
-                <div class="item-desc">自动归类上传至云端</div>
-                <div class="oss-select-group">
-                    <select id="oss-lang" class="oss-select"><option value="CN">🇨🇳 中文</option><option value="EN">🇬🇧 English</option></select>
-                    <select id="oss-category" class="oss-select"><option value="Quarterly">季度报告</option><option value="Thematic">专题研究</option><option value="BP">产业园</option><option value="Others">其他材料</option></select>
-                </div>
-                <div class="file-input-wrapper"><input type="file" id="oss-report-file" multiple accept=".pdf,.ppt,.pptx" class="file-input"></div>
-                <button class="btn-action btn-green" id="btn-upload-oss" onclick="uploadToOSS()">🚀 直传至阿里云</button>
+                <div class="item-icon">📚</div><div class="item-title" style="color:#28a745;">报告归档上传</div>
+                <div class="item-desc">支持输入任意层级目录</div>
+                <input type="text" id="oss-upload-path" class="file-input" placeholder="例如: 华北区/北京/2026/ (留空为根目录)" style="border:1px solid #ccc; padding:8px; width:90%; box-sizing:border-box; margin-bottom:5px;">
+                <div class="file-input-wrapper"><input type="file" id="oss-report-file" multiple accept=".pdf,.ppt,.pptx,.doc,.docx" class="file-input"></div>
+                <button class="btn-action btn-green" id="btn-upload-oss" onclick="uploadToOSS()">🚀 直传至当前路径</button>
             </div>
 
             <div class="resource-item">
@@ -168,13 +165,14 @@
 
     <div class="card" style="margin-top: 10px; border: 1px solid #c3e6cb;">
         <div class="card-header" style="background: #eafbee; border-bottom: 1px solid #c3e6cb;">
-            <h3 style="color: #155724;">☁️ 阿里云报告库管理</h3>
+            <h3 style="color: #155724;">☁️ OSS 层级文件管理</h3>
+            <div style="font-size: 13px; color: #555;" id="admin-oss-breadcrumb">当前位置：根目录</div>
         </div>
-        <div class="scroll-area" style="max-height: 400px;">
+        <div class="scroll-area" style="max-height: 450px;">
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 50%;">目录路径 / 文件名</th>
+                        <th style="width: 50%;">名称</th>
                         <th style="width: 15%;">大小</th>
                         <th style="width: 15%;">更新时间</th>
                         <th style="width: 20%; text-align: center;">操作</th>
@@ -190,15 +188,15 @@
 
 <div id="move-modal" class="modal-overlay">
     <div class="modal-box">
-        <h3 class="modal-title">📂 更改报告分类</h3>
-        <p style="font-size:12px; color:#888;" id="move-file-name"></p>
-        <div class="oss-select-group" style="width:100%; margin:15px 0;">
-            <select id="move-lang" class="oss-select"><option value="CN">🇨🇳 中文</option><option value="EN">🇬🇧 English</option></select>
-            <select id="move-cat" class="oss-select"><option value="Quarterly">季度报告</option><option value="Thematic">专题研究</option><option value="BP">产业园</option><option value="Others">其他</option></select>
+        <h3 class="modal-title">📂 移动或重命名文件</h3>
+        <p style="font-size:12px; color:#888; margin-bottom: 5px;">原路径: <span id="move-old-path" style="color:#dc3545;"></span></p>
+        <div style="margin:15px 0;">
+            <label style="font-size:12px; font-weight:bold;">输入新路径 (包含文件名):</label>
+            <input type="text" id="move-new-path" style="width:100%; padding:8px; margin-top:5px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
         </div>
         <div style="display:flex; gap:10px; justify-content:flex-end;">
-            <button class="btn-action" style="background:#eee; width:auto;" onclick="closeMoveModal()">取消</button>
-            <button class="btn-action btn-blue" style="width:auto;" id="btn-confirm-move" onclick="confirmMove()">确认移动</button>
+            <button class="btn-action" style="background:#eee; width:auto; color:#333;" onclick="closeMoveModal()">取消</button>
+            <button class="btn-action btn-blue" style="width:auto;" id="btn-confirm-move" onclick="confirmMove()">确认修改</button>
         </div>
     </div>
 </div>
@@ -207,6 +205,7 @@
     let currentUser = null;
     const CONFIG = { owner: 'wateryh2004-beep', repo: 'office-map', branch: 'main' };
     let allUploadedFiles = []; 
+    let adminCurrentPrefix = '';
 
     window.onload = function() {
         const userStr = localStorage.getItem('colliers_user');
@@ -214,10 +213,9 @@
         currentUser = JSON.parse(userStr);
         if (currentUser.role !== 'admin') { window.location.href = 'index.html'; return; }
 
-        loadLogs(); loadFiles(); loadVersionInfo(); loadOSSReports();   
+        loadLogs(); loadFiles(); loadVersionInfo(); loadOSSReports('');   
     };
 
-    // ★ 修改：使用合并后的 portal 接口发布公告 ★
     async function updateNotice() {
         const text = document.getElementById('notice-input').value.trim(); 
         if (!text) { alert("内容不能为空！"); return; }
@@ -241,8 +239,10 @@
         const fileInput = document.getElementById('oss-report-file');
         const files = fileInput.files;
         if (files.length === 0) { alert("请选择文件！"); return; }
-        const lang = document.getElementById('oss-lang').value;
-        const category = document.getElementById('oss-category').value;
+        
+        let path = document.getElementById('oss-upload-path').value.trim();
+        if (path && !path.endsWith('/')) path += '/';
+
         const btn = document.getElementById('btn-upload-oss');
         btn.disabled = true; btn.innerText = "正在直传...";
         try {
@@ -250,7 +250,7 @@
             const signData = await signRes.json();
             for (let file of files) {
                 const formData = new FormData();
-                formData.append('key', `${lang}/${category}/${file.name}`);
+                formData.append('key', `${path}${file.name}`);
                 formData.append('policy', signData.policy);
                 formData.append('OSSAccessKeyId', signData.OSSAccessKeyId);
                 formData.append('signature', signData.signature);
@@ -259,56 +259,97 @@
                 await fetch(signData.host, { method: 'POST', body: formData });
             }
             alert("✅ 上传成功！");
-            loadOSSReports();
+            document.getElementById('oss-upload-path').value = '';
+            fileInput.value = '';
+            loadOSSReports(adminCurrentPrefix);
         } catch (e) { alert("上传失败"); }
-        finally { btn.disabled = false; btn.innerText = "🚀 直传至阿里云"; }
+        finally { btn.disabled = false; btn.innerText = "🚀 直传至当前路径"; }
     }
 
-    async function loadOSSReports() {
+    async function loadOSSReports(prefix = '') {
+        adminCurrentPrefix = prefix;
         const tbody = document.getElementById('oss-body');
+        const breadcrumb = document.getElementById('admin-oss-breadcrumb');
+        
+        breadcrumb.innerHTML = prefix ? `当前位置：<b>${prefix}</b> <a href="javascript:void(0)" onclick="loadOSSReports('${prefix.split('/').slice(0,-2).join('/')}${prefix.split('/').length > 2 ? '/' : ''}')">[🔙返回上层]</a>` : `当前位置：<b>根目录</b>`;
+        
+        tbody.innerHTML = `<tr><td colspan="4" class="empty-tip">加载目录中...</td></tr>`;
         try {
-            const res = await fetch('/api/oss?action=get-list');
+            const res = await fetch(`/api/oss?action=get-list&prefix=${encodeURIComponent(prefix)}`);
             const result = await res.json();
             if (result.status === 'success') {
-                tbody.innerHTML = result.data.map(file => {
-                    const parts = file.name.split('/');
-                    const display = parts.length >= 3 ? parts.slice(2).join('/') : file.name;
-                    return `<tr>
-                        <td><span class="oss-tag-lang">${parts[0]||'未知'}</span><span class="oss-tag-cat">${parts[1]||'未分类'}</span><br>📄 ${display}</td>
-                        <td>${file.size}</td><td>${file.lastModified.split('T')[0]}</td>
-                        <td style="text-align:center;">
-                            <button class="edit-btn-sm" onclick="openMoveModal('${file.name}', '${parts[0]}', '${parts[1]}')">✏️ 分类</button>
-                            <button class="delete-btn-sm" onclick="deleteOSSReport('${file.name}')">❌</button>
-                        </td>
-                    </tr>`;
+                if (result.data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="empty-tip">📭 当前目录为空</td></tr>`;
+                    return;
+                }
+                
+                tbody.innerHTML = result.data.map(item => {
+                    if (item.type === 'folder') {
+                        const folderName = item.name.replace(prefix, '').replace('/', '');
+                        return `<tr style="cursor:pointer;" onclick="loadOSSReports('${item.name}')">
+                            <td style="font-weight:bold;">📁 ${folderName}</td>
+                            <td>-</td><td>-</td><td style="text-align:center; color:#004080;">打开目录</td>
+                        </tr>`;
+                    } else {
+                        const dateStr = item.lastModified.split('T')[0];
+                        return `<tr>
+                            <td>📄 ${item.shortName}</td>
+                            <td>${item.size}</td><td>${dateStr}</td>
+                            <td style="text-align:center;">
+                                <button class="edit-btn-sm" onclick="openMoveModal('${item.name}')">✏️ 移动/重命名</button>
+                                <button class="delete-btn-sm" onclick="deleteOSSReport('${item.name}')">❌</button>
+                            </td>
+                        </tr>`;
+                    }
                 }).join('');
             }
-        } catch (e) {}
+        } catch (e) { tbody.innerHTML = `<tr><td colspan="4" class="empty-tip">获取列表失败</td></tr>`; }
     }
 
     async function deleteOSSReport(fileName) {
-        if (!confirm("确定删除？")) return;
+        if (!confirm(`确定要彻底删除文件 ${fileName} 吗？此操作不可逆！`)) return;
         await fetch(`/api/oss?action=delete&file=${encodeURIComponent(fileName)}`, { method: 'POST' });
-        loadOSSReports();
+        loadOSSReports(adminCurrentPrefix);
     }
 
     let currentMovingFile = "";
-    function openMoveModal(fullKey, curLang, curCat) {
+    function openMoveModal(fullKey) {
         currentMovingFile = fullKey;
-        document.getElementById('move-file-name').innerText = fullKey.split('/').pop();
-        document.getElementById('move-lang').value = curLang;
-        document.getElementById('move-cat').value = curCat;
+        document.getElementById('move-old-path').innerText = fullKey;
+        document.getElementById('move-new-path').value = fullKey;
         document.getElementById('move-modal').style.display = 'flex';
     }
-    function closeMoveModal() { document.getElementById('move-modal').style.display = 'none'; }
+    
+    function closeMoveModal() { 
+        document.getElementById('move-modal').style.display = 'none'; 
+    }
+    
     async function confirmMove() {
-        const newKey = `${document.getElementById('move-lang').value}/${document.getElementById('move-cat').value}/${currentMovingFile.split('/').pop()}`;
-        const res = await fetch('/api/oss?action=move', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ oldKey: currentMovingFile, newKey: newKey })
-        });
-        if ((await res.json()).status === 'success') { closeMoveModal(); loadOSSReports(); }
+        const newKey = document.getElementById('move-new-path').value.trim();
+        if(!newKey || newKey === currentMovingFile) {
+            alert("路径不能为空或未做修改！"); return;
+        }
+        const btn = document.getElementById('btn-confirm-move');
+        btn.disabled = true; btn.innerText = "处理中...";
+        
+        try {
+            const res = await fetch('/api/oss?action=move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ oldKey: currentMovingFile, newKey: newKey })
+            });
+            const data = await res.json();
+            if (data.status === 'success') { 
+                closeMoveModal(); 
+                loadOSSReports(adminCurrentPrefix); 
+            } else {
+                alert("修改失败：" + data.message);
+            }
+        } catch (e) {
+            alert("请求异常");
+        } finally {
+            btn.disabled = false; btn.innerText = "确认修改";
+        }
     }
 
     async function directUpload(inputId, targetFileName, btnId) {
