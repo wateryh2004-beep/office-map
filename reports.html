@@ -190,6 +190,49 @@
         const resultFiles = allReports.filter(f => f.parsedLang === currentLang && f.cleanName.toLowerCase().includes(keyword));
         renderTableData(resultFiles);
     }
+
+    // ==========================================
+    // ★★★ 单点登录心跳检测 (防挤号机制) ★★★
+    // ==========================================
+    let heartbeatTimer = null;
+
+    function startHeartbeat() {
+        if (heartbeatTimer) clearInterval(heartbeatTimer);
+        
+        heartbeatTimer = setInterval(async () => {
+            const userStr = localStorage.getItem('colliers_user');
+            const currentToken = localStorage.getItem('colliers_token');
+            
+            if (!userStr || !currentToken) return; 
+            
+            const user = JSON.parse(userStr);
+            
+            try {
+                // 这里的 URL 已经更新为了合并后的 /api/login?action=check
+                const res = await fetch('/api/login?action=check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user.name, token: currentToken })
+                });
+                const data = await res.json();
+                
+                if (data.status === 'invalid') {
+                    clearInterval(heartbeatTimer); 
+                    localStorage.removeItem('colliers_user');
+                    localStorage.removeItem('colliers_token');
+                    
+                    alert("⚠️ 系统提示：\n您的账号已在其他设备或浏览器登录！\n当前页面将被强制退出。");
+                    window.location.href = 'index.html'; 
+                }
+            } catch (e) {
+                console.warn("心跳检测波动", e);
+            }
+        }, 60000); 
+    }
+
+    if (localStorage.getItem('colliers_user') && localStorage.getItem('colliers_token')) {
+        startHeartbeat();
+    }
 </script>
 
 </body>
