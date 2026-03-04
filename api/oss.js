@@ -1,93 +1,118 @@
-import OSS from 'ali-oss';
+const OSS = require('ali-oss');
+const crypto = require('crypto');
+
+const client = new OSS({
+    region: 'oss-cn-shanghai', // 确保与你阿里云后台一致
+    accessKeyId: process.env.OSS_AK,
+    accessKeySecret: process.env.OSS_SK,
+    bucket: 'colliers-reports'
+});
 
 export default async function handler(req, res) {
-    const action = req.query.action || (req.body && req.body.action);
-
-    if (!action) {
-        return res.status(400).json({ status: 'error', message: '缺少 action 参数' });
-    }
+    const action = req.query.action;
 
     try {
-        const client = new OSS({
-            region: process.env.ALIYUN_OSS_REGION,
-            accessKeyId: process.env.ALIYUN_OSS_AK,
-            accessKeySecret: process.env.ALIYUN_OSS_SK,
-            bucket: process.env.ALIYUN_OSS_BUCKET,
-            secure: true // ★强制开启 HTTPS，彻底解决浏览器下载拦截问题
-        });
-
-        // 1. 签发直传通行证
+        // ==========================================
+        // 1. 获取直传签名 (Browser Direct Upload)
+        // ==========================================
         if (action === 'get-signature') {
             const date = new Date();
-            date.setMinutes(date.getMinutes() + 10);
-            
+            date.setHours(date.getHours() + 1); // 1小时后过期
             const policy = {
                 expiration: date.toISOString(),
-                conditions: [ ["content-length-range", 0, 104857600] ]
+                conditions: [
+                    ["content-length-range", 0, 104857600], // 限制100MB
+                    ["starts-with", "$key", ""] // 允许上传到任何路径
+                ]
             };
 
-            const formData = client.calculatePostSignature(policy);
-            const host = `https://${process.env.ALIYUN_OSS_BUCKET}.${process.env.ALIYUN_OSS_REGION}.aliyuncs.com`;
+            const base64Policy = Buffer.from(JSON.stringify(policy)).toString('base64');
+            const signature = crypto
+                .createHmac('sha1', process.env.OSS_SK)
+                .update(base64Policy)
+                .digest('base64');
 
             return res.status(200).json({
-                status: 'success', host: host, policy: formData.policy,
-                OSSAccessKeyId: formData.OSSAccessKeyId, signature: formData.Signature
+                status: 'success',
+                accessid: process.env.OSS_AK,
+                host: `https://${client.options.bucket}.${client.options.region}.aliyuncs.com`,
+                policy: base64Policy,
+                signature: signature,
+                expire: Math.floor(date.getTime() / 1000)
             });
         }
 
-        // 2. 获取列表 (带强制下载指令)
+        // ==========================================
+        // 2. 获取目录列表 (Directory Drill-down)
+        // ==========================================
         else if (action === 'get-list') {
-            const result = await client.list({ 'max-keys': 1000 });
-            const files = result.objects || [];
-
-            const data = files.map(file => {
-                const fileNameOnly = file.name.split('/').pop(); // 提取纯文件名
-                
-                // ★ 生成带有时效性的 HTTPS 链接，并强制浏览器弹出下载
-                const url = client.signatureUrl(file.name, { 
-                    expires: 600,
-                    response: {
-                        'content-disposition': `attachment; filename="${encodeURIComponent(fileNameOnly)}"`
-                    }
-                }); 
-                
-                return {
-                    name: file.name,
-                    size: (file.size / 1024 / 1024).toFixed(2) + ' MB',
-                    lastModified: file.lastModified,
-                    downloadUrl: url
-                };
+            const prefix = req.query.prefix || ''; // 当前所在的文件夹路径
+            
+            // 使用 delimiter 实现“文件夹”效果
+            const result = await client.list({
+                prefix: prefix,
+                delimiter: '/',
+                'max-keys': 1000
             });
 
-            data.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
-            return res.status(200).json({ status: 'success', data: data });
+            // 解析文件夹：CommonPrefixes 里的内容就是该层级的子目录
+            const folders = (result.prefixes || []).map(p => ({
+                name: p,
+                type: 'folder'
+            }));
+
+            // 解析文件：Objects 里的内容就是该层级下的文件
+            const files = (result.objects || [])
+                .filter(o => o.name !== prefix) // 排除目录自身
+                .map(o => {
+                    // 生成 1 小时有效的临时下载链接（防止 Bucket 私有时无法访问）
+                    const url = client.signatureUrl(o.name, { expires: 3600 });
+                    return {
+                        name: o.name,
+                        shortName: o.name.replace(prefix, ''), // 只显示文件名，不带路径
+                        size: (o.size / 1024 / 1024).toFixed(2) + ' MB',
+                        lastModified: o.lastModified,
+                        type: 'file',
+                        url: url
+                    };
+                });
+
+            return res.status(200).json({ 
+                status: 'success', 
+                currentPath: prefix,
+                data: [...folders, ...files] 
+            });
         }
 
-        // 3. 删除指定文件
+        // ==========================================
+        // 3. 删除文件 (Delete)
+        // ==========================================
         else if (action === 'delete') {
-            const fileName = req.query.file || (req.body && req.body.file);
-            await client.delete(fileName);
-            return res.status(200).json({ status: 'success', message: '删除成功' });
+            const fileKey = req.query.file;
+            if (!fileKey) return res.status(400).json({ message: "Missing file key" });
+            
+            await client.delete(fileKey);
+            return res.status(200).json({ status: 'success' });
         }
 
-        // 4. ★★★ 新增：移动文件/重分类 ★★★
-        else if (action === 'move') {
+        // ==========================================
+        // 4. 移动/重命名 (Move/Rename)
+        // ==========================================
+        else if (action === 'move' && req.method === 'POST') {
             const { oldKey, newKey } = req.body;
-            if (!oldKey || !newKey) throw new Error("缺少路径参数");
-            
-            // 阿里云的移动逻辑：先复制一份到新路径，再删掉旧的
+            if (!oldKey || !newKey) return res.status(400).json({ message: "Keys missing" });
+
+            // OSS 没有真正的移动，需要先 Copy 再 Delete
             await client.copy(newKey, oldKey);
             await client.delete(oldKey);
             
-            return res.status(200).json({ status: 'success', message: '移动成功' });
+            return res.status(200).json({ status: 'success' });
         }
 
-        else {
-            return res.status(400).json({ status: 'error', message: '未知的 action' });
-        }
+        return res.status(400).json({ message: "Invalid action" });
 
     } catch (e) {
-        console.error("OSS API Error:", e);
+        console.error("OSS API Error:", e.message);
         return res.status(500).json({ status: 'error', message: e.message });
     }
 }
