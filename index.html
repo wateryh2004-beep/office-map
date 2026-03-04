@@ -35,20 +35,21 @@
         #pwd-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center; }
         .pwd-box { background: white; padding: 30px; border-radius: 8px; width: 300px; text-align: center; }
         .btn-group { display: flex; gap: 10px; margin-top: 20px; }
-        .btn-cancel { flex: 1; padding: 10px; border: 1px solid #ccc; background: white; border-radius: 4px; }
-        .btn-confirm { flex: 1; padding: 10px; border: none; background: #004080; color: white; border-radius: 4px; }
+        .btn-cancel { flex: 1; padding: 10px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer; }
+        .btn-confirm { flex: 1; padding: 10px; border: none; background: #004080; color: white; border-radius: 4px; cursor: pointer; }
 
         /* 留言墙样式 */
         .msg-wall { width: 100%; max-width: 800px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eee; }
         .msg-wall h3 { margin-top: 0; font-size: 15px; color: #004080; border-bottom: 1px solid #eee; padding-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-        .msg-list { min-height: 80px; max-height: 200px; overflow-y: auto; margin-bottom: 15px; }
-        .msg-item { background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #004080; animation: fadeIn 0.3s; }
+        .msg-list { min-height: 80px; max-height: 200px; overflow-y: auto; margin-bottom: 15px; scroll-behavior: smooth; }
+        .msg-item { background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #004080; animation: fadeIn 0.3s; text-align: left; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .msg-info { font-size: 10px; color: #888; margin-bottom: 3px; }
-        .msg-content { font-size: 13px; color: #333; }
+        .msg-content { font-size: 13px; color: #333; word-break: break-all; }
         .msg-input-group { display: flex; gap: 10px; border-top: 1px solid #eee; padding-top: 15px; }
         .msg-input-group input { flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 20px; font-size: 13px; outline: none; }
         .msg-input-group button { background: #004080; color: white; border: none; padding: 0 15px; border-radius: 20px; cursor: pointer; font-size: 13px; }
+        .msg-input-group button:disabled { background: #ccc; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -116,7 +117,7 @@
             </div>
             <div class="msg-input-group">
                 <input type="text" id="new-msg" placeholder="输入想说的话 (限100字)..." maxlength="100">
-                <button onclick="postMessage()">发送</button>
+                <button id="btn-send-msg" onclick="postMessage()">发送</button>
             </div>
         </div>
     </div>
@@ -174,47 +175,76 @@
             }
             if (user.role === 'admin') document.getElementById('admin-settings-btn').style.display = 'block';
             startHeartbeat();
-            loadMessages(); // 登录成功后加载留言
+            loadMessages(); 
         }
 
         function logout() { localStorage.clear(); location.reload(); }
 
         async function loadNotice() {
             try {
-                const res = await fetch('/api/portal?action=get-notice');
+                const res = await fetch(`/api/portal?action=get-notice&_t=${Date.now()}`);
                 const data = await res.json();
                 document.getElementById('marquee-content').innerText = data.text || "欢迎使用！";
             } catch (e) { document.getElementById('marquee-content').innerText = "系统运行中"; }
         }
 
+        // ★ 核心修复：加载留言逻辑 (增加强制刷新和滚动效果)
         async function loadMessages() {
+            const list = document.getElementById('msg-list');
             try {
-                const res = await fetch('/api/portal?action=get-messages');
+                // 加时间戳防止 API 缓存
+                const res = await fetch(`/api/portal?action=get-messages&_t=${Date.now()}`);
                 const msgs = await res.json();
-                const list = document.getElementById('msg-list');
-                if (msgs.length === 0) { list.innerHTML = '<p style="color:#999; font-size:12px; text-align:center; padding:20px;">今日尚无留言，抢个沙发吧！</p>'; return; }
+                
+                if (!Array.isArray(msgs) || msgs.length === 0) { 
+                    list.innerHTML = '<p style="color:#999; font-size:12px; text-align:center; padding:20px;">今日尚无留言，抢个沙发吧！</p>'; 
+                    return; 
+                }
+                
                 list.innerHTML = msgs.map(m => `
                     <div class="msg-item">
                         <div class="msg-info"><strong>${m.user}</strong> · ${m.time}</div>
                         <div class="msg-content">${m.text}</div>
                     </div>
                 `).join('');
-                list.scrollTop = list.scrollHeight;
-            } catch (e) { }
+                
+                // 自动平滑滚动到最新内容
+                list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
+            } catch (e) {
+                list.innerHTML = '<p style="color:red; font-size:12px; text-align:center; padding:20px;">留言加载波动，稍后重试</p>';
+            }
         }
 
+        // ★ 核心修复：发送留言逻辑 (防连击 + 状态管理)
         async function postMessage() {
             const input = document.getElementById('new-msg');
             const text = input.value.trim();
             if (!text || !currentUser) return;
+
+            const btn = document.getElementById('btn-send-msg');
+            btn.disabled = true;
+            btn.innerText = "...";
+
             try {
                 const res = await fetch('/api/portal?action=post-message', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user: currentUser.name, text: text })
                 });
-                if ((await res.json()).status === 'success') { input.value = ''; loadMessages(); }
-            } catch (e) { alert("发送失败"); }
+                const result = await res.json();
+                
+                if (result.status === 'success') { 
+                    input.value = ''; 
+                    await loadMessages(); // 确保加载完成后再恢复按钮
+                } else {
+                    alert("发送失败: " + (result.message || "服务器繁忙"));
+                }
+            } catch (e) { 
+                alert("网络繁忙，请稍后再试"); 
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "发送";
+            }
         }
 
         function startHeartbeat() {
@@ -229,7 +259,8 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username: user.name, token: token })
                     });
-                    if ((await res.json()).status === 'invalid') { logout(); alert("账号已在别处登录。"); }
+                    const data = await res.json();
+                    if (data.status === 'invalid') { logout(); alert("账号已在别处登录。"); }
                 } catch (e) { }
             }, 60000);
         }
