@@ -5,21 +5,21 @@ export default async function handler(req, res) {
     const action = req.query.action;
 
     try {
-        // ★ 优化1：拦截环境变量丢失导致的底层闪崩
         if (!process.env.OSS_AK || !process.env.OSS_SK) {
             return res.status(500).json({ status: 'error', message: 'Vercel 环境变量 OSS_AK 或 OSS_SK 丢失，请检查 Vercel 项目设置！' });
         }
 
-        // ★ 优化2：动态读取 Bucket 和 Region（优先使用环境变量中的 ALIYUN_OSS_BUCKET 和 ALIYUN_OSS_REGION）
         const region = process.env.ALIYUN_OSS_REGION || process.env.OSS_REGION || 'oss-cn-shanghai';
         const bucket = process.env.ALIYUN_OSS_BUCKET || process.env.OSS_BUCKET || 'colliers-reports';
 
+        // ★ 核心修复：添加 secure: true
         const client = new OSS({
             region: region,
             accessKeyId: process.env.OSS_AK,
             accessKeySecret: process.env.OSS_SK,
             bucket: bucket,
-            timeout: 7000 
+            timeout: 7000,
+            secure: true // 强制使用 HTTPS 协议，防止浏览器安全拦截下载
         });
 
         // ==========================================
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
                 expiration: date.toISOString(),
                 conditions: [
                     ["content-length-range", 0, 104857600], // 限制100MB
-                    ["starts-with", "$key", ""] // 允许上传到任何路径
+                    ["starts-with", "$key", ""] 
                 ]
             };
 
