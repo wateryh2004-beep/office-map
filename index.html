@@ -48,9 +48,7 @@
         
         #admin-settings-btn { display: none; margin-left: 15px; font-size: 12px; background: #004080; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
 
-        /* 新增：修改密码链接与弹窗样式 */
-        .pwd-link { display: block; margin-top: 15px; font-size: 12px; color: #666; cursor: pointer; text-decoration: underline; }
-        .pwd-link:hover { color: #004080; }
+        /* 修改密码弹窗样式 */
         #pwd-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center; }
         .pwd-box { background: white; padding: 30px; border-radius: 8px; width: 300px; text-align: center; }
         .pwd-box h3 { margin-top: 0; color: #333; }
@@ -69,7 +67,6 @@
             <input type="text" id="login-id" class="login-input" placeholder="工号 (Employee ID)">
             <input type="password" id="login-pwd" class="login-input" placeholder="密码 (默认: 123456)">
             <button class="login-btn" onclick="handleLogin()">认证进入</button>
-            <span class="pwd-link" onclick="openPwdModal()">修改初始密码</span>
             <div id="login-msg" class="login-error">认证失败</div>
         </div>
     </div>
@@ -77,10 +74,11 @@
     <div id="pwd-modal">
         <div class="pwd-box">
             <h3>修改密码</h3>
-            <input type="text" id="cp-name" class="login-input" placeholder="您的姓名">
-            <input type="text" id="cp-id" class="login-input" placeholder="您的工号">
+            <p style="font-size: 12px; color: #666; margin-bottom: 10px;">修改成功后需重新登录</p>
+            <input type="text" id="cp-name" class="login-input" placeholder="姓名" readonly style="background:#f5f5f5;">
+            <input type="text" id="cp-id" class="login-input" placeholder="请输入工号验证身份">
             <input type="password" id="cp-old" class="login-input" placeholder="原密码 (默认: 123456)">
-            <input type="password" id="cp-new" class="login-input" placeholder="设置新密码 (最少6位)">
+            <input type="password" id="cp-new" class="login-input" placeholder="新密码 (最少6位)">
             <div class="btn-group">
                 <button class="btn-cancel" onclick="closePwdModal()">取消</button>
                 <button class="btn-confirm" onclick="submitChangePwd()">确认修改</button>
@@ -93,6 +91,7 @@
         <h1>高力国际内部数据平台</h1>
         <div class="user-info">
             <span id="user-display">未登录</span>
+            <span class="logout-btn" onclick="openPwdModal()" style="color: #ffcc00; font-weight: bold;">修改密码</span>
             <span class="logout-btn" onclick="logout()">退出登录</span>
         </div>
     </div>
@@ -146,7 +145,6 @@
         async function handleLogin() {
             const name = document.getElementById('login-name').value.trim();
             const id = document.getElementById('login-id').value.trim();
-            // 这里获取密码
             const password = document.getElementById('login-pwd').value.trim();
             const msg = document.getElementById('login-msg');
 
@@ -159,19 +157,15 @@
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, id, password }) // 发送的是 password
+                    body: JSON.stringify({ name, id, password })
                 });
                 
-                // 删掉拦截，直接读取服务器的真实原话
                 const text = await res.text();
                 let data;
-
                 try {
-                    data = JSON.parse(text); // 尝试翻译成正常数据
-                } catch (parseError) {
-                    // 如果翻译失败，说明后端彻底崩了，直接把原话打印在控制台
-                    console.error("服务器严重崩溃，原始报错如下:", text);
-                    msg.innerText = "后端严重崩溃，请按 F12 查看控制台红字"; 
+                    data = JSON.parse(text);
+                } catch (e) {
+                    msg.innerText = "后端服务异常"; 
                     msg.style.display = 'block'; 
                     return;
                 }
@@ -181,13 +175,11 @@
                     localStorage.setItem('colliers_token', data.token); 
                     loginSuccess(data.data);
                 } else { 
-                    // 显示后端的详细报错
                     msg.innerText = data.message || "认证失败"; 
                     msg.style.display = 'block'; 
                 }
             } catch (e) { 
-                console.error(e); 
-                msg.innerText = "网络请求失败，请检查网络连接"; 
+                msg.innerText = "网络请求失败"; 
                 msg.style.display = 'block'; 
             } finally {
                 btn.innerText = "认证进入";
@@ -221,28 +213,20 @@
             try {
                 const res = await fetch('/api/get-notice');
                 const data = await res.json();
-                document.getElementById('marquee-content').innerText = data.text || "欢迎使用系统门户！如遇问题请联系管理员。";
+                document.getElementById('marquee-content').innerText = data.text || "欢迎使用系统门户！";
             } catch (e) {
-                document.getElementById('marquee-content').innerText = "欢迎使用系统门户！目前系统运行正常。";
+                document.getElementById('marquee-content').innerText = "欢迎使用系统门户！";
             }
         }
 
-        // ==========================================
-        // ★★★ 单点登录心跳检测 (防挤号机制) ★★★
-        // ==========================================
         let heartbeatTimer = null;
-
         function startHeartbeat() {
             if (heartbeatTimer) clearInterval(heartbeatTimer);
-            
             heartbeatTimer = setInterval(async () => {
                 const userStr = localStorage.getItem('colliers_user');
                 const currentToken = localStorage.getItem('colliers_token');
-                
                 if (!userStr || !currentToken) return; 
-                
                 const user = JSON.parse(userStr);
-                
                 try {
                     const res = await fetch('/api/login?action=check', {
                         method: 'POST',
@@ -250,36 +234,28 @@
                         body: JSON.stringify({ username: user.name, token: currentToken })
                     });
                     const data = await res.json();
-                    
                     if (data.status === 'invalid') {
                         clearInterval(heartbeatTimer); 
-                        localStorage.removeItem('colliers_user');
-                        localStorage.removeItem('colliers_token');
-                        
-                        alert("⚠️ 系统提示：\n您的账号已在其他设备或浏览器登录，或者密码已被修改！\n当前页面将被强制退出。");
-                        window.location.reload(); 
+                        logout();
+                        alert("⚠️ 您的账号已在其他地方登录或密码已更改，请重新登录。");
                     }
-                } catch (e) {
-                    console.warn("心跳检测波动", e);
-                }
+                } catch (e) {}
             }, 60000); 
         }
 
-        // ==========================================
-        // ★★★ 修改密码前端逻辑 ★★★
-        // ==========================================
+        // 修改密码逻辑
         function openPwdModal() { 
             document.getElementById('pwd-modal').style.display = 'flex'; 
+            const userStr = localStorage.getItem('colliers_user');
+            if(userStr) {
+                const user = JSON.parse(userStr);
+                document.getElementById('cp-name').value = user.name;
+            }
         }
         
         function closePwdModal() { 
             document.getElementById('pwd-modal').style.display = 'none'; 
             document.getElementById('pwd-msg').style.display = 'none';
-            // 清空输入框
-            document.getElementById('cp-name').value = '';
-            document.getElementById('cp-id').value = '';
-            document.getElementById('cp-old').value = '';
-            document.getElementById('cp-new').value = '';
         }
 
         async function submitChangePwd() {
@@ -300,9 +276,6 @@
                 return; 
             }
 
-            const btn = document.querySelector('.btn-confirm');
-            btn.innerText = "处理中...";
-
             try {
                 const res = await fetch('/api/login?action=change-pwd', {
                     method: 'POST',
@@ -310,19 +283,16 @@
                     body: JSON.stringify({ name, id, oldPwd, newPwd })
                 });
                 const data = await res.json();
-                
                 if(data.status === 'success') {
-                    alert("✅ " + data.message);
-                    closePwdModal();
+                    alert("✅ 密码修改成功！请重新登录。");
+                    logout(); // 修改成功后强制登出
                 } else {
                     msg.innerText = data.message; 
                     msg.style.display = 'block';
                 }
             } catch(e) {
-                msg.innerText = "网络异常，请重试"; 
+                msg.innerText = "修改失败，请检查网络"; 
                 msg.style.display = 'block';
-            } finally {
-                btn.innerText = "确认修改";
             }
         }
     </script>
