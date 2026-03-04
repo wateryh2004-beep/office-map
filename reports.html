@@ -84,7 +84,7 @@
         }
     };
 
-    // 核心：基于 prefix 的动态层级拉取
+    // 核心：基于 prefix 的动态层级拉取（终极诊断版）
     async function fetchReports(prefix) {
         currentPrefix = prefix || '';
         document.getElementById('report-list').innerHTML = `<tr><td colspan="4" class="status-message">加载中...</td></tr>`;
@@ -97,32 +97,37 @@
 
             const res = await fetch(url);
             
-            // 【关键修改】：尝试解析后端返回的 JSON 数据
+            // 【核心修改】：先不当作 JSON 解析，直接强行把服务器返回的纯文本扒下来！
+            const rawText = await res.text(); 
+            
             let result;
             try {
-                result = await res.json();
+                // 拿到纯文本后，再尝试将其转换为 JSON
+                result = JSON.parse(rawText);
             } catch (jsonErr) {
-                throw new Error(`服务器 500 崩溃，且未返回有效 JSON。`);
+                // 如果转换失败（说明 Vercel 吐了一个 HTML 错误页面出来）
+                // 我们直接把这个 rawText 打印在屏幕上！
+                throw new Error(`
+                    <b>HTTP状态码：</b> ${res.status} <br><br>
+                    <b>服务器返回的原始内容：</b><br>
+                    <div style="background:#f8f9fa; padding:10px; border:1px solid #ddd; margin-top:10px; font-family:monospace; font-size:12px; white-space:pre-wrap; text-align:left; color:#333;">${rawText.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
+                `);
             }
 
-            // 如果后端明确表示成功
             if (res.ok && result.status === 'success') {
                 currentData = result.data || [];
                 renderBreadcrumb();
                 renderTable(currentData);
             } else {
-                // 把 api/oss.js 捕获到的真实错误信息 (result.message) 抛出来
                 throw new Error(result.message || `请求失败 (HTTP ${res.status})`);
             }
         } catch (e) { 
             console.error("加载文件列表失败:", e);
             document.getElementById('report-list').innerHTML = `
                 <tr>
-                    <td colspan="4" class="status-message" style="color: #dc3545; font-weight: bold;">
-                        ❌ 阿里云/接口报错：${e.message}<br>
-                        <span style="font-size:12px; color:#888; font-weight: normal; margin-top: 10px; display: inline-block;">
-                            （请把上面这行“报错信息”发给我，我们马上就能定位问题）
-                        </span>
+                    <td colspan="4" class="status-message" style="color: #dc3545;">
+                        <span style="font-weight: bold; font-size:16px;">❌ 终极报错诊断追踪：</span><br><br>
+                        ${e.message}
                     </td>
                 </tr>`; 
         }
