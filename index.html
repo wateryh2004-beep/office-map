@@ -7,54 +7,48 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8f9fa; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
-        
         #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 64, 128, 0.95); z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .login-box { background: white; padding: 40px; border-radius: 8px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
         .login-box h2 { margin: 0 0 20px 0; color: #004080; }
         .login-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
         .login-btn { width: 100%; padding: 12px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px; }
-        .login-btn:hover { background: #003366; }
         .login-error { color: red; font-size: 12px; margin-top: 10px; display: none; }
-
         .header { background: #004080; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .header h1 { margin: 0; font-size: 20px; }
         .user-info { font-size: 14px; display: flex; gap: 15px; align-items: center; }
         .logout-btn { color: white; text-decoration: underline; cursor: pointer; font-size: 12px; opacity: 0.8; }
-        .logout-btn:hover { opacity: 1; }
-
-        .main-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
-        .welcome-text { text-align: center; color: #333; margin-bottom: 40px; max-width: 800px; font-size: 15px; line-height: 1.6; }
-        
-        .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px 40px; max-width: 800px; width: 100%; }
-        
-        .nav-card { background: white; padding: 30px 20px; border-radius: 12px; text-align: center; text-decoration: none; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; gap: 15px; border: 1px solid #eee; }
-        .nav-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); border-color: #ddd; }
-        
-        .icon-box { font-size: 50px; }
-        .c-blue { color: #3498db; }    
-        .c-purple { color: #8e44ad; }  
-        .c-red { color: #c0392b; }     
-        
-        .card-title { font-size: 16px; font-weight: bold; }
-
-        .nav-card.disabled { opacity: 0.6; cursor: not-allowed; }
-        .nav-card.disabled:hover { transform: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-color: #eee; }
-
-        .notice-bar { background: #fff3cd; color: #856404; padding: 12px 20px; display: flex; align-items: center; border-top: 1px solid #ffeeba; }
-        .notice-title { font-weight: bold; margin-right: 15px; white-space: nowrap; }
+        .main-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 30px 20px; }
+        .welcome-text { text-align: center; color: #333; margin-bottom: 30px; max-width: 800px; font-size: 14px; line-height: 1.6; }
+        .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px 30px; max-width: 800px; width: 100%; margin-bottom: 30px; }
+        .nav-card { background: white; padding: 25px 15px; border-radius: 12px; text-align: center; text-decoration: none; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.2s; display: flex; flex-direction: column; align-items: center; gap: 10px; border: 1px solid #eee; }
+        .nav-card:hover { transform: translateY(-3px); border-color: #004080; }
+        .icon-box { font-size: 40px; }
+        .c-blue { color: #3498db; } .c-purple { color: #8e44ad; } .c-red { color: #c0392b; }
+        .card-title { font-size: 15px; font-weight: bold; }
+        .nav-card.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+        .notice-bar { background: #fff3cd; color: #856404; padding: 10px 20px; display: flex; align-items: center; border-top: 1px solid #ffeeba; }
+        .notice-title { font-weight: bold; margin-right: 15px; white-space: nowrap; font-size: 13px; }
         .marquee-wrapper { flex: 1; overflow: hidden; position: relative; }
-        .marquee-text { display: inline-block; white-space: nowrap; animation: marquee 20s linear infinite; font-size: 14px; }
+        .marquee-text { display: inline-block; white-space: nowrap; animation: marquee 25s linear infinite; font-size: 13px; }
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-        
-        #admin-settings-btn { display: none; margin-left: 15px; font-size: 12px; background: #004080; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-
-        /* 修改密码弹窗样式 */
+        #admin-settings-btn { display: none; margin-left: 15px; font-size: 11px; background: #004080; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
         #pwd-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center; }
         .pwd-box { background: white; padding: 30px; border-radius: 8px; width: 300px; text-align: center; }
-        .pwd-box h3 { margin-top: 0; color: #333; }
         .btn-group { display: flex; gap: 10px; margin-top: 20px; }
-        .btn-cancel { flex: 1; padding: 10px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer; }
-        .btn-confirm { flex: 1; padding: 10px; border: none; background: #004080; color: white; border-radius: 4px; cursor: pointer; }
+        .btn-cancel { flex: 1; padding: 10px; border: 1px solid #ccc; background: white; border-radius: 4px; }
+        .btn-confirm { flex: 1; padding: 10px; border: none; background: #004080; color: white; border-radius: 4px; }
+
+        /* 留言墙样式 */
+        .msg-wall { width: 100%; max-width: 800px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eee; }
+        .msg-wall h3 { margin-top: 0; font-size: 15px; color: #004080; border-bottom: 1px solid #eee; padding-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .msg-list { min-height: 80px; max-height: 200px; overflow-y: auto; margin-bottom: 15px; }
+        .msg-item { background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #004080; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .msg-info { font-size: 10px; color: #888; margin-bottom: 3px; }
+        .msg-content { font-size: 13px; color: #333; }
+        .msg-input-group { display: flex; gap: 10px; border-top: 1px solid #eee; padding-top: 15px; }
+        .msg-input-group input { flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 20px; font-size: 13px; outline: none; }
+        .msg-input-group button { background: #004080; color: white; border: none; padding: 0 15px; border-radius: 20px; cursor: pointer; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -62,26 +56,25 @@
     <div id="login-overlay">
         <div class="login-box">
             <h2>COLLIERS DATA</h2>
-            <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据系统门户 (SSO版)</p>
-            <input type="text" id="login-name" class="login-input" placeholder="姓名 (Name)">
-            <input type="text" id="login-id" class="login-input" placeholder="工号 (Employee ID)">
+            <p style="color:#666; font-size:12px; margin-bottom:20px;">内部数据系统门户 (SSO版)</p>
+            <input type="text" id="login-name" class="login-input" placeholder="姓名">
+            <input type="text" id="login-id" class="login-input" placeholder="工号">
             <input type="password" id="login-pwd" class="login-input" placeholder="密码 (默认: 123456)">
             <button class="login-btn" onclick="handleLogin()">认证进入</button>
-            <div id="login-msg" class="login-error">认证失败</div>
+            <div id="login-msg" class="login-error"></div>
         </div>
     </div>
 
     <div id="pwd-modal">
         <div class="pwd-box">
             <h3>修改密码</h3>
-            <p style="font-size: 12px; color: #666; margin-bottom: 10px;">修改成功后需重新登录</p>
-            <input type="text" id="cp-name" class="login-input" placeholder="姓名" readonly style="background:#f5f5f5;">
-            <input type="text" id="cp-id" class="login-input" placeholder="请输入工号验证身份">
-            <input type="password" id="cp-old" class="login-input" placeholder="原密码 (默认: 123456)">
+            <input type="text" id="cp-name" class="login-input" readonly style="background:#f5f5f5;">
+            <input type="text" id="cp-id" class="login-input" placeholder="输入工号验证">
+            <input type="password" id="cp-old" class="login-input" placeholder="原密码">
             <input type="password" id="cp-new" class="login-input" placeholder="新密码 (最少6位)">
             <div class="btn-group">
                 <button class="btn-cancel" onclick="closePwdModal()">取消</button>
-                <button class="btn-confirm" onclick="submitChangePwd()">确认修改</button>
+                <button class="btn-confirm" onclick="submitChangePwd()">确认</button>
             </div>
             <div id="pwd-msg" class="login-error"></div>
         </div>
@@ -90,16 +83,15 @@
     <div class="header">
         <h1>高力国际内部数据平台</h1>
         <div class="user-info">
-            <span id="user-display">未登录</span>
-            <span class="logout-btn" onclick="openPwdModal()" style="color: #ffcc00; font-weight: bold;">修改密码</span>
+            <span id="user-display"></span>
+            <span class="logout-btn" onclick="openPwdModal()" style="color:#ffcc00; font-weight:bold;">修改密码</span>
             <span class="logout-btn" onclick="logout()">退出登录</span>
         </div>
     </div>
 
     <div class="main-content">
         <div class="welcome-text">
-            <strong>欢迎来到系统门户。</strong><br>
-            请根据您的业务需求选择进入对应的功能模块。目前“项目地图”、“报告资料库”和“数据收集”功能已开放，其他模块正在规划拓展中。
+            <strong>欢迎使用。</strong> 请选择对应的业务模块。
         </div>
 
         <div class="grid-container">
@@ -107,25 +99,34 @@
                 <div class="icon-box c-blue"><i class="fas fa-map-marked-alt"></i></div>
                 <div class="card-title">项目地图</div>
             </a>
-            
             <a href="reports.html" class="nav-card">
                 <div class="icon-box c-purple"><i class="fas fa-newspaper"></i></div>
                 <div class="card-title">报告资料库</div>
             </a>
-
             <a href="update.html" class="nav-card" id="btn-data-collect">
                 <div class="icon-box c-red"><i class="fas fa-chart-line"></i></div>
                 <div class="card-title">数据收集</div>
             </a>
         </div>
+
+        <div class="msg-wall">
+            <h3><i class="fas fa-comment-dots"></i> 今日留言墙 (Daily Board)</h3>
+            <div id="msg-list" class="msg-list">
+                <p style="color:#999; font-size:12px; text-align:center; padding:20px;">正在拉取今日心声...</p>
+            </div>
+            <div class="msg-input-group">
+                <input type="text" id="new-msg" placeholder="输入想说的话 (限100字)..." maxlength="100">
+                <button onclick="postMessage()">发送</button>
+            </div>
+        </div>
     </div>
 
     <div class="notice-bar">
-        <div class="notice-title">📢 重要通知：</div>
+        <div class="notice-title">📢 公告：</div>
         <div class="marquee-wrapper">
-            <div class="marquee-text" id="marquee-content">正在获取最新通知...</div>
+            <div class="marquee-text" id="marquee-content">加载中...</div>
         </div>
-        <button id="admin-settings-btn" onclick="window.location.href='admin.html'">⚙️ 进入后台</button>
+        <button id="admin-settings-btn" onclick="window.location.href='admin.html'">⚙️ 后台</button>
     </div>
 
     <script>
@@ -134,7 +135,6 @@
         window.onload = function() {
             const cachedUser = localStorage.getItem('colliers_user');
             const cachedToken = localStorage.getItem('colliers_token'); 
-            
             if (cachedUser && cachedToken) {
                 currentUser = JSON.parse(cachedUser);
                 loginSuccess(currentUser);
@@ -147,153 +147,114 @@
             const id = document.getElementById('login-id').value.trim();
             const password = document.getElementById('login-pwd').value.trim();
             const msg = document.getElementById('login-msg');
-
-            if (!name || !id || !password) { msg.innerText = "请填写完整信息"; msg.style.display = 'block'; return; }
-            msg.style.display = 'none';
-            const btn = document.querySelector('.login-btn');
-            btn.innerText = "认证中...";
-            
+            if (!name || !id || !password) { msg.innerText = "请填写完整"; msg.style.display = 'block'; return; }
+            const btn = document.querySelector('.login-btn'); btn.innerText = "认证中...";
             try {
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, id, password })
                 });
-                
-                const text = await res.text();
-                let data;
-                try {
-                    data = JSON.parse(text);
-                } catch (e) {
-                    msg.innerText = "后端服务异常"; 
-                    msg.style.display = 'block'; 
-                    return;
-                }
-                
+                const data = await res.json();
                 if (data.status === 'success') {
                     localStorage.setItem('colliers_user', JSON.stringify(data.data));
                     localStorage.setItem('colliers_token', data.token); 
                     loginSuccess(data.data);
-                } else { 
-                    msg.innerText = data.message || "认证失败"; 
-                    msg.style.display = 'block'; 
-                }
-            } catch (e) { 
-                msg.innerText = "网络请求失败"; 
-                msg.style.display = 'block'; 
-            } finally {
-                btn.innerText = "认证进入";
-            }
+                } else { msg.innerText = data.message || "失败"; msg.style.display = 'block'; }
+            } catch (e) { msg.innerText = "网络错误"; msg.style.display = 'block'; }
+            finally { btn.innerText = "认证进入"; }
         }
 
         function loginSuccess(user) {
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('user-display').innerText = `${user.name} (${user.role})`;
-            
             if (user.role === 'viewer') {
-                const btnData = document.getElementById('btn-data-collect');
-                btnData.classList.add('disabled');
-                btnData.href = "javascript:alert('您没有数据填报权限，请联系管理员。');";
+                const btn = document.getElementById('btn-data-collect');
+                btn.classList.add('disabled');
             }
-
-            if (user.role === 'admin') {
-                document.getElementById('admin-settings-btn').style.display = 'block';
-            }
-
+            if (user.role === 'admin') document.getElementById('admin-settings-btn').style.display = 'block';
             startHeartbeat();
+            loadMessages(); // 登录成功后加载留言
         }
 
-        function logout() { 
-            localStorage.removeItem('colliers_user'); 
-            localStorage.removeItem('colliers_token'); 
-            location.reload(); 
-        }
+        function logout() { localStorage.clear(); location.reload(); }
 
         async function loadNotice() {
             try {
-                const res = await fetch('/api/get-notice');
+                const res = await fetch('/api/portal?action=get-notice');
                 const data = await res.json();
-                document.getElementById('marquee-content').innerText = data.text || "欢迎使用系统门户！";
-            } catch (e) {
-                document.getElementById('marquee-content').innerText = "欢迎使用系统门户！";
-            }
+                document.getElementById('marquee-content').innerText = data.text || "欢迎使用！";
+            } catch (e) { document.getElementById('marquee-content').innerText = "系统运行中"; }
         }
 
-        let heartbeatTimer = null;
+        async function loadMessages() {
+            try {
+                const res = await fetch('/api/portal?action=get-messages');
+                const msgs = await res.json();
+                const list = document.getElementById('msg-list');
+                if (msgs.length === 0) { list.innerHTML = '<p style="color:#999; font-size:12px; text-align:center; padding:20px;">今日尚无留言，抢个沙发吧！</p>'; return; }
+                list.innerHTML = msgs.map(m => `
+                    <div class="msg-item">
+                        <div class="msg-info"><strong>${m.user}</strong> · ${m.time}</div>
+                        <div class="msg-content">${m.text}</div>
+                    </div>
+                `).join('');
+                list.scrollTop = list.scrollHeight;
+            } catch (e) { }
+        }
+
+        async function postMessage() {
+            const input = document.getElementById('new-msg');
+            const text = input.value.trim();
+            if (!text || !currentUser) return;
+            try {
+                const res = await fetch('/api/portal?action=post-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: currentUser.name, text: text })
+                });
+                if ((await res.json()).status === 'success') { input.value = ''; loadMessages(); }
+            } catch (e) { alert("发送失败"); }
+        }
+
         function startHeartbeat() {
-            if (heartbeatTimer) clearInterval(heartbeatTimer);
-            heartbeatTimer = setInterval(async () => {
+            setInterval(async () => {
                 const userStr = localStorage.getItem('colliers_user');
-                const currentToken = localStorage.getItem('colliers_token');
-                if (!userStr || !currentToken) return; 
+                const token = localStorage.getItem('colliers_token');
+                if (!userStr || !token) return;
                 const user = JSON.parse(userStr);
                 try {
                     const res = await fetch('/api/login?action=check', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username: user.name, token: currentToken })
+                        body: JSON.stringify({ username: user.name, token: token })
                     });
-                    const data = await res.json();
-                    if (data.status === 'invalid') {
-                        clearInterval(heartbeatTimer); 
-                        logout();
-                        alert("⚠️ 您的账号已在其他地方登录或密码已更改，请重新登录。");
-                    }
-                } catch (e) {}
-            }, 60000); 
+                    if ((await res.json()).status === 'invalid') { logout(); alert("账号已在别处登录。"); }
+                } catch (e) { }
+            }, 60000);
         }
 
-        // 修改密码逻辑
         function openPwdModal() { 
             document.getElementById('pwd-modal').style.display = 'flex'; 
-            const userStr = localStorage.getItem('colliers_user');
-            if(userStr) {
-                const user = JSON.parse(userStr);
-                document.getElementById('cp-name').value = user.name;
-            }
+            document.getElementById('cp-name').value = JSON.parse(localStorage.getItem('colliers_user')).name;
         }
-        
-        function closePwdModal() { 
-            document.getElementById('pwd-modal').style.display = 'none'; 
-            document.getElementById('pwd-msg').style.display = 'none';
-        }
-
+        function closePwdModal() { document.getElementById('pwd-modal').style.display = 'none'; }
         async function submitChangePwd() {
-            const name = document.getElementById('cp-name').value.trim();
             const id = document.getElementById('cp-id').value.trim();
             const oldPwd = document.getElementById('cp-old').value.trim();
             const newPwd = document.getElementById('cp-new').value.trim();
             const msg = document.getElementById('pwd-msg');
-
-            if(!name || !id || !oldPwd || !newPwd) { 
-                msg.innerText = "请填满所有字段"; 
-                msg.style.display = 'block'; 
-                return; 
-            }
-            if(newPwd.length < 6) { 
-                msg.innerText = "新密码至少需要 6 位"; 
-                msg.style.display = 'block'; 
-                return; 
-            }
-
+            if(!id || !oldPwd || !newPwd) { msg.innerText = "请填满所有字段"; msg.style.display='block'; return; }
             try {
                 const res = await fetch('/api/login?action=change-pwd', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, id, oldPwd, newPwd })
+                    body: JSON.stringify({ name: document.getElementById('cp-name').value, id, oldPwd, newPwd })
                 });
                 const data = await res.json();
-                if(data.status === 'success') {
-                    alert("✅ 密码修改成功！请重新登录。");
-                    logout(); // 修改成功后强制登出
-                } else {
-                    msg.innerText = data.message; 
-                    msg.style.display = 'block';
-                }
-            } catch(e) {
-                msg.innerText = "修改失败，请检查网络"; 
-                msg.style.display = 'block';
-            }
+                if(data.status === 'success') { alert("修改成功，请重登"); logout(); }
+                else { msg.innerText = data.message; msg.style.display='block'; }
+            } catch(e) { msg.innerText = "修改失败"; msg.style.display='block'; }
         }
     </script>
 </body>
