@@ -1,6 +1,6 @@
-{
-  "dependencies": {
+"dependencies": {
+    "@octokit/rest": "^19.0.11",
     "xlsx": "^0.18.5",
-    "@octokit/rest": "^19.0.0"
+    "@vercel/kv": "latest",
+    "ali-oss": "^6.18.0"
   }
-}
