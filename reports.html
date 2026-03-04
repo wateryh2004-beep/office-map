@@ -75,7 +75,9 @@
     window.onload = function() {
         const userStr = localStorage.getItem('colliers_user');
         if (!userStr) { alert("请先登录！"); window.location.href = 'index.html'; return; }
-        fetchReports(''); // 初始加载根目录
+        
+        // 初始加载根目录
+        fetchReports(''); 
         
         if (localStorage.getItem('colliers_user') && localStorage.getItem('colliers_token')) {
             startHeartbeat();
@@ -84,18 +86,43 @@
 
     // 核心：基于 prefix 的动态层级拉取
     async function fetchReports(prefix) {
-        currentPrefix = prefix;
+        // 确保 prefix 至少是空字符串，防止 undefined 报错
+        currentPrefix = prefix || '';
         document.getElementById('report-list').innerHTML = `<tr><td colspan="4" class="status-message">加载中...</td></tr>`;
+        
         try {
-            const res = await fetch(`/api/oss?action=get-list&prefix=${encodeURIComponent(prefix)}`);
+            // ★ 修复点 1：兼容根目录，避免 url 末尾出现 &prefix= 导致后端解析报错
+            let url = '/api/oss?action=get-list';
+            if (currentPrefix) {
+                url += `&prefix=${encodeURIComponent(currentPrefix)}`;
+            }
+
+            const res = await fetch(url);
+            
+            // ★ 修复点 2：拦截非 200 的 HTTP 错误
+            if (!res.ok) {
+                throw new Error(`服务器响应异常 (HTTP ${res.status})`);
+            }
+
             const result = await res.json();
+            
             if (result.status === 'success') {
-                currentData = result.data;
+                currentData = result.data || [];
                 renderBreadcrumb();
                 renderTable(currentData);
+            } else {
+                throw new Error(result.message || '接口返回了失败状态');
             }
         } catch (e) { 
-            document.getElementById('report-list').innerHTML = `<tr><td colspan="4" class="status-message">加载失败，请刷新。</td></tr>`; 
+            console.error("加载文件列表失败:", e);
+            // ★ 修复点 3：将具体的报错原因直接显示在界面上，方便定位
+            document.getElementById('report-list').innerHTML = `
+                <tr>
+                    <td colspan="4" class="status-message" style="color: #dc3545;">
+                        ❌ 加载失败：${e.message}<br>
+                        <span style="font-size:12px; color:#888;">（如果一直报错，请按 F12 打开开发者工具查看 Console，并将红色报错发给我）</span>
+                    </td>
+                </tr>`; 
         }
     }
 
@@ -106,7 +133,7 @@
         if (currentPrefix) {
             const parts = currentPrefix.split('/').filter(p => p);
             let cumulativePath = '';
-            parts.forEach((part, index) => {
+            parts.forEach((part) => {
                 cumulativePath += part + '/';
                 html += ` <span style="color:#888; text-decoration:none;">/</span> <span style="cursor:pointer; color:#004080;" onclick="fetchReports('${cumulativePath}')">${part}</span>`;
             });
@@ -117,7 +144,8 @@
     // 渲染文件夹和文件混合列表
     function renderTable(dataList) {
         const tbody = document.getElementById('report-list');
-        if (dataList.length === 0) {
+        
+        if (!Array.isArray(dataList) || dataList.length === 0) {
             let backHtml = currentPrefix ? `<tr style="cursor:pointer; background:#fdfdfd;" onclick="goUp()"><td colspan="4" style="color:#004080; font-weight:bold;">🔙 返回上一级...</td></tr>` : '';
             tbody.innerHTML = backHtml + `<tr><td colspan="4" class="status-message">📭 当前目录为空</td></tr>`;
             return;
@@ -133,24 +161,33 @@
 
         html += dataList.map(item => {
             if (item.type === 'folder') {
-                const folderName = item.name.replace(currentPrefix, '').replace('/', '');
+                // 提取纯粹的文件夹名称
+                const folderName = item.name.replace(currentPrefix, '').replace(/\//g, '');
                 return `
                 <tr style="cursor:pointer;" onclick="fetchReports('${item.name}')">
                     <td style="font-weight:bold; color:#333; font-size:15px;">📁 ${folderName}</td>
                     <td style="color:#aaa;">-</td><td style="color:#aaa;">-</td><td style="text-align: center; color:#aaa;">进入</td>
                 </tr>`;
             } else {
-                const dateObj = new Date(item.lastModified);
-                const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
+                // 安全解析时间
+                let dateStr = '-';
+                if (item.lastModified) {
+                    const dateObj = new Date(item.lastModified);
+                    if (!isNaN(dateObj)) {
+                        dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
+                    }
+                }
+                
                 return `
                 <tr>
-                    <td style="font-weight:500; color:#004080;">📄 ${item.shortName}</td>
-                    <td style="color:#888;">${item.size}</td>
+                    <td style="font-weight:500; color:#004080;">📄 ${item.shortName || '未知文件'}</td>
+                    <td style="color:#888;">${item.size || '-'}</td>
                     <td style="color:#888;">${dateStr}</td>
                     <td style="text-align: center;"><a href="${item.url}" class="btn-download" target="_blank">⬇ 下载</a></td>
                 </tr>`;
             }
         }).join('');
+        
         tbody.innerHTML = html;
     }
 
@@ -166,7 +203,7 @@
     function filterCurrentView() {
         const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
         const filtered = currentData.filter(item => {
-            const name = item.type === 'folder' ? item.name : item.shortName;
+            const name = item.type === 'folder' ? item.name : (item.shortName || '');
             return name.toLowerCase().includes(keyword);
         });
         renderTable(filtered);
