@@ -10,12 +10,15 @@ export default async function handler(req, res) {
             return res.status(500).json({ status: 'error', message: 'Vercel 环境变量 OSS_AK 或 OSS_SK 丢失，请检查 Vercel 项目设置！' });
         }
 
-        // ★ 优化2：将客户端初始化移入内部，并设置 7 秒超时限制（防 Vercel 10s 强杀）
+        // ★ 优化2：动态读取 Bucket 和 Region（优先使用环境变量中的 ALIYUN_OSS_BUCKET 和 ALIYUN_OSS_REGION）
+        const region = process.env.ALIYUN_OSS_REGION || process.env.OSS_REGION || 'oss-cn-shanghai';
+        const bucket = process.env.ALIYUN_OSS_BUCKET || process.env.OSS_BUCKET || 'colliers-reports';
+
         const client = new OSS({
-            region: 'oss-cn-shanghai', // 确保与你阿里云后台一致
+            region: region,
             accessKeyId: process.env.OSS_AK,
             accessKeySecret: process.env.OSS_SK,
-            bucket: 'colliers-reports',
+            bucket: bucket,
             timeout: 7000 
         });
 
@@ -53,24 +56,21 @@ export default async function handler(req, res) {
         // 2. 获取目录列表 (Directory Drill-down)
         // ==========================================
         else if (action === 'get-list') {
-            const prefix = req.query.prefix || ''; // 当前所在的文件夹路径
+            const prefix = req.query.prefix || ''; 
             
-            // 使用 delimiter 实现“文件夹”效果
             const result = await client.list({
                 prefix: prefix,
                 delimiter: '/',
                 'max-keys': 1000
             });
 
-            // 解析文件夹
             const folders = (result.prefixes || []).map(p => ({
                 name: p,
                 type: 'folder'
             }));
 
-            // 解析文件
             const files = (result.objects || [])
-                .filter(o => o.name !== prefix) // 排除目录自身
+                .filter(o => o.name !== prefix) 
                 .map(o => {
                     const url = client.signatureUrl(o.name, { expires: 3600 });
                     return {
@@ -118,7 +118,6 @@ export default async function handler(req, res) {
 
     } catch (e) {
         console.error("OSS API Error:", e.message);
-        // ★ 优化3：确保即使报错也是返回标准的 JSON 格式，绝不崩溃
         return res.status(500).json({ status: 'error', message: e.message || 'OSS接口网络超时或遇到内部错误' });
     }
 }
