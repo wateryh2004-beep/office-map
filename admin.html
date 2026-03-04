@@ -18,64 +18,26 @@
         .back-link:hover { opacity: 1; text-decoration: underline; }
         
         /* 主容器 */
-        .container { 
-            max-width: 1200px; 
-            margin: 30px auto; 
-            padding: 0 20px; 
-            display: flex;
-            flex-direction: column;
-            gap: 25px; 
-        }
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; display: flex; flex-direction: column; gap: 25px; }
         
         /* 卡片通用样式 */
         .card { background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eef2f5; overflow: hidden; display: flex; flex-direction: column; }
-        .card-header { 
-            background: #f8f9fa; 
-            padding: 15px 20px; 
-            border-bottom: 1px solid #e9ecef; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-        }
+        .card-header { background: #f8f9fa; padding: 15px 20px; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; }
         .card-header h3 { margin: 0; color: #004080; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
         
         /* --- 第一层：资源管理 --- */
-        .resources-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr; 
-            divide-x: 1px solid #e9ecef; 
-        }
-        
-        .resource-item {
-            padding: 25px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            border-right: 1px solid #f0f0f0;
-        }
+        .resources-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; divide-x: 1px solid #e9ecef; }
+        .resource-item { padding: 25px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; border-right: 1px solid #f0f0f0; }
         .resource-item:last-child { border-right: none; }
-
         .item-icon { font-size: 28px; margin-bottom: 5px; }
         .item-title { font-weight: bold; color: #333; font-size: 15px; text-align: center; }
         .item-desc { font-size: 12px; color: #888; margin-top: -10px; margin-bottom: 5px; text-align: center; }
-        
         .file-input-wrapper { width: 100%; display: flex; justify-content: center; }
         .file-input { width: 90%; font-size: 12px; color: #666; }
 
         /* --- 第二层：监控数据 --- */
-        .monitor-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr; 
-            gap: 25px;
-            height: 550px; /* 为了放筛选框，稍微加高一点 */
-        }
-        .monitor-card {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
+        .monitor-row { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; height: 550px; }
+        .monitor-card { height: 100%; display: flex; flex-direction: column; }
 
         /* 按钮样式 */
         .btn-action { padding: 8px 16px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; width: 80%; }
@@ -83,7 +45,9 @@
         .btn-blue:hover { background: #003366; }
         .btn-red { background: #dc3545; color: white; }
         .btn-red:hover { background: #c82333; }
-        .btn-red:disabled { background: #e9ecef; color: #adb5bd; cursor: not-allowed; }
+        .btn-green { background: #28a745; color: white; }
+        .btn-green:hover { background: #218838; }
+        .btn-action:disabled { background: #e9ecef; color: #adb5bd; cursor: not-allowed; }
         .btn-link { color: #004080; text-decoration: none; font-size: 12px; font-weight: bold; border: 1px solid #cce5ff; padding: 4px 10px; border-radius: 20px; background: #f0f8ff; transition: all 0.2s; }
         .btn-link:hover { background: #004080; color: white; }
 
@@ -98,6 +62,8 @@
         .tag-keyword { background: #eef2f5; padding: 2px 8px; border-radius: 4px; color: #555; border: 1px solid #e0e0e0; }
         .download-btn-sm { background: #28a745; color: white; padding: 4px 10px; border-radius: 3px; text-decoration: none; font-size: 11px; white-space: nowrap; }
         .download-btn-sm:hover { background: #218838; }
+        .delete-btn-sm { background: #dc3545; color: white; padding: 4px 10px; border-radius: 3px; cursor: pointer; border: none; font-size: 11px; white-space: nowrap; transition: 0.2s; }
+        .delete-btn-sm:hover { background: #c82333; }
 
         .empty-tip { text-align: center; color: #999; padding: 40px; }
         
@@ -109,13 +75,7 @@
 
         /* 版本号悬浮 */
         #version-tag { position: fixed; bottom: 15px; right: 20px; background: rgba(0, 40, 80, 0.9); color: white; padding: 8px 16px; border-radius: 30px; font-size: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 9999; display: none; backdrop-filter: blur(4px); }
-        
-        /* 文件名标签 (用于展示解析出的属性) */
         .file-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-right: 5px; display: inline-block; margin-bottom: 3px; }
-        .bg-gradeA { background: #e3f2fd; color: #0277bd; }
-        .bg-gradeB { background: #f1f8e9; color: #558b2f; }
-        .bg-bp { background: #fff3e0; color: #e65100; }
-        .bg-unknown { background: #f5f5f5; color: #666; }
     </style>
 </head>
 <body>
@@ -134,7 +94,6 @@
     <div class="card">
         <div class="card-header">
             <h3>🛠️ 系统核心资源管理 (Resource Management)</h3>
-            <span style="font-size:12px; color:#888;">上传文件大小支持最高 100MB</span>
         </div>
         <div class="resources-grid">
             
@@ -144,7 +103,7 @@
                 <div class="item-desc">管理 data.xlsx 底表</div>
                 <a href="./data.xlsx" class="btn-link" download>⬇ 备份当前数据</a>
                 <div class="file-input-wrapper"><input type="file" id="source-file" accept=".xlsx" class="file-input"></div>
-                <button class="btn-action btn-red" id="btn-upload-source" onclick="directUpload('source-file', 'data.xlsx', 'btn-upload-source')">🚀 覆盖更新 Excel</button>
+                <button class="btn-action btn-red" id="btn-upload-source" onclick="directUpload('source-file', 'data.xlsx', 'btn-upload-source')">🚀 更新 Excel</button>
             </div>
 
             <div class="resource-item">
@@ -153,16 +112,16 @@
                 <div class="item-desc">管理 users.xlsx 白名单</div>
                 <a href="./users.xlsx" class="btn-link" download>⬇ 备份当前名单</a>
                 <div class="file-input-wrapper"><input type="file" id="user-file" accept=".xlsx" class="file-input"></div>
-                <button class="btn-action btn-red" id="btn-upload-user" onclick="directUpload('user-file', 'users.xlsx', 'btn-upload-user')">🚀 更新名单 Excel</button>
+                <button class="btn-action btn-red" id="btn-upload-user" onclick="directUpload('user-file', 'users.xlsx', 'btn-upload-user')">🚀 更新名单</button>
             </div>
 
-            <div class="resource-item">
-                <div class="item-icon">📄</div>
-                <div class="item-title">市场季报 (Report PDF)</div>
-                <div class="item-desc">更新 sample_report.pdf</div>
-                <a href="./sample_report.pdf" target="_blank" class="btn-link">👁️ 预览当前季报</a>
-                <div class="file-input-wrapper"><input type="file" id="report-file" accept=".pdf" class="file-input"></div>
-                <button class="btn-action btn-red" id="btn-upload-report" onclick="directUpload('report-file', 'sample_report.pdf', 'btn-upload-report')">🚀 覆盖更新 PDF</button>
+            <div class="resource-item" style="background: #f8fdf8;">
+                <div class="item-icon">📚</div>
+                <div class="item-title" style="color:#28a745;">报告资料库 (OSS Upload)</div>
+                <div class="item-desc">支持批量上传 PDF，无大小限制</div>
+                <div style="height:24px;"></div>
+                <div class="file-input-wrapper"><input type="file" id="oss-report-file" multiple accept=".pdf,.ppt,.pptx" class="file-input"></div>
+                <button class="btn-action btn-green" id="btn-upload-oss" onclick="uploadToOSS()">🚀 直传至阿里云</button>
             </div>
 
             <div class="resource-item" style="border-right: none;">
@@ -178,7 +137,6 @@
     </div>
 
     <div class="monitor-row">
-        
         <div class="card monitor-card">
             <div class="card-header">
                 <h3>👥 用户搜索日志</h3>
@@ -197,24 +155,18 @@
 
         <div class="card monitor-card">
             <div class="card-header">
-                <h3>📁 季度填报归档 (Uploads)</h3>
+                <h3>📁 季度填报归档 (GitHub Uploads)</h3>
             </div>
-            
             <div class="filter-bar">
-                <select id="filter-quarter" class="select-sm" onchange="renderFiles()">
-                    <option value="ALL">全部季度</option>
-                    </select>
+                <select id="filter-quarter" class="select-sm" onchange="renderFiles()"><option value="ALL">全部季度</option></select>
                 <select id="filter-type" class="select-sm" onchange="renderFiles()">
                     <option value="ALL">全部物业类型</option>
                     <option value="GradeA">甲级 (Grade A)</option>
                     <option value="GradeB">乙级 (Grade B)</option>
                     <option value="BP">产业园 (BP)</option>
                 </select>
-                <select id="filter-user" class="select-sm" onchange="renderFiles()">
-                    <option value="ALL">所有填报人</option>
-                    </select>
+                <select id="filter-user" class="select-sm" onchange="renderFiles()"><option value="ALL">所有填报人</option></select>
             </div>
-
             <div class="scroll-area">
                 <table id="file-table">
                     <thead><tr><th>解析信息 / 文件名</th><th style="width:20%">大小</th><th style="width:15%">操作</th></tr></thead>
@@ -222,8 +174,30 @@
                 </table>
             </div>
         </div>
-
     </div>
+
+    <div class="card" style="margin-top: 10px; border: 1px solid #c3e6cb;">
+        <div class="card-header" style="background: #eafbee; border-bottom: 1px solid #c3e6cb;">
+            <h3 style="color: #155724;">☁️ 阿里云报告库管理 (OSS Manager)</h3>
+            <span style="font-size:12px; color:#155724;">所有文件直连云端，点击操作即时生效</span>
+        </div>
+        <div class="scroll-area" style="max-height: 400px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 50%;">文件名称</th>
+                        <th style="width: 15%;">大小</th>
+                        <th style="width: 20%;">最后更新时间</th>
+                        <th style="width: 15%; text-align: center;">管理操作</th>
+                    </tr>
+                </thead>
+                <tbody id="oss-body">
+                    <tr><td colspan="4" class="empty-tip">正在从阿里云拉取数据...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
 
 <div id="version-tag">📅 底表更新于：<strong id="last-update-time">...</strong></div>
@@ -233,14 +207,8 @@
     const today = new Date();
     document.getElementById('log-month').value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
 
-    // --- 配置信息 ---
-    const CONFIG = {
-        owner: 'wateryh2004-beep', 
-        repo: 'office-map',        
-        branch: 'main'
-    };
-
-    // 全局变量保存所有文件，方便前端反复筛选
+    // --- GitHub 配置信息 ---
+    const CONFIG = { owner: 'wateryh2004-beep', repo: 'office-map', branch: 'main' };
     let allUploadedFiles = [];
 
     window.onload = function() {
@@ -249,147 +217,134 @@
         currentUser = JSON.parse(userStr);
         if (currentUser.role !== 'admin') { alert("无权访问"); window.location.href = 'index.html'; return; }
 
+        // 加载全部模块
         loadLogs();
-        loadFiles();
+        loadFiles();        // 查 GitHub 季度数据
         loadVersionInfo();
+        loadOSSReports();   // ★ 查 阿里云报告库
     };
 
-    // --- 获取当前季度字符串 (例如 2026-Q1) ---
-    function getCurrentQuarterStr() {
-        const d = new Date();
-        const y = d.getFullYear();
-        const m = d.getMonth() + 1;
-        let q = 1;
-        if (m >= 4 && m <= 6) q = 2;
-        else if (m >= 7 && m <= 9) q = 3;
-        else if (m >= 10 && m <= 12) q = 4;
-        return `${y}-Q${q}`;
-    }
+    // ==========================================
+    // ★★★ 核心：阿里云 OSS 直传与管理逻辑 ★★★
+    // ==========================================
 
-    // --- 将时间戳转换回季度 (例如 1770086693753 -> 2026-Q1) ---
-    function tsToQuarterStr(timestampStr) {
-        const ts = parseInt(timestampStr);
-        if (isNaN(ts)) return "未知时间";
-        const d = new Date(ts);
-        const y = d.getFullYear();
-        const m = d.getMonth() + 1;
-        let q = 1;
-        if (m >= 4 && m <= 6) q = 2;
-        else if (m >= 7 && m <= 9) q = 3;
-        else if (m >= 10 && m <= 12) q = 4;
-        return `${y}-Q${q}`;
-    }
+    // 1. 直传至 OSS
+    async function uploadToOSS() {
+        const fileInput = document.getElementById('oss-report-file');
+        const files = fileInput.files;
+        if (files.length === 0) { alert("请先选择要上传的 PDF 报告！"); return; }
 
-    // --- 文件处理与筛选逻辑 ★★★ ---
-    async function loadFiles() {
+        const btn = document.getElementById('btn-upload-oss');
+        btn.disabled = true;
+        btn.innerText = "🔑 获取云端通行证...";
+
         try {
-            const res = await fetch('/api/get-uploaded-files');
-            const result = await res.json();
+            // 第一步：向 Vercel 请求 OSS 临时上传凭证
+            const signRes = await fetch('/api/oss?action=get-signature');
+            const signData = await signRes.json();
             
-            if (result.data && result.data.length > 0) {
-                // 1. 解析文件名 (规范：Iris_GradeA-1770086693753.xlsx 或旧版 Iris-1770086693753.xlsx)
-                allUploadedFiles = result.data.map(file => {
-                    let fName = file.name.replace('.xlsx', '');
-                    let parts = fName.split('-');
-                    let uNameAndType = parts[0];
-                    let ts = parts[1] || '0';
-                    
-                    let uName = uNameAndType;
-                    let type = 'Unknown';
-                    
-                    // 如果存在下划线，说明是新版命名 [用户_类型]
-                    if (uNameAndType.includes('_')) {
-                        let subParts = uNameAndType.split('_');
-                        uName = subParts[0];
-                        type = subParts[1];
-                    }
+            if (signData.status !== 'success') {
+                throw new Error("通行证获取失败: " + signData.message);
+            }
 
-                    return {
-                        ...file,
-                        parsedUser: uName,
-                        parsedType: type,
-                        parsedQuarter: tsToQuarterStr(ts),
-                        timestamp: parseInt(ts)
-                    };
+            // 第二步：遍历选中的文件，拿着通行证逐一发往阿里云
+            for (let i = 0; i < files.length; i++) {
+                let file = files[i];
+                btn.innerText = `⏳ 正在直传 (${i+1}/${files.length})...`;
+
+                const formData = new FormData();
+                // 阿里云表单直传规则：key 是文件名
+                formData.append('key', file.name); 
+                formData.append('policy', signData.policy);
+                formData.append('OSSAccessKeyId', signData.OSSAccessKeyId);
+                formData.append('signature', signData.signature);
+                formData.append('success_action_status', '200'); // 让 OSS 成功后返回 HTTP 200
+                formData.append('file', file);
+
+                // 直接 POST 给阿里云，不走 Vercel 流量！
+                const uploadRes = await fetch(signData.host, {
+                    method: 'POST',
+                    body: formData
                 });
 
-                // 按时间倒序排列
-                allUploadedFiles.sort((a, b) => b.timestamp - a.timestamp);
-
-                // 2. 提取唯一的过滤选项并填充下拉框
-                const quarters = [...new Set(allUploadedFiles.map(f => f.parsedQuarter))].filter(q => q !== '未知时间').sort().reverse();
-                const users = [...new Set(allUploadedFiles.map(f => f.parsedUser))].sort();
-                
-                const qSelect = document.getElementById('filter-quarter');
-                quarters.forEach(q => qSelect.insertAdjacentHTML('beforeend', `<option value="${q}">${q}</option>`));
-                
-                const uSelect = document.getElementById('filter-user');
-                users.forEach(u => uSelect.insertAdjacentHTML('beforeend', `<option value="${u}">${u}</option>`));
-
-                // 3. 智能设置默认项：如果有当前季度的选项，就选中它，否则选ALL
-                const currentQ = getCurrentQuarterStr();
-                if (quarters.includes(currentQ)) {
-                    qSelect.value = currentQ;
-                }
-
-                // 4. 初次渲染
-                renderFiles();
-
-            } else { 
-                document.getElementById('file-body').innerHTML = '<tr><td colspan="3" class="empty-tip">暂无上传文件</td></tr>'; 
+                if (!uploadRes.ok) throw new Error(`${file.name} 上传失败`);
             }
-        } catch (e) { console.error(e); }
+
+            alert("✅ 全部报告上传成功！");
+            fileInput.value = ''; // 清空选择框
+            loadOSSReports();     // 刷新下方列表
+
+        } catch (e) {
+            console.error(e);
+            alert("上传中止: " + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "🚀 直传至阿里云";
+        }
     }
 
-    // --- 执行筛选并渲染 DOM ---
-    window.renderFiles = function() {
-        const qVal = document.getElementById('filter-quarter').value;
-        const tVal = document.getElementById('filter-type').value;
-        const uVal = document.getElementById('filter-user').value;
+    // 2. 获取并渲染 OSS 列表
+    async function loadOSSReports() {
+        const tbody = document.getElementById('oss-body');
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-tip">正在同步云端报告...</td></tr>';
+        
+        try {
+            const res = await fetch('/api/oss?action=get-list');
+            const result = await res.json();
 
-        // 过滤数据
-        const filtered = allUploadedFiles.filter(f => {
-            let pass = true;
-            if (qVal !== 'ALL' && f.parsedQuarter !== qVal) pass = false;
-            if (tVal !== 'ALL' && f.parsedType !== tVal) pass = false;
-            if (uVal !== 'ALL' && f.parsedUser !== uVal) pass = false;
-            return pass;
-        });
+            if (result.status === 'success') {
+                if (result.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="empty-tip">报告库为空</td></tr>';
+                    return;
+                }
 
-        // 渲染 HTML
-        const tbody = document.getElementById('file-body');
-        if (filtered.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" class="empty-tip">没有符合条件的文件</td></tr>';
-            return;
+                tbody.innerHTML = result.data.map(file => {
+                    const dateObj = new Date(file.lastModified);
+                    const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')} ${String(dateObj.getHours()).padStart(2,'0')}:${String(dateObj.getMinutes()).padStart(2,'0')}`;
+
+                    return `
+                        <tr>
+                            <td style="font-weight:500; color:#004080;">📄 ${file.name}</td>
+                            <td style="color:#888;">${file.size}</td>
+                            <td style="color:#888;">${dateStr}</td>
+                            <td style="text-align: center;">
+                                <button class="delete-btn-sm" onclick="deleteOSSReport('${file.name}')">❌ 删除</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } else {
+                tbody.innerHTML = `<tr><td colspan="4" class="empty-tip" style="color:red;">加载失败: ${result.message}</td></tr>`;
+            }
+        } catch (e) {
+            console.error(e);
+            tbody.innerHTML = '<tr><td colspan="4" class="empty-tip" style="color:red;">网络错误，无法拉取报告列表</td></tr>';
         }
+    }
 
-        tbody.innerHTML = filtered.map(file => {
-            // 类型徽章颜色
-            let typeClass = 'bg-unknown';
-            if (file.parsedType === 'GradeA') typeClass = 'bg-gradeA';
-            else if (file.parsedType === 'GradeB') typeClass = 'bg-gradeB';
-            else if (file.parsedType === 'BP') typeClass = 'bg-bp';
+    // 3. 删除 OSS 报告
+    async function deleteOSSReport(fileName) {
+        if (!confirm(`⚠️ 危险操作！\n确定要永久删除云端报告【${fileName}】吗？`)) return;
+
+        try {
+            const res = await fetch(`/api/oss?action=delete&file=${encodeURIComponent(fileName)}`, { method: 'POST' });
+            const data = await res.json();
             
-            let typeLabel = file.parsedType === 'Unknown' ? '未分类' : file.parsedType;
+            if (data.status === 'success') {
+                loadOSSReports(); // 刷新列表
+            } else {
+                alert("删除失败: " + data.message);
+            }
+        } catch (e) {
+            console.error(e);
+            alert("网络错误，删除失败");
+        }
+    }
 
-            return `
-                <tr>
-                    <td>
-                        <div style="margin-bottom: 4px;">
-                            <span class="file-badge bg-gradeA" style="background:#e3f2fd; color:#0277bd;">👤 ${file.parsedUser}</span>
-                            <span class="file-badge ${typeClass}">🏢 ${typeLabel}</span>
-                            <span class="file-badge" style="background:#f1f8e9; color:#558b2f;">📅 ${file.parsedQuarter}</span>
-                        </div>
-                        <div style="color:#999; font-size:11px; word-break:break-all;" title="${file.name}">📄 ${file.name.length>30 ? file.name.substring(0,27)+'...' : file.name}</div>
-                    </td>
-                    <td style="color:#888; vertical-align:top; padding-top:14px;">${file.size}</td>
-                    <td style="vertical-align:top; padding-top:10px;"><a href="${file.download_url}" class="download-btn-sm" target="_blank">⬇ 下载</a></td>
-                </tr>
-            `;
-        }).join('');
-    };
 
-    // --- 前端直传核心逻辑 (无变化) ---
+    // ==========================================
+    // (保留功能) GitHub 文件上传与筛选逻辑
+    // ==========================================
     async function directUpload(inputId, targetFileName, btnId) {
         const fileInput = document.getElementById(inputId);
         const file = fileInput.files[0];
@@ -398,8 +353,7 @@
 
         const btn = document.getElementById(btnId);
         const originalText = btn.innerText;
-        btn.disabled = true;
-        btn.innerText = "⏳ 正在上传...";
+        btn.disabled = true; btn.innerText = "⏳ 正在上传...";
 
         try {
             const tokenRes = await fetch('/api/get-token');
@@ -430,33 +384,111 @@
                 } catch (uploadErr) {
                     console.error(uploadErr);
                     alert("上传失败: " + uploadErr.message);
-                } finally {
-                    btn.disabled = false; btn.innerText = originalText;
-                }
+                } finally { btn.disabled = false; btn.innerText = originalText; }
             };
         } catch (e) {
-            console.error(e);
-            alert("系统错误: " + e.message);
-            btn.disabled = false; btn.innerText = originalText;
+            console.error(e); alert("系统错误: " + e.message); btn.disabled = false; btn.innerText = originalText;
         }
     }
 
+    function getCurrentQuarterStr() {
+        const d = new Date();
+        const y = d.getFullYear(); const m = d.getMonth() + 1;
+        let q = 1; if (m >= 4 && m <= 6) q = 2; else if (m >= 7 && m <= 9) q = 3; else if (m >= 10 && m <= 12) q = 4;
+        return `${y}-Q${q}`;
+    }
+
+    function tsToQuarterStr(timestampStr) {
+        const ts = parseInt(timestampStr); if (isNaN(ts)) return "未知时间";
+        const d = new Date(ts);
+        const y = d.getFullYear(); const m = d.getMonth() + 1;
+        let q = 1; if (m >= 4 && m <= 6) q = 2; else if (m >= 7 && m <= 9) q = 3; else if (m >= 10 && m <= 12) q = 4;
+        return `${y}-Q${q}`;
+    }
+
+    async function loadFiles() {
+        try {
+            const res = await fetch('/api/get-uploaded-files');
+            const result = await res.json();
+            
+            if (result.data && result.data.length > 0) {
+                allUploadedFiles = result.data.map(file => {
+                    let fName = file.name.replace('.xlsx', '');
+                    let parts = fName.split('-');
+                    let uNameAndType = parts[0];
+                    let ts = parts[1] || '0';
+                    let uName = uNameAndType, type = 'Unknown';
+                    if (uNameAndType.includes('_')) { let subParts = uNameAndType.split('_'); uName = subParts[0]; type = subParts[1]; }
+                    return { ...file, parsedUser: uName, parsedType: type, parsedQuarter: tsToQuarterStr(ts), timestamp: parseInt(ts) };
+                });
+                allUploadedFiles.sort((a, b) => b.timestamp - a.timestamp);
+                
+                const quarters = [...new Set(allUploadedFiles.map(f => f.parsedQuarter))].filter(q => q !== '未知时间').sort().reverse();
+                const users = [...new Set(allUploadedFiles.map(f => f.parsedUser))].sort();
+                
+                const qSelect = document.getElementById('filter-quarter');
+                quarters.forEach(q => qSelect.insertAdjacentHTML('beforeend', `<option value="${q}">${q}</option>`));
+                
+                const uSelect = document.getElementById('filter-user');
+                users.forEach(u => uSelect.insertAdjacentHTML('beforeend', `<option value="${u}">${u}</option>`));
+
+                const currentQ = getCurrentQuarterStr();
+                if (quarters.includes(currentQ)) qSelect.value = currentQ;
+                
+                renderFiles();
+            } else { document.getElementById('file-body').innerHTML = '<tr><td colspan="3" class="empty-tip">暂无上传文件</td></tr>'; }
+        } catch (e) { console.error(e); }
+    }
+
+    window.renderFiles = function() {
+        const qVal = document.getElementById('filter-quarter').value;
+        const tVal = document.getElementById('filter-type').value;
+        const uVal = document.getElementById('filter-user').value;
+
+        const filtered = allUploadedFiles.filter(f => {
+            let pass = true;
+            if (qVal !== 'ALL' && f.parsedQuarter !== qVal) pass = false;
+            if (tVal !== 'ALL' && f.parsedType !== tVal) pass = false;
+            if (uVal !== 'ALL' && f.parsedUser !== uVal) pass = false;
+            return pass;
+        });
+
+        const tbody = document.getElementById('file-body');
+        if (filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="empty-tip">没有符合条件的文件</td></tr>'; return; }
+
+        tbody.innerHTML = filtered.map(file => {
+            let typeClass = 'bg-unknown';
+            if (file.parsedType === 'GradeA') typeClass = 'bg-gradeA'; else if (file.parsedType === 'GradeB') typeClass = 'bg-gradeB'; else if (file.parsedType === 'BP') typeClass = 'bg-bp';
+            let typeLabel = file.parsedType === 'Unknown' ? '未分类' : file.parsedType;
+            return `
+                <tr>
+                    <td>
+                        <div style="margin-bottom: 4px;">
+                            <span class="file-badge bg-gradeA" style="background:#e3f2fd; color:#0277bd;">👤 ${file.parsedUser}</span>
+                            <span class="file-badge ${typeClass}">🏢 ${typeLabel}</span>
+                            <span class="file-badge" style="background:#f1f8e9; color:#558b2f;">📅 ${file.parsedQuarter}</span>
+                        </div>
+                        <div style="color:#999; font-size:11px; word-break:break-all;" title="${file.name}">📄 ${file.name.length>30 ? file.name.substring(0,27)+'...' : file.name}</div>
+                    </td>
+                    <td style="color:#888; vertical-align:top; padding-top:14px;">${file.size}</td>
+                    <td style="vertical-align:top; padding-top:10px;"><a href="${file.download_url}" class="download-btn-sm" target="_blank">⬇ 下载</a></td>
+                </tr>
+            `;
+        }).join('');
+    };
+
+    // ==========================================
+    // (保留功能) 公告发布、日志下载、版本控制、心跳检测
+    // ==========================================
     async function updateNotice() {
         const text = document.getElementById('notice-input').value.trim();
         if (!text) { alert("通知内容不能为空！"); return; }
-        const btn = document.getElementById('btn-update-notice');
-        btn.disabled = true; btn.innerText = "⏳ 发布中...";
+        const btn = document.getElementById('btn-update-notice'); btn.disabled = true; btn.innerText = "⏳ 发布中...";
         try {
-            const res = await fetch('/api/update-notice', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: text, user: currentUser.name })
-            });
+            const res = await fetch('/api/update-notice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: text, user: currentUser.name }) });
             const result = await res.json();
-            if (result.status === 'success') {
-                alert("✅ 公告已发布！Vercel正在同步，大约1分钟后所有用户可见。");
-                document.getElementById('notice-input').value = '';
-            } else { alert("发布失败: " + result.message); }
+            if (result.status === 'success') { alert("✅ 公告已发布！Vercel正在同步，大约1分钟后所有用户可见。"); document.getElementById('notice-input').value = ''; } 
+            else { alert("发布失败: " + result.message); }
         } catch (e) { alert("网络错误"); } finally { btn.disabled = false; btn.innerText = "✅ 发布新公告"; }
     }
 
@@ -464,10 +496,7 @@
         try {
             const res = await fetch('/api/get-source-meta');
             const data = await res.json();
-            if (data.status === 'success') {
-                document.getElementById('last-update-time').innerText = data.lastUpdated;
-                document.getElementById('version-tag').style.display = 'block';
-            }
+            if (data.status === 'success') { document.getElementById('last-update-time').innerText = data.lastUpdated; document.getElementById('version-tag').style.display = 'block'; }
         } catch (e) { console.error(e); }
     }
 
@@ -477,12 +506,7 @@
             const result = await res.json();
             const tbody = document.getElementById('log-body');
             if (result.data && result.data.length > 0) {
-                tbody.innerHTML = result.data.map(log => `
-                    <tr>
-                        <td style="color:#888;">${log.time.split(' ')[0]} <span style="font-size:11px">${log.time.split(' ')[1]||''}</span></td>
-                        <td class="tag-user">${log.user}</td>
-                        <td><span class="tag-keyword">${log.details.keyword}</span></td>
-                    </tr>`).join('');
+                tbody.innerHTML = result.data.map(log => `<tr><td style="color:#888;">${log.time.split(' ')[0]} <span style="font-size:11px">${log.time.split(' ')[1]||''}</span></td><td class="tag-user">${log.user}</td><td><span class="tag-keyword">${log.details.keyword}</span></td></tr>`).join('');
             } else { tbody.innerHTML = '<tr><td colspan="3" class="empty-tip">本月暂无记录</td></tr>'; }
         } catch (e) { console.error(e); }
     }
@@ -492,6 +516,27 @@
         if(!month) { alert("请选择月份"); return; }
         window.open(`/api/download-logs?month=${month}`, '_blank');
     }
+
+    // ★★★ 防挤号机制 ★★★
+    let heartbeatTimer = null;
+    function startHeartbeat() {
+        if (heartbeatTimer) clearInterval(heartbeatTimer);
+        heartbeatTimer = setInterval(async () => {
+            const userStr = localStorage.getItem('colliers_user');
+            const currentToken = localStorage.getItem('colliers_token');
+            if (!userStr || !currentToken) return; 
+            const user = JSON.parse(userStr);
+            try {
+                const res = await fetch('/api/check-session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: user.name, token: currentToken }) });
+                const data = await res.json();
+                if (data.status === 'invalid') {
+                    clearInterval(heartbeatTimer); localStorage.removeItem('colliers_user'); localStorage.removeItem('colliers_token');
+                    alert("⚠️ 系统提示：\n您的账号已在其他设备或浏览器登录！\n当前页面将被强制退出。"); window.location.href = 'index.html'; 
+                }
+            } catch (e) { console.warn("心跳检测波动", e); }
+        }, 60000); 
+    }
+    if (localStorage.getItem('colliers_user') && localStorage.getItem('colliers_token')) { startHeartbeat(); }
 </script>
 
 </body>
