@@ -47,6 +47,16 @@
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
         
         #admin-settings-btn { display: none; margin-left: 15px; font-size: 12px; background: #004080; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+
+        /* 新增：修改密码链接与弹窗样式 */
+        .pwd-link { display: block; margin-top: 15px; font-size: 12px; color: #666; cursor: pointer; text-decoration: underline; }
+        .pwd-link:hover { color: #004080; }
+        #pwd-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center; }
+        .pwd-box { background: white; padding: 30px; border-radius: 8px; width: 300px; text-align: center; }
+        .pwd-box h3 { margin-top: 0; color: #333; }
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-cancel { flex: 1; padding: 10px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer; }
+        .btn-confirm { flex: 1; padding: 10px; border: none; background: #004080; color: white; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -57,9 +67,25 @@
             <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据系统门户 (SSO版)</p>
             <input type="text" id="login-name" class="login-input" placeholder="姓名 (Name)">
             <input type="text" id="login-id" class="login-input" placeholder="工号 (Employee ID)">
-            <input type="text" id="login-phone" class="login-input" placeholder="手机号 (Phone)">
+            <input type="password" id="login-pwd" class="login-input" placeholder="密码 (默认: 123456)">
             <button class="login-btn" onclick="handleLogin()">认证进入</button>
+            <span class="pwd-link" onclick="openPwdModal()">修改初始密码</span>
             <div id="login-msg" class="login-error">认证失败</div>
+        </div>
+    </div>
+
+    <div id="pwd-modal">
+        <div class="pwd-box">
+            <h3>修改密码</h3>
+            <input type="text" id="cp-name" class="login-input" placeholder="您的姓名">
+            <input type="text" id="cp-id" class="login-input" placeholder="您的工号">
+            <input type="password" id="cp-old" class="login-input" placeholder="原密码 (默认: 123456)">
+            <input type="password" id="cp-new" class="login-input" placeholder="设置新密码 (最少6位)">
+            <div class="btn-group">
+                <button class="btn-cancel" onclick="closePwdModal()">取消</button>
+                <button class="btn-confirm" onclick="submitChangePwd()">确认修改</button>
+            </div>
+            <div id="pwd-msg" class="login-error"></div>
         </div>
     </div>
 
@@ -120,10 +146,11 @@
         async function handleLogin() {
             const name = document.getElementById('login-name').value.trim();
             const id = document.getElementById('login-id').value.trim();
-            const phone = document.getElementById('login-phone').value.trim();
+            // 这里获取密码
+            const password = document.getElementById('login-pwd').value.trim();
             const msg = document.getElementById('login-msg');
 
-            if (!name || !id || !phone) { msg.innerText = "请填写完整信息"; msg.style.display = 'block'; return; }
+            if (!name || !id || !password) { msg.innerText = "请填写完整信息"; msg.style.display = 'block'; return; }
             msg.style.display = 'none';
             const btn = document.querySelector('.login-btn');
             btn.innerText = "认证中...";
@@ -132,10 +159,10 @@
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, id, phone })
+                    body: JSON.stringify({ name, id, password }) // 发送的是 password
                 });
                 
-                // 【核心修复】：删掉拦截，直接读取服务器的真实原话
+                // 删掉拦截，直接读取服务器的真实原话
                 const text = await res.text();
                 let data;
 
@@ -154,7 +181,7 @@
                     localStorage.setItem('colliers_token', data.token); 
                     loginSuccess(data.data);
                 } else { 
-                    // 现在终于能显示后端写的那一堆详细报错了！
+                    // 显示后端的详细报错
                     msg.innerText = data.message || "认证失败"; 
                     msg.style.display = 'block'; 
                 }
@@ -217,7 +244,6 @@
                 const user = JSON.parse(userStr);
                 
                 try {
-                    // ★ 这里的 URL 已更新为新的二合一接口 ★
                     const res = await fetch('/api/login?action=check', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -230,13 +256,74 @@
                         localStorage.removeItem('colliers_user');
                         localStorage.removeItem('colliers_token');
                         
-                        alert("⚠️ 系统提示：\n您的账号已在其他设备或浏览器登录！\n当前页面将被强制退出。");
+                        alert("⚠️ 系统提示：\n您的账号已在其他设备或浏览器登录，或者密码已被修改！\n当前页面将被强制退出。");
                         window.location.reload(); 
                     }
                 } catch (e) {
                     console.warn("心跳检测波动", e);
                 }
             }, 60000); 
+        }
+
+        // ==========================================
+        // ★★★ 修改密码前端逻辑 ★★★
+        // ==========================================
+        function openPwdModal() { 
+            document.getElementById('pwd-modal').style.display = 'flex'; 
+        }
+        
+        function closePwdModal() { 
+            document.getElementById('pwd-modal').style.display = 'none'; 
+            document.getElementById('pwd-msg').style.display = 'none';
+            // 清空输入框
+            document.getElementById('cp-name').value = '';
+            document.getElementById('cp-id').value = '';
+            document.getElementById('cp-old').value = '';
+            document.getElementById('cp-new').value = '';
+        }
+
+        async function submitChangePwd() {
+            const name = document.getElementById('cp-name').value.trim();
+            const id = document.getElementById('cp-id').value.trim();
+            const oldPwd = document.getElementById('cp-old').value.trim();
+            const newPwd = document.getElementById('cp-new').value.trim();
+            const msg = document.getElementById('pwd-msg');
+
+            if(!name || !id || !oldPwd || !newPwd) { 
+                msg.innerText = "请填满所有字段"; 
+                msg.style.display = 'block'; 
+                return; 
+            }
+            if(newPwd.length < 6) { 
+                msg.innerText = "新密码至少需要 6 位"; 
+                msg.style.display = 'block'; 
+                return; 
+            }
+
+            const btn = document.querySelector('.btn-confirm');
+            btn.innerText = "处理中...";
+
+            try {
+                const res = await fetch('/api/login?action=change-pwd', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, id, oldPwd, newPwd })
+                });
+                const data = await res.json();
+                
+                if(data.status === 'success') {
+                    alert("✅ " + data.message);
+                    closePwdModal();
+                } else {
+                    msg.innerText = data.message; 
+                    msg.style.display = 'block';
+                }
+            } catch(e) {
+                msg.innerText = "网络异常，请重试"; 
+                msg.style.display = 'block';
+            } finally {
+                btn.innerText = "确认修改";
+            }
         }
     </script>
 </body>
