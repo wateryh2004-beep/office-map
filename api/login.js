@@ -1,49 +1,75 @@
-const XLSX = require('xlsx');
-const path = require('path');
+import { kv } from '@vercel/kv';
+import * as XLSX from 'xlsx';
+import { Octokit } from "@octokit/rest";
 
-export default function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
+export default async function handler(req, res) {
+    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
+    
+    // 获取动作指令：如果是 'check' 就是查岗，否则就是默认的登录
+    const action = req.query.action || (req.body && req.body.action);
 
     try {
-        // 1. 获取前端传来的用户输入
-        const { name, id, phone } = req.body;
+        // ==========================================
+        // 功能 1：查岗逻辑 (Check Session)
+        // ==========================================
+        if (action === 'check') {
+            const { username, token } = req.body;
+            if (!username || !token) return res.status(400).json({ status: 'invalid' });
+            
+            // 从 Vercel KV 里查出该用户当前合法的 Token
+            const activeToken = await kv.get(`session_${username}`);
+            
+            if (activeToken === token) {
+                return res.status(200).json({ status: 'valid' });
+            } else {
+                return res.status(200).json({ status: 'invalid' });
+            }
+        } 
+        
+        // ==========================================
+        // 功能 2：登录并发放房卡逻辑 (Login)
+        // ==========================================
+        else {
+            const { name, id, phone } = req.body;
+            if (!name || !id || !phone) return res.status(400).json({ status: 'fail', message: '参数缺失' });
 
-        if (!name || !id || !phone) {
-            return res.status(400).json({ status: 'fail', message: '信息填写不完整' });
-        }
-
-        // 2. 读取服务器上的用户表
-        const filePath = path.join(process.cwd(), 'users.xlsx');
-        const workbook = XLSX.readFile(filePath);
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const users = XLSX.utils.sheet_to_json(sheet);
-
-        // 3. 核心逻辑：比对信息
-        // 必须 姓名、工号、手机号 全部匹配
-        const user = users.find(u => 
-            String(u.name).trim() === name.trim() &&
-            String(u.id).trim() === id.trim() &&
-            String(u.phone).trim() === phone.trim()
-        );
-
-        if (user) {
-            // 4. 匹配成功，返回用户信息（不含密码，仅返回角色）
-            return res.status(200).json({ 
-                status: 'success', 
-                data: {
-                    name: user.name,
-                    role: user.role || 'viewer' // 默认为普通用户
-                }
+            const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+            const { data } = await octokit.repos.getContent({
+                owner: 'wateryh2004-beep', // 你的 GitHub 用户名
+                repo: 'office-map',
+                path: 'users.xlsx',
+                ref: 'main'
             });
-        } else {
-            // 5. 匹配失败
-            return res.status(401).json({ status: 'fail', message: '认证失败：信息不匹配或无权限' });
-        }
 
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ status: 'error', message: '服务器内部错误' });
+            const buffer = Buffer.from(data.content, 'base64');
+            const workbook = XLSX.read(buffer, { type: 'buffer' });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const users = XLSX.utils.sheet_to_json(sheet);
+
+            const matchedUser = users.find(u => 
+                String(u['姓名']) === String(name) && 
+                String(u['工号']) === String(id) && 
+                String(u['手机号']) === String(phone)
+            );
+
+            if (matchedUser) {
+                // 生成唯一的 Token (房卡)
+                const sessionToken = Date.now().toString(36) + Math.random().toString(36).substring(2);
+                
+                // 将 Token 存入 Vercel KV，有效期 24 小时 (86400秒)
+                await kv.set(`session_${name}`, sessionToken, { ex: 86400 });
+
+                return res.status(200).json({ 
+                    status: 'success', 
+                    data: { name: matchedUser['姓名'], role: matchedUser['权限'] || 'viewer' },
+                    token: sessionToken 
+                });
+            } else {
+                return res.status(401).json({ status: 'fail', message: '信息不匹配' });
+            }
+        }
+    } catch (e) {
+        console.error(e);
+        return res.status(500).json({ status: 'error', message: '服务器验证失败' });
     }
 }
