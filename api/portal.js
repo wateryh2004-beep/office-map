@@ -8,16 +8,13 @@ export default async function handler(req, res) {
     const REPO = 'office-map';
     const PATH = 'notice.json';
 
-    // 💡 获取北京时间 (GMT+8)
-    const now = new Date();
-    const beijingTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+    // 强制使用北京时间计算 Key
+    const beijingTime = new Date(new Date().getTime() + 8 * 60 * 60 * 1000);
     const today = beijingTime.toISOString().split('T')[0];
     const msgKey = `messages:${today}`;
 
     try {
-        // ==========================================
-        // 1. 公告逻辑 (Notice)
-        // ==========================================
+        // --- 1. 公告逻辑 (保持不变) ---
         if (action === 'get-notice') {
             try {
                 const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path: PATH, ref: 'main' });
@@ -44,44 +41,37 @@ export default async function handler(req, res) {
             return res.status(200).json({ status: 'success' });
         }
 
-        // ==========================================
-        // 2. 留言墙逻辑 (Message Wall)
-        // ==========================================
+        // --- 2. 留言墙逻辑 (重构为原子操作) ---
         if (action === 'get-messages') {
-            let msgs = await kv.get(msgKey);
-            // 🛡️ 强制容错：如果拿到的不是数组，立刻重置为空数组
-            if (!Array.isArray(msgs)) msgs = [];
-            return res.status(200).json(msgs);
+            // 获取从 0 到 -1 (即所有) 的列表项
+            const msgs = await kv.lrange(msgKey, 0, -1) || [];
+            // 如果存入时是字符串对象，解析它
+            const parsedMsgs = msgs.map(m => typeof m === 'string' ? JSON.parse(m) : m);
+            return res.status(200).json(parsedMsgs);
         } 
         
         else if (action === 'post-message' && req.method === 'POST') {
             const { user, text } = req.body;
-            if (!text) return res.status(400).json({ status: 'error', message: "内容为空" });
-
-            // 🛡️ 关键修复：在写入前再次强制校验类型
-            let currentMsgs = await kv.get(msgKey);
-            if (!Array.isArray(currentMsgs)) currentMsgs = [];
+            if (!text) return res.status(400).json({ status: 'error', message: "内容不能为空" });
 
             const newEntry = {
-                user: user || "匿名用户",
+                user: user || "匿名",
                 text: text,
-                // 强制使用北京时间显示
-                time: new Date(new Date().getTime() + 8 * 60 * 60 * 1000).toISOString().split('T')[1].substring(0, 5)
+                time: beijingTime.toISOString().split('T')[1].substring(0, 5)
             };
 
-            currentMsgs.push(newEntry);
-            
-            // 限制每天最多显示 50 条，防止 Vercel 接口超载
-            if (currentMsgs.length > 50) currentMsgs = currentMsgs.slice(-50);
+            // 🚀 原子操作：将新消息推入 Redis List 末尾
+            // 并设置过期时间为 48 小时，自动清理旧数据节省空间
+            await kv.rpush(msgKey, JSON.stringify(newEntry));
+            await kv.expire(msgKey, 172800); 
 
-            await kv.set(msgKey, JSON.stringify(currentMsgs)); // 显式转为 JSON 字符串存储
             return res.status(200).json({ status: 'success' });
         }
 
-        return res.status(400).json({ status: 'error', message: "无效的 Action" });
+        return res.status(400).json({ status: 'error', message: "Invalid Action" });
 
     } catch (e) {
         console.error("Portal API Error:", e.message);
-        return res.status(500).json({ status: 'error', message: "服务器忙: " + e.message });
+        return res.status(500).json({ status: 'error', message: e.message });
     }
 }
