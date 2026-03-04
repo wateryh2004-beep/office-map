@@ -129,30 +129,38 @@
             btn.innerText = "认证中...";
             
             try {
-                // 调用默认的 login (因为没有带 action=check 参数)
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, id, phone })
                 });
                 
-                // 处理 Vercel 崩溃导致的 500 错误
-                if (!res.ok) {
-                    throw new Error("后端服务异常");
-                }
+                // 【核心修复】：删掉拦截，直接读取服务器的真实原话
+                const text = await res.text();
+                let data;
 
-                const data = await res.json();
+                try {
+                    data = JSON.parse(text); // 尝试翻译成正常数据
+                } catch (parseError) {
+                    // 如果翻译失败，说明后端彻底崩了，直接把原话打印在控制台
+                    console.error("服务器严重崩溃，原始报错如下:", text);
+                    msg.innerText = "后端严重崩溃，请按 F12 查看控制台红字"; 
+                    msg.style.display = 'block'; 
+                    return;
+                }
                 
                 if (data.status === 'success') {
                     localStorage.setItem('colliers_user', JSON.stringify(data.data));
                     localStorage.setItem('colliers_token', data.token); 
                     loginSuccess(data.data);
                 } else { 
-                    msg.innerText = data.message || "认证失败"; msg.style.display = 'block'; 
+                    // 现在终于能显示后端写的那一堆详细报错了！
+                    msg.innerText = data.message || "认证失败"; 
+                    msg.style.display = 'block'; 
                 }
             } catch (e) { 
                 console.error(e); 
-                msg.innerText = "系统连接错误，请检查 Vercel 部署状态"; 
+                msg.innerText = "网络请求失败，请检查网络连接"; 
                 msg.style.display = 'block'; 
             } finally {
                 btn.innerText = "认证进入";
