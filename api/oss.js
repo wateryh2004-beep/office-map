@@ -1,17 +1,24 @@
 const OSS = require('ali-oss');
 const crypto = require('crypto');
 
-const client = new OSS({
-    region: 'oss-cn-shanghai', // 确保与你阿里云后台一致
-    accessKeyId: process.env.OSS_AK,
-    accessKeySecret: process.env.OSS_SK,
-    bucket: 'colliers-reports'
-});
-
 export default async function handler(req, res) {
     const action = req.query.action;
 
     try {
+        // ★ 优化1：拦截环境变量丢失导致的底层闪崩
+        if (!process.env.OSS_AK || !process.env.OSS_SK) {
+            return res.status(500).json({ status: 'error', message: 'Vercel 环境变量 OSS_AK 或 OSS_SK 丢失，请检查 Vercel 项目设置！' });
+        }
+
+        // ★ 优化2：将客户端初始化移入内部，并设置 7 秒超时限制（防 Vercel 10s 强杀）
+        const client = new OSS({
+            region: 'oss-cn-shanghai', // 确保与你阿里云后台一致
+            accessKeyId: process.env.OSS_AK,
+            accessKeySecret: process.env.OSS_SK,
+            bucket: 'colliers-reports',
+            timeout: 7000 
+        });
+
         // ==========================================
         // 1. 获取直传签名 (Browser Direct Upload)
         // ==========================================
@@ -55,21 +62,20 @@ export default async function handler(req, res) {
                 'max-keys': 1000
             });
 
-            // 解析文件夹：CommonPrefixes 里的内容就是该层级的子目录
+            // 解析文件夹
             const folders = (result.prefixes || []).map(p => ({
                 name: p,
                 type: 'folder'
             }));
 
-            // 解析文件：Objects 里的内容就是该层级下的文件
+            // 解析文件
             const files = (result.objects || [])
                 .filter(o => o.name !== prefix) // 排除目录自身
                 .map(o => {
-                    // 生成 1 小时有效的临时下载链接（防止 Bucket 私有时无法访问）
                     const url = client.signatureUrl(o.name, { expires: 3600 });
                     return {
                         name: o.name,
-                        shortName: o.name.replace(prefix, ''), // 只显示文件名，不带路径
+                        shortName: o.name.replace(prefix, ''), 
                         size: (o.size / 1024 / 1024).toFixed(2) + ' MB',
                         lastModified: o.lastModified,
                         type: 'file',
@@ -102,7 +108,6 @@ export default async function handler(req, res) {
             const { oldKey, newKey } = req.body;
             if (!oldKey || !newKey) return res.status(400).json({ message: "Keys missing" });
 
-            // OSS 没有真正的移动，需要先 Copy 再 Delete
             await client.copy(newKey, oldKey);
             await client.delete(oldKey);
             
@@ -113,6 +118,7 @@ export default async function handler(req, res) {
 
     } catch (e) {
         console.error("OSS API Error:", e.message);
-        return res.status(500).json({ status: 'error', message: e.message });
+        // ★ 优化3：确保即使报错也是返回标准的 JSON 格式，绝不崩溃
+        return res.status(500).json({ status: 'error', message: e.message || 'OSS接口网络超时或遇到内部错误' });
     }
 }
