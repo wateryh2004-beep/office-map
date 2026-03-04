@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>报告资料库 | Colliers</title>
+    <style>
+        /* --- 全局与基础样式 --- */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; color: #333; display: flex; flex-direction: column; min-height: 100vh; }
+        
+        /* 顶部导航 */
+        .header { background: #004080; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header h1 { margin: 0; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+        .back-link { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 14px; transition: color 0.2s; font-weight: 500; }
+        .back-link:hover { color: white; text-decoration: underline; }
+
+        /* 主体容器 */
+        .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; flex: 1; width: 100%; box-sizing: border-box; }
+        
+        /* 搜索与工具栏 */
+        .toolbar { background: white; padding: 20px; border-radius: 8px 8px 0 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+        .search-box { flex: 1; max-width: 400px; display: flex; position: relative; }
+        .search-input { width: 100%; padding: 10px 15px 10px 35px; border: 1px solid #ddd; border-radius: 20px; font-size: 14px; outline: none; transition: all 0.2s; }
+        .search-input:focus { border-color: #004080; box-shadow: 0 0 0 3px rgba(0,64,128,0.1); }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; font-size: 14px; }
+        .file-count { font-size: 13px; color: #666; font-weight: 500; }
+
+        /* 表格区域 */
+        .table-container { background: white; border-radius: 0 0 8px 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; }
+        th { background: #f8f9fa; color: #555; font-weight: 600; padding: 15px 20px; border-bottom: 2px solid #eee; }
+        td { padding: 15px 20px; border-bottom: 1px solid #f0f0f0; color: #444; vertical-align: middle; }
+        tr:hover { background: #fcfcfc; }
+        tr:last-child td { border-bottom: none; }
+
+        /* 文件名列美化 */
+        .file-name-cell { display: flex; align-items: center; gap: 10px; font-weight: 500; color: #004080; }
+        .file-icon { font-size: 18px; color: #e74c3c; } /* PDF红色图标 */
+
+        /* 下载按钮 */
+        .btn-download { background: #e3f2fd; color: #0277bd; padding: 6px 15px; border-radius: 20px; text-decoration: none; font-size: 12px; font-weight: bold; transition: all 0.2s; display: inline-block; }
+        .btn-download:hover { background: #0277bd; color: white; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(2,119,189,0.3); }
+
+        /* 加载与空状态 */
+        .status-message { text-align: center; padding: 60px 20px; color: #888; font-size: 15px; }
+        .loader { display: inline-block; width: 24px; height: 24px; border: 3px solid #f3f3f3; border-top: 3px solid #004080; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>📚 Colliers 报告资料库</h1>
+    <a href="index.html" class="back-link">🏠 返回门户大厅</a>
+</div>
+
+<div class="container">
+    <div class="toolbar">
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" class="search-input" placeholder="输入报告名称或年份搜索..." onkeyup="filterReports()">
+        </div>
+        <div class="file-count">共检索到 <strong id="count-display" style="color:#004080;">0</strong> 份报告</div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 55%;">报告名称</th>
+                    <th style="width: 15%;">文件大小</th>
+                    <th style="width: 20%;">上传时间</th>
+                    <th style="width: 10%; text-align: center;">操作</th>
+                </tr>
+            </thead>
+            <tbody id="report-list">
+                <tr>
+                    <td colspan="4">
+                        <div class="status-message">
+                            <div class="loader"></div>
+                            <div>正在从云端安全拉取报告列表...</div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    let allReports = []; // 全局变量，用于存放拉取下来的所有报告数据，方便前端搜索过滤
+
+    window.onload = function() {
+        // 1. 验证登录状态
+        const userStr = localStorage.getItem('colliers_user');
+        if (!userStr) { 
+            alert("请先登录系统！"); 
+            window.location.href = 'index.html'; 
+            return; 
+        }
+
+        // 2. 拉取 OSS 报告列表
+        fetchReports();
+    };
+
+    // --- 核心拉取逻辑 ---
+    async function fetchReports() {
+        try {
+            // 调用我们刚写的“三合一”路由，action=get-list
+            const res = await fetch('/api/oss?action=get-list');
+            const result = await res.json();
+
+            if (result.status === 'success') {
+                allReports = result.data;
+                renderTable(allReports);
+            } else {
+                showError("无法获取列表：" + result.message);
+            }
+        } catch (e) {
+            console.error(e);
+            showError("网络或服务器错误，请稍后重试。");
+        }
+    }
+
+    // --- 渲染表格逻辑 ---
+    function renderTable(dataArray) {
+        const tbody = document.getElementById('report-list');
+        const countDisplay = document.getElementById('count-display');
+        countDisplay.innerText = dataArray.length;
+
+        if (dataArray.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4"><div class="status-message">📭 暂无符合条件的报告。</div></td></tr>`;
+            return;
+        }
+
+        let html = '';
+        dataArray.forEach(file => {
+            // 格式化时间，让它更符合中国人的阅读习惯
+            const dateObj = new Date(file.lastModified);
+            const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')} ${String(dateObj.getHours()).padStart(2,'0')}:${String(dateObj.getMinutes()).padStart(2,'0')}`;
+
+            html += `
+                <tr>
+                    <td>
+                        <div class="file-name-cell">
+                            <span class="file-icon">📄</span>
+                            <span title="${file.name}">${file.name}</span>
+                        </div>
+                    </td>
+                    <td style="color:#888;">${file.size}</td>
+                    <td style="color:#888;">${dateStr}</td>
+                    <td style="text-align: center;">
+                        <a href="${file.downloadUrl}" target="_blank" class="btn-download">⬇ 下载</a>
+                    </td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = html;
+    }
+
+    // --- 前端模糊搜索逻辑 ---
+    function filterReports() {
+        const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+        
+        // 如果搜索框为空，展示全部
+        if (!keyword) {
+            renderTable(allReports);
+            return;
+        }
+
+        // 过滤出名字里包含关键词的报告
+        const filteredData = allReports.filter(file => file.name.toLowerCase().includes(keyword));
+        renderTable(filteredData);
+    }
+
+    // --- 错误提示辅助函数 ---
+    function showError(msg) {
+        const tbody = document.getElementById('report-list');
+        tbody.innerHTML = `<tr><td colspan="4"><div class="status-message" style="color:#e74c3c;">❌ ${msg}</div></td></tr>`;
+    }
+
+    // ==========================================
+    // ★★★ 单点登录心跳检测 (防挤号机制) ★★★
+    // ==========================================
+    let heartbeatTimer = null;
+
+    function startHeartbeat() {
+        if (heartbeatTimer) clearInterval(heartbeatTimer);
+        
+        heartbeatTimer = setInterval(async () => {
+            const userStr = localStorage.getItem('colliers_user');
+            const currentToken = localStorage.getItem('colliers_token');
+            
+            if (!userStr || !currentToken) return; 
+            
+            const user = JSON.parse(userStr);
+            
+            try {
+                const res = await fetch('/api/check-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user.name, token: currentToken })
+                });
+                const data = await res.json();
+                
+                if (data.status === 'invalid') {
+                    clearInterval(heartbeatTimer); 
+                    localStorage.removeItem('colliers_user');
+                    localStorage.removeItem('colliers_token');
+                    
+                    alert("⚠️ 系统提示：\n您的账号已在其他设备或浏览器登录！\n当前页面将被强制退出。");
+                    window.location.href = 'index.html'; 
+                }
+            } catch (e) {
+                console.warn("心跳检测波动", e);
+            }
+        }, 60000); 
+    }
+
+    if (localStorage.getItem('colliers_user') && localStorage.getItem('colliers_token')) {
+        startHeartbeat();
+    }
+</script>
+
+</body>
+</html>
