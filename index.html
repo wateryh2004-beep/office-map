@@ -8,7 +8,7 @@
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8f9fa; margin: 0; padding: 0; display: flex; flex-direction: column; min-height: 100vh; }
         
-        /* --- 登录遮罩层 (与之前一致) --- */
+        /* --- 登录遮罩层 --- */
         #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 64, 128, 0.95); z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .login-box { background: white; padding: 40px; border-radius: 8px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
         .login-box h2 { margin: 0 0 20px 0; color: #004080; }
@@ -28,7 +28,6 @@
         .main-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
         .welcome-text { text-align: center; color: #333; margin-bottom: 40px; max-width: 800px; font-size: 15px; line-height: 1.6; }
         
-        /* ★★★ 布局修改：由于目前只有3个模块，改为 repeat(3, 1fr) 完美居中对齐 ★★★ */
         .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px 40px; max-width: 800px; width: 100%; }
         
         /* 单个模块卡片 */
@@ -68,7 +67,7 @@
     <div id="login-overlay">
         <div class="login-box">
             <h2>COLLIERS DATA</h2>
-            <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据系统门户 v7.0</p>
+            <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据系统门户 v7.5</p>
             <input type="text" id="login-name" class="login-input" placeholder="姓名 (Name)">
             <input type="text" id="login-id" class="login-input" placeholder="工号 (Employee ID)">
             <input type="text" id="login-phone" class="login-input" placeholder="手机号 (Phone)">
@@ -88,7 +87,7 @@
     <div class="main-content">
         <div class="welcome-text">
             <strong>欢迎来到系统门户。</strong><br>
-            请根据您的业务需求选择进入对应的功能模块。目前“项目地图”、“季度报告”和“数据收集”功能已开放，其他模块正在规划拓展中。
+            请根据您的业务需求选择进入对应的功能模块。目前“项目地图”、“报告资料库”和“数据收集”功能已开放，其他模块正在规划拓展中。
         </div>
 
         <div class="grid-container">
@@ -97,17 +96,16 @@
                 <div class="card-title">项目地图</div>
             </a>
             
-            <a href="sample_report.pdf" target="_blank" class="nav-card">
+            <a href="reports.html" class="nav-card">
                 <div class="icon-box c-purple"><i class="fas fa-newspaper"></i></div>
-                <div class="card-title">季度报告</div>
+                <div class="card-title">报告资料库</div>
             </a>
 
             <a href="update.html" class="nav-card" id="btn-data-collect">
                 <div class="icon-box c-red"><i class="fas fa-chart-line"></i></div>
                 <div class="card-title">数据收集</div>
             </a>
-
-            </div>
+        </div>
     </div>
 
     <div class="notice-bar">
@@ -123,7 +121,9 @@
 
         window.onload = function() {
             const cachedUser = localStorage.getItem('colliers_user');
-            if (cachedUser) {
+            const cachedToken = localStorage.getItem('colliers_token'); // 新增Token校验
+            
+            if (cachedUser && cachedToken) {
                 currentUser = JSON.parse(cachedUser);
                 loginSuccess(currentUser);
             }
@@ -145,11 +145,19 @@
                     body: JSON.stringify({ name, id, phone })
                 });
                 const data = await res.json();
+                
                 if (data.status === 'success') {
+                    // ★★★ 补全：保存用户信息，并保存后端发来的Token(房卡) ★★★
                     localStorage.setItem('colliers_user', JSON.stringify(data.data));
+                    localStorage.setItem('colliers_token', data.token); 
+                    
                     loginSuccess(data.data);
-                } else { msg.innerText = data.message || "认证失败"; msg.style.display = 'block'; }
-            } catch (e) { console.error(e); msg.innerText = "系统连接错误"; msg.style.display = 'block'; }
+                } else { 
+                    msg.innerText = data.message || "认证失败"; msg.style.display = 'block'; 
+                }
+            } catch (e) { 
+                console.error(e); msg.innerText = "系统连接错误"; msg.style.display = 'block'; 
+            }
         }
 
         function loginSuccess(user) {
@@ -167,9 +175,16 @@
             if (user.role === 'admin') {
                 document.getElementById('admin-settings-btn').style.display = 'block';
             }
+
+            // ★★★ 补全：登录成功后立即启动防挤号心跳 ★★★
+            startHeartbeat();
         }
 
-        function logout() { localStorage.removeItem('colliers_user'); location.reload(); }
+        function logout() { 
+            localStorage.removeItem('colliers_user'); 
+            localStorage.removeItem('colliers_token'); 
+            location.reload(); 
+        }
 
         // 获取滚动通知
         async function loadNotice() {
@@ -181,8 +196,46 @@
                 document.getElementById('marquee-content').innerText = "欢迎使用高力国际办公楼市场监测系统！目前系统运行正常。";
             }
         }
+
+        // ==========================================
+        // ★★★ 单点登录心跳检测 (防挤号机制) ★★★
+        // ==========================================
+        let heartbeatTimer = null;
+
+        function startHeartbeat() {
+            if (heartbeatTimer) clearInterval(heartbeatTimer);
+            
+            // 每隔 60 秒查一次岗
+            heartbeatTimer = setInterval(async () => {
+                const userStr = localStorage.getItem('colliers_user');
+                const currentToken = localStorage.getItem('colliers_token');
+                
+                if (!userStr || !currentToken) return; 
+                
+                const user = JSON.parse(userStr);
+                
+                try {
+                    const res = await fetch('/api/check-session', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: user.name, token: currentToken })
+                    });
+                    const data = await res.json();
+                    
+                    if (data.status === 'invalid') {
+                        // 发现被挤掉了
+                        clearInterval(heartbeatTimer); 
+                        localStorage.removeItem('colliers_user');
+                        localStorage.removeItem('colliers_token');
+                        
+                        alert("⚠️ 系统提示：\n您的账号已在其他设备或浏览器登录！\n当前页面将被强制退出。");
+                        window.location.reload(); // 强制刷新回登录框
+                    }
+                } catch (e) {
+                    console.warn("心跳检测波动", e);
+                }
+            }, 60000); // 60000 毫秒 = 1分钟
+        }
     </script>
 </body>
 </html>
-
-```
