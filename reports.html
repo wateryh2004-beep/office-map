@@ -5,221 +5,225 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>报告资料库 | Colliers</title>
     <style>
-        /* --- 全局与基础样式 --- */
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; color: #333; display: flex; flex-direction: column; min-height: 100vh; }
-        
-        /* 顶部导航 */
+        /* --- 全局样式 --- */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; color: #333; display: flex; flex-direction: column; min-height: 100vh; }
         .header { background: #004080; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .header h1 { margin: 0; font-size: 20px; display: flex; align-items: center; gap: 10px; }
-        .back-link { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 14px; transition: color 0.2s; font-weight: 500; }
+        .header h1 { margin: 0; font-size: 20px; }
+        .back-link { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 14px; font-weight: 500; }
         .back-link:hover { color: white; text-decoration: underline; }
-
-        /* 主体容器 */
-        .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; flex: 1; width: 100%; box-sizing: border-box; }
         
-        /* 搜索与工具栏 */
-        .toolbar { background: white; padding: 20px; border-radius: 8px 8px 0 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-        .search-box { flex: 1; max-width: 400px; display: flex; position: relative; }
-        .search-input { width: 100%; padding: 10px 15px 10px 35px; border: 1px solid #ddd; border-radius: 20px; font-size: 14px; outline: none; transition: all 0.2s; }
-        .search-input:focus { border-color: #004080; box-shadow: 0 0 0 3px rgba(0,64,128,0.1); }
-        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; font-size: 14px; }
-        .file-count { font-size: 13px; color: #666; font-weight: 500; }
+        .container { max-width: 1000px; margin: 20px auto; padding: 0 20px; flex: 1; width: 100%; box-sizing: border-box; }
 
-        /* 表格区域 */
-        .table-container { background: white; border-radius: 0 0 8px 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; }
-        th { background: #f8f9fa; color: #555; font-weight: 600; padding: 15px 20px; border-bottom: 2px solid #eee; }
-        td { padding: 15px 20px; border-bottom: 1px solid #f0f0f0; color: #444; vertical-align: middle; }
+        /* --- 语言切换 Tabs --- */
+        .tabs { display: flex; justify-content: center; margin-bottom: 25px; border-bottom: 2px solid #ddd; }
+        .tab-btn { background: none; border: none; padding: 12px 30px; font-size: 16px; font-weight: bold; color: #777; cursor: pointer; position: relative; transition: 0.3s; }
+        .tab-btn.active { color: #004080; }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 3px; background: #004080; border-radius: 3px 3px 0 0; }
+        .tab-btn:hover { color: #004080; }
+
+        /* --- 面包屑与搜索栏 --- */
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .breadcrumb { font-size: 14px; font-weight: 500; color: #555; display: flex; align-items: center; gap: 8px; }
+        .breadcrumb a { color: #004080; text-decoration: none; background: #e3f2fd; padding: 4px 10px; border-radius: 20px; transition: 0.2s; }
+        .breadcrumb a:hover { background: #004080; color: white; }
+        .search-box { position: relative; width: 250px; }
+        .search-input { width: 100%; padding: 8px 15px 8px 30px; border: 1px solid #ddd; border-radius: 20px; font-size: 13px; outline: none; box-sizing: border-box; }
+        .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #888; }
+
+        /* --- 文件夹视图 (CSS Grid) --- */
+        .folder-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .folder-card { background: white; border-radius: 12px; padding: 30px 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.04); cursor: pointer; transition: all 0.2s; border: 1px solid #eee; position: relative; }
+        .folder-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); border-color: #004080; }
+        .folder-icon { font-size: 45px; margin-bottom: 15px; }
+        .folder-name { font-weight: 600; font-size: 15px; color: #333; }
+        .folder-count { position: absolute; top: 15px; right: 15px; background: #f0f0f0; color: #666; font-size: 11px; font-weight: bold; padding: 2px 8px; border-radius: 12px; }
+
+        /* --- 文件列表视图 --- */
+        .table-container { background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); overflow: hidden; display: none; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { background: #f8f9fa; color: #555; font-weight: 600; padding: 15px 20px; border-bottom: 2px solid #eee; text-align: left; }
+        td { padding: 15px 20px; border-bottom: 1px solid #f0f0f0; color: #444; }
         tr:hover { background: #fcfcfc; }
-        tr:last-child td { border-bottom: none; }
-
-        /* 文件名列美化 */
-        .file-name-cell { display: flex; align-items: center; gap: 10px; font-weight: 500; color: #004080; }
-        .file-icon { font-size: 18px; color: #e74c3c; } /* PDF红色图标 */
-
-        /* 下载按钮 */
-        .btn-download { background: #e3f2fd; color: #0277bd; padding: 6px 15px; border-radius: 20px; text-decoration: none; font-size: 12px; font-weight: bold; transition: all 0.2s; display: inline-block; }
-        .btn-download:hover { background: #0277bd; color: white; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(2,119,189,0.3); }
-
-        /* 加载与空状态 */
-        .status-message { text-align: center; padding: 60px 20px; color: #888; font-size: 15px; }
-        .loader { display: inline-block; width: 24px; height: 24px; border: 3px solid #f3f3f3; border-top: 3px solid #004080; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .btn-download { background: #e3f2fd; color: #0277bd; padding: 6px 15px; border-radius: 20px; text-decoration: none; font-size: 12px; font-weight: bold; }
+        .btn-download:hover { background: #0277bd; color: white; }
+        .status-message { text-align: center; padding: 40px; color: #888; }
     </style>
 </head>
 <body>
 
 <div class="header">
     <h1>📚 Colliers 报告资料库</h1>
-    <a href="index.html" class="back-link">🏠 返回门户大厅</a>
+    <a href="index.html" class="back-link">🏠 返回门户</a>
 </div>
 
 <div class="container">
-    <div class="toolbar">
-        <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" class="search-input" placeholder="输入报告名称或年份搜索..." onkeyup="filterReports()">
-        </div>
-        <div class="file-count">共检索到 <strong id="count-display" style="color:#004080;">0</strong> 份报告</div>
+    
+    <div class="tabs">
+        <button class="tab-btn active" id="tab-CN" onclick="switchLang('CN')">🇨🇳 中文报告</button>
+        <button class="tab-btn" id="tab-EN" onclick="switchLang('EN')">🇬🇧 English Reports</button>
     </div>
 
-    <div class="table-container">
+    <div class="toolbar">
+        <div class="breadcrumb" id="breadcrumb">
+            </div>
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" class="search-input" placeholder="在当前语言库内搜索..." onkeyup="handleSearch()">
+        </div>
+    </div>
+
+    <div class="folder-grid" id="folder-view">
+        </div>
+
+    <div class="table-container" id="file-view">
         <table>
-            <thead>
-                <tr>
-                    <th style="width: 55%;">报告名称</th>
-                    <th style="width: 15%;">文件大小</th>
-                    <th style="width: 20%;">上传时间</th>
-                    <th style="width: 10%; text-align: center;">操作</th>
-                </tr>
-            </thead>
+            <thead><tr><th style="width: 60%;">报告名称</th><th style="width: 15%;">文件大小</th><th style="width: 15%;">发布日期</th><th style="width: 10%; text-align: center;">操作</th></tr></thead>
             <tbody id="report-list">
-                <tr>
-                    <td colspan="4">
-                        <div class="status-message">
-                            <div class="loader"></div>
-                            <div>正在从云端安全拉取报告列表...</div>
-                        </div>
-                    </td>
-                </tr>
+                <tr><td colspan="4"><div class="status-message">正在从云端安全拉取...</div></td></tr>
             </tbody>
         </table>
     </div>
+
 </div>
 
 <script>
-    let allReports = []; // 全局变量，用于存放拉取下来的所有报告数据，方便前端搜索过滤
+    // 全局状态管理
+    let allReports = [];       // OSS 拉取的所有原始数据
+    let currentLang = 'CN';    // 当前选中的语言 ('CN' 或 'EN')
+    let currentFolder = null;  // 当前进入的文件夹 ('Quarterly', 'Thematic', etc. null代表在根目录)
 
-    window.onload = function() {
-        // 1. 验证登录状态
-        const userStr = localStorage.getItem('colliers_user');
-        if (!userStr) { 
-            alert("请先登录系统！"); 
-            window.location.href = 'index.html'; 
-            return; 
-        }
-
-        // 2. 拉取 OSS 报告列表
-        fetchReports();
+    // 字典映射
+    const FOLDER_MAP = {
+        'Quarterly': { icon: '📁', name: '季度报告' },
+        'Thematic':  { icon: '📂', name: '专题研究' },
+        'BP':        { icon: '🏭', name: '产业园专刊' },
+        'Others':    { icon: '🗂️', name: '其他参考材料' }
     };
 
-    // --- 核心拉取逻辑 ---
+    window.onload = function() {
+        const userStr = localStorage.getItem('colliers_user');
+        if (!userStr) { alert("请先登录！"); window.location.href = 'index.html'; return; }
+        fetchReports(); // 启动时拉取一次即可
+    };
+
+    // --- 步骤一：拉取云端数据 ---
     async function fetchReports() {
         try {
-            // 调用我们刚写的“三合一”路由，action=get-list
             const res = await fetch('/api/oss?action=get-list');
             const result = await res.json();
-
             if (result.status === 'success') {
-                allReports = result.data;
-                renderTable(allReports);
-            } else {
-                showError("无法获取列表：" + result.message);
+                // 为每个文件解析好属性，方便后续过滤
+                allReports = result.data.map(file => {
+                    const parts = file.name.split('/');
+                    return {
+                        ...file,
+                        parsedLang: parts.length >= 3 ? parts[0] : 'CN', // 旧文件归为中文
+                        parsedFolder: parts.length >= 3 ? parts[1] : 'Others', // 旧文件归为其他
+                        cleanName: parts.length >= 3 ? parts.slice(2).join('/') : file.name
+                    };
+                });
+                renderUI(); // 数据就绪，开始渲染界面
             }
-        } catch (e) {
-            console.error(e);
-            showError("网络或服务器错误，请稍后重试。");
+        } catch (e) { document.getElementById('report-list').innerHTML = `<tr><td colspan="4" class="status-message">加载失败，请刷新。</td></tr>`; }
+    }
+
+    // --- 步骤二：核心 UI 路由分发器 ---
+    function renderUI() {
+        const folderView = document.getElementById('folder-view');
+        const fileView = document.getElementById('file-view');
+        const breadcrumb = document.getElementById('breadcrumb');
+
+        // 更新 Tab 样式
+        document.getElementById('tab-CN').className = currentLang === 'CN' ? 'tab-btn active' : 'tab-btn';
+        document.getElementById('tab-EN').className = currentLang === 'EN' ? 'tab-btn active' : 'tab-btn';
+
+        // 1. 如果在根目录（未选择文件夹） -> 显示 4 个大文件夹
+        if (currentFolder === null) {
+            folderView.style.display = 'grid';
+            fileView.style.display = 'none';
+            breadcrumb.innerHTML = currentLang === 'CN' ? '<span>📍 当前位置：中文字库</span>' : '<span>📍 Location：English DB</span>';
+            
+            // 统计每个文件夹里的文件数量
+            let html = '';
+            for (const [key, meta] of Object.entries(FOLDER_MAP)) {
+                const count = allReports.filter(f => f.parsedLang === currentLang && f.parsedFolder === key).length;
+                html += `
+                    <div class="folder-card" onclick="openFolder('${key}')">
+                        <div class="folder-count">${count} 份</div>
+                        <div class="folder-icon">${meta.icon}</div>
+                        <div class="folder-name">${currentLang === 'EN' && key==='Quarterly'?'Quarterly':meta.name}</div>
+                    </div>
+                `;
+            }
+            folderView.innerHTML = html;
+        } 
+        // 2. 如果进入了具体文件夹 -> 显示文件表格
+        else {
+            folderView.style.display = 'none';
+            fileView.style.display = 'block';
+            
+            const folderName = FOLDER_MAP[currentFolder].name;
+            breadcrumb.innerHTML = `<a href="javascript:void(0)" onclick="closeFolder()">🔙 返回上级</a> <span> / ${folderName}</span>`;
+            
+            // 过滤出当前语言 + 当前文件夹的数据
+            const targetFiles = allReports.filter(f => f.parsedLang === currentLang && f.parsedFolder === currentFolder);
+            renderTableData(targetFiles);
         }
     }
 
-    // --- 渲染表格逻辑 ---
-    function renderTable(dataArray) {
-        const tbody = document.getElementById('report-list');
-        const countDisplay = document.getElementById('count-display');
-        countDisplay.innerText = dataArray.length;
+    // --- 交互控制函数 ---
+    function switchLang(lang) {
+        currentLang = lang;
+        currentFolder = null; // 切换语言时，退回文件夹根目录
+        document.getElementById('searchInput').value = ''; // 清空搜索
+        renderUI();
+    }
 
-        if (dataArray.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4"><div class="status-message">📭 暂无符合条件的报告。</div></td></tr>`;
+    function openFolder(folderKey) {
+        currentFolder = folderKey;
+        renderUI();
+    }
+
+    function closeFolder() {
+        currentFolder = null;
+        renderUI();
+    }
+
+    // --- 表格渲染渲染 ---
+    function renderTableData(files) {
+        const tbody = document.getElementById('report-list');
+        if (files.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="status-message">📭 此目录下暂无报告。</td></tr>`;
             return;
         }
 
-        let html = '';
-        dataArray.forEach(file => {
-            // 格式化时间，让它更符合中国人的阅读习惯
+        tbody.innerHTML = files.map(file => {
             const dateObj = new Date(file.lastModified);
-            const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')} ${String(dateObj.getHours()).padStart(2,'0')}:${String(dateObj.getMinutes()).padStart(2,'0')}`;
-
-            html += `
+            const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
+            return `
                 <tr>
-                    <td>
-                        <div class="file-name-cell">
-                            <span class="file-icon">📄</span>
-                            <span title="${file.name}">${file.name}</span>
-                        </div>
-                    </td>
+                    <td style="font-weight:500; color:#004080;">📄 ${file.cleanName}</td>
                     <td style="color:#888;">${file.size}</td>
                     <td style="color:#888;">${dateStr}</td>
-                    <td style="text-align: center;">
-                        <a href="${file.downloadUrl}" target="_blank" class="btn-download">⬇ 下载</a>
-                    </td>
+                    <td style="text-align: center;"><a href="${file.downloadUrl}" target="_blank" class="btn-download">⬇ 下载</a></td>
                 </tr>
             `;
-        });
-
-        tbody.innerHTML = html;
+        }).join('');
     }
 
-    // --- 前端模糊搜索逻辑 ---
-    function filterReports() {
+    // --- 全局模糊搜索 ---
+    function handleSearch() {
         const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
-        
-        // 如果搜索框为空，展示全部
-        if (!keyword) {
-            renderTable(allReports);
-            return;
-        }
+        if (!keyword) { renderUI(); return; } // 清空搜索时恢复原状
 
-        // 过滤出名字里包含关键词的报告
-        const filteredData = allReports.filter(file => file.name.toLowerCase().includes(keyword));
-        renderTable(filteredData);
-    }
+        // 搜索模式下，强制隐藏文件夹，显示表格
+        document.getElementById('folder-view').style.display = 'none';
+        document.getElementById('file-view').style.display = 'block';
+        document.getElementById('breadcrumb').innerHTML = `<a href="javascript:void(0)" onclick="document.getElementById('searchInput').value=''; renderUI();">🔙 退出搜索</a> <span> / 搜索结果</span>`;
 
-    // --- 错误提示辅助函数 ---
-    function showError(msg) {
-        const tbody = document.getElementById('report-list');
-        tbody.innerHTML = `<tr><td colspan="4"><div class="status-message" style="color:#e74c3c;">❌ ${msg}</div></td></tr>`;
-    }
-
-    // ==========================================
-    // ★★★ 单点登录心跳检测 (防挤号机制) ★★★
-    // ==========================================
-    let heartbeatTimer = null;
-
-    function startHeartbeat() {
-        if (heartbeatTimer) clearInterval(heartbeatTimer);
-        
-        heartbeatTimer = setInterval(async () => {
-            const userStr = localStorage.getItem('colliers_user');
-            const currentToken = localStorage.getItem('colliers_token');
-            
-            if (!userStr || !currentToken) return; 
-            
-            const user = JSON.parse(userStr);
-            
-            try {
-                const res = await fetch('/api/check-session', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: user.name, token: currentToken })
-                });
-                const data = await res.json();
-                
-                if (data.status === 'invalid') {
-                    clearInterval(heartbeatTimer); 
-                    localStorage.removeItem('colliers_user');
-                    localStorage.removeItem('colliers_token');
-                    
-                    alert("⚠️ 系统提示：\n您的账号已在其他设备或浏览器登录！\n当前页面将被强制退出。");
-                    window.location.href = 'index.html'; 
-                }
-            } catch (e) {
-                console.warn("心跳检测波动", e);
-            }
-        }, 60000); 
-    }
-
-    if (localStorage.getItem('colliers_user') && localStorage.getItem('colliers_token')) {
-        startHeartbeat();
+        // 在当前选中的语言库中进行全文检索
+        const resultFiles = allReports.filter(f => f.parsedLang === currentLang && f.cleanName.toLowerCase().includes(keyword));
+        renderTableData(resultFiles);
     }
 </script>
 
