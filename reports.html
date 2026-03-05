@@ -52,15 +52,15 @@
 <div class="container">
     
     <div class="lang-grid" id="lang-view" style="display: none;">
-        <div class="lang-card" onclick="fetchReports('CN/')">
-            <div class="lang-icon">🇨🇳</div>
-            <div class="lang-title">中文报告库</div>
-            <div class="lang-desc">Chinese Reports Archive</div>
+        <div class="lang-card" onclick="fetchReports('一线城市/')">
+            <div class="lang-icon">🏢</div>
+            <div class="lang-title">一线城市报告</div>
+            <div class="lang-desc">Tier 1 Cities</div>
         </div>
-        <div class="lang-card" onclick="fetchReports('EN/')">
-            <div class="lang-icon">🇬🇧</div>
-            <div class="lang-title">英文报告库</div>
-            <div class="lang-desc">English Reports Archive</div>
+        <div class="lang-card" onclick="fetchReports('二线城市/')">
+            <div class="lang-icon">🏙️</div>
+            <div class="lang-title">二线城市报告</div>
+            <div class="lang-desc">Tier 2 Cities</div>
         </div>
     </div>
 
@@ -91,7 +91,6 @@
 </div>
 
 <script>
-    // --- 纯逻辑，无任何变动 ---
     let currentPrefix = '';
     let currentData = [];
 
@@ -115,6 +114,7 @@
         document.getElementById('report-list').innerHTML = `<tr><td colspan="4" class="status-message">加载中...</td></tr>`;
         
         try {
+            // 中文字符将被自动进行 encodeURIComponent 编码，完美适配阿里云接口
             const url = `/api/oss?action=get-list&prefix=${encodeURIComponent(currentPrefix)}`;
             const res = await fetch(url);
             const result = JSON.parse(await res.text());
@@ -129,7 +129,7 @@
 
     function renderBreadcrumb() {
         const bc = document.getElementById('breadcrumb');
-        let html = `<span onclick="fetchReports('')">🏠 根目录</span>`;
+        let html = `<span onclick="fetchReports('')">🏠 首页</span>`;
         if (currentPrefix) {
             const parts = currentPrefix.split('/').filter(p => p);
             let path = '';
@@ -141,7 +141,7 @@
     function renderTable(dataList) {
         const tbody = document.getElementById('report-list');
         if (!dataList || dataList.length === 0) {
-            tbody.innerHTML = (currentPrefix ? `<tr style="cursor:pointer;" onclick="goUp()"><td colspan="4" style="color:#003E7E; font-weight:bold;">🔙 返回上层</td></tr>` : '') + `<tr><td colspan="4" class="status-message">空目录</td></tr>`;
+            tbody.innerHTML = (currentPrefix ? `<tr style="cursor:pointer;" onclick="goUp()"><td colspan="4" style="color:#003E7E; font-weight:bold;">🔙 返回上层</td></tr>` : '') + `<tr><td colspan="4" class="status-message">当前目录为空</td></tr>`;
             return;
         }
         let html = currentPrefix ? `<tr style="cursor:pointer;" onclick="goUp()"><td colspan="4" style="color:#003E7E; font-weight:bold;">🔙 返回上层</td></tr>` : '';
