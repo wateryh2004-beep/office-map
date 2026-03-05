@@ -430,31 +430,32 @@
 
     // ★ 新增：新建文件夹 (通过写入 .keep 占位文件实现)
     async function createFolderOSS() {
-        const folderName = prompt("请输入新建文件夹的名称：\n(例如：2026Q1)");
+        const folderName = prompt("请输入新建文件夹的名称：\n(例如：一线城市 或 2026Q1)");
         if (!folderName) return;
         
         const btn = document.getElementById('btn-create-folder');
         btn.disabled = true; btn.innerText = "创建中...";
         
         try {
-            const signRes = await fetch('/api/oss?action=get-signature');
-            const signData = await signRes.json();
+            const fullPath = `${adminCurrentPrefix}${folderName}/`;
             
-            const formData = new FormData();
-            const folderPath = `${adminCurrentPrefix}${folderName}/.keep`;
-            formData.append('key', folderPath);
-            formData.append('policy', signData.policy);
-            formData.append('OSSAccessKeyId', signData.OSSAccessKeyId);
-            formData.append('signature', signData.signature);
-            formData.append('success_action_status', '200');
+            const res = await fetch('/api/oss?action=create-folder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ folder: fullPath })
+            });
+            const data = await res.json();
             
-            const emptyBlob = new Blob([" "], { type: 'text/plain' });
-            formData.append('file', emptyBlob, '.keep');
-            
-            await fetch(signData.host, { method: 'POST', body: formData });
-            loadOSSReports(adminCurrentPrefix);
-        } catch(e) { alert("创建失败。"); }
-        finally { btn.disabled = false; btn.innerText = "📁 新建文件夹"; }
+            if (data.status === 'success') {
+                loadOSSReports(adminCurrentPrefix);
+            } else {
+                alert("创建失败: " + data.message);
+            }
+        } catch(e) { 
+            alert("请求异常，请检查网络。"); 
+        } finally { 
+            btn.disabled = false; btn.innerText = "📁 新建文件夹"; 
+        }
     }
 
     async function executeOSSUpload() {
