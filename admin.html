@@ -27,7 +27,7 @@
         .tab-content.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- 卡片与网格 (专业紧凑版) --- */
+        /* --- 卡片与网格 --- */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .card { background: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #e0e0e0; display: flex; flex-direction: column; overflow: hidden; margin-bottom: 20px; }
         .card-header { background: #f8f9fa; padding: 12px 20px; border-bottom: 1px solid #e0e0e0; font-weight: 600; font-size: 14px; color: #003E7E; display: flex; justify-content: space-between; align-items: center; }
@@ -55,7 +55,7 @@
         
         .table-wrapper { width: 100%; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
-        th { background: white; color: #888; font-weight: 600; padding: 12px 20px; border-bottom: 2px solid #eee; position: sticky; top: 0; }
+        th { background: white; color: #888; font-weight: 600; padding: 12px 20px; border-bottom: 2px solid #eee; position: sticky; top: 0; z-index: 10;}
         td { padding: 12px 20px; border-bottom: 1px solid #eee; color: #444; }
         tr:hover td { background: #f9f9f9; }
         .action-link { color: #003E7E; cursor: pointer; font-size: 12px; font-weight: 600; margin-right: 10px; }
@@ -64,8 +64,11 @@
 
         /* --- 模态框 --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 99999; justify-content: center; align-items: center; }
-        .modal-box { background: white; padding: 25px; border-radius: 4px; width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .modal-title { margin: 0 0 15px 0; font-size: 15px; color: #003E7E; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .modal-box { background: white; padding: 25px; border-radius: 4px; width: 380px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .modal-title { margin: 0 0 15px 0; font-size: 15px; color: #003E7E; border-bottom: 1px solid #eee; padding-bottom: 10px; font-weight: bold; }
+        
+        /* 筛选栏 */
+        .filter-bar { background: #fafafa; padding: 12px 20px; border-bottom: 1px solid #eee; display: flex; gap: 10px; }
     </style>
 </head>
 <body>
@@ -142,7 +145,7 @@
     </div>
 
     <div id="tab-oss" class="tab-content">
-        <div class="card" style="min-height: 500px;">
+        <div class="card" style="min-height: 550px;">
             <div class="card-header">☁️ 阿里云报告直连引擎</div>
             
             <div class="oss-toolbar">
@@ -151,14 +154,17 @@
                 </div>
                 
                 <div style="display:flex; gap:10px;">
+                    <button class="btn btn-outline" id="btn-create-folder" onclick="createFolderOSS()">
+                        📁 新建文件夹
+                    </button>
                     <input type="file" id="oss-report-file" multiple accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx" style="display:none;" onchange="executeOSSUpload()">
                     <button class="btn btn-primary" id="btn-upload-oss" onclick="document.getElementById('oss-report-file').click()">
-                        ➕ 上传文件到当前目录
+                        ➕ 上传文件到此目录
                     </button>
                 </div>
             </div>
 
-            <div class="table-wrapper">
+            <div class="table-wrapper" style="height: 480px; overflow-y: auto;">
                 <table>
                     <thead>
                         <tr>
@@ -180,29 +186,43 @@
         <div class="grid-2">
             <div class="card">
                 <div class="card-header">
+                    <span>📁 季度数据填报归档</span>
+                    <button class="btn btn-outline" style="padding:2px 8px;" onclick="loadFiles()">刷新</button>
+                </div>
+                <div class="filter-bar">
+                    <select id="filter-user" class="input-box" style="padding:4px; font-size:12px; width:auto;" onchange="renderFilteredFiles()">
+                        <option value="ALL">全部填报人</option>
+                    </select>
+                    <select id="filter-type" class="input-box" style="padding:4px; font-size:12px; width:auto;" onchange="renderFilteredFiles()">
+                        <option value="ALL">全部物业类型</option>
+                        <option value="GradeA">甲级写字楼 (GradeA)</option>
+                        <option value="GradeB">乙级写字楼 (GradeB)</option>
+                        <option value="BP">产业园 (BP)</option>
+                    </select>
+                    <select id="filter-month" class="input-box" style="padding:4px; font-size:12px; width:auto;" onchange="renderFilteredFiles()">
+                        <option value="ALL">全部时间</option>
+                    </select>
+                </div>
+                <div style="height: 400px; overflow-y: auto;">
+                    <table>
+                        <thead><tr><th>解析信息 (人员/分类/时间)</th><th style="text-align:right; width:80px;">操作</th></tr></thead>
+                        <tbody id="file-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
                     <span>👥 搜索行为日志</span>
                     <div style="display:flex; gap:5px;">
                         <input type="month" id="log-month" class="input-box" style="padding:2px 5px; font-size:11px;">
                         <button class="btn btn-outline" style="padding:2px 8px;" onclick="downloadLogExcel()">导出</button>
                     </div>
                 </div>
-                <div style="height: 400px; overflow-y: auto;">
+                <div style="height: 440px; overflow-y: auto;">
                     <table>
                         <thead><tr><th>时间</th><th>用户</th><th>检索行为</th></tr></thead>
                         <tbody id="log-body"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <span>📁 季度数据填报归档</span>
-                    <button class="btn btn-outline" style="padding:2px 8px;" onclick="loadFiles()">刷新</button>
-                </div>
-                <div style="height: 400px; overflow-y: auto;">
-                    <table>
-                        <thead><tr><th>解析信息 (分类-用户-时间)</th><th style="text-align:right;">操作</th></tr></thead>
-                        <tbody id="file-body"></tbody>
                     </table>
                 </div>
             </div>
@@ -213,10 +233,16 @@
 
 <div id="move-modal" class="modal-overlay">
     <div class="modal-box">
-        <h3 class="modal-title">移动或重命名</h3>
+        <h3 class="modal-title">移动文件 / 修改路径</h3>
         <p style="font-size:12px; color:#888; margin:0 0 10px 0; word-break:break-all;">原路径: <span id="move-old-path" style="color:#d32f2f;"></span></p>
         <input type="text" id="move-new-path" class="input-box" style="width:100%;">
-        <p style="font-size:11px; color:#666; margin-top:5px;">提示：修改前面的文件夹名称即可移动文件。例如把 2025Q4 改为 2026Q1。</p>
+        
+        <div style="background:#f4f6f8; padding:10px; margin-top:15px; border-radius:4px; font-size:11px; color:#555; line-height:1.5;">
+            <strong>💡 批量改名/移入新文件夹技巧：</strong><br>
+            阿里云OSS不支持直接重命名文件夹。<br>
+            直接在上方修改路径（例如把 <code>2025Q4/报告.pdf</code> 改为 <code>2026Q1/报告.pdf</code>），系统会自动创建新文件夹并转移该文件！
+        </div>
+
         <div class="input-group" style="margin-top:15px; justify-content:flex-end;">
             <button class="btn btn-outline" onclick="closeMoveModal()">取消</button>
             <button class="btn btn-primary" id="btn-confirm-move" onclick="confirmMove()">确认保存</button>
@@ -228,6 +254,7 @@
     let currentUser = null;
     const CONFIG = { owner: 'wateryh2004-beep', repo: 'office-map', branch: 'main' };
     let adminCurrentPrefix = '';
+    let allArchiveFiles = []; // 存储所有填报日志
 
     window.onload = function() {
         const userStr = localStorage.getItem('colliers_user');
@@ -249,7 +276,7 @@
     };
 
     // ==========================================
-    // 模块 1：基础文件管理 (上传与纯前端下载)
+    // 模块 1：基础配置 (文件直传下载 & 发布公告)
     // ==========================================
     async function directUpload(inputId, targetFileName, btnId) {
         const file = document.getElementById(inputId).files[0];
@@ -278,7 +305,6 @@
         };
     }
 
-    // 纯前端利用 Octokit 下载 GitHub 原文件
     async function downloadRawFile(fileName) {
         try {
             const tokenRes = await fetch('/api/get-token');
@@ -286,8 +312,6 @@
             const octokit = new window.Octokit({ auth: tokenData.token });
             
             const { data } = await octokit.repos.getContent({ owner: CONFIG.owner, repo: CONFIG.repo, path: fileName });
-            
-            // Base64 转 Blob 下载
             const byteCharacters = atob(data.content);
             const byteNumbers = new Array(byteCharacters.length);
             for (let i = 0; i < byteCharacters.length; i++) { byteNumbers[i] = byteCharacters.charCodeAt(i); }
@@ -309,8 +333,15 @@
             const res = await fetch('/api/portal?action=update-notice', { 
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, user: currentUser.name }) 
             }); 
-            if ((await res.json()).status === 'success') { alert("✅ 公告发布成功"); document.getElementById('notice-input').value = ''; } 
-        } catch (e) {} finally { btn.disabled = false; btn.innerText = "发布公告"; }
+            const data = await res.json();
+            if (data.status === 'success') { 
+                alert("✅ 公告发布成功"); 
+                document.getElementById('notice-input').value = ''; 
+            } else {
+                alert("❌ 发布失败: " + (data.message || '系统错误'));
+            }
+        } catch (e) { alert("网络异常，发布失败。"); } 
+        finally { btn.disabled = false; btn.innerText = "发布公告"; }
     }
 
     // ==========================================
@@ -320,7 +351,6 @@
         const email = document.getElementById('admin-pwd-email').value.trim();
         const phone = document.getElementById('admin-pwd-phone').value.trim();
         const resDiv = document.getElementById('pwd-result');
-        
         if(!email || !phone) { resDiv.innerText = "请完整输入用户的邮箱和手机号！"; resDiv.style.color = "#d32f2f"; return; }
         
         resDiv.innerText = "请求中..."; resDiv.style.color = "#888";
@@ -330,21 +360,16 @@
                 body: JSON.stringify({ email, phone })
             });
             const data = await res.json();
-            
             if(data.status === 'success') {
                 resDiv.style.color = "#003E7E";
                 if(actionType === 'query') resDiv.innerText = `查询成功！该用户当前登录密码为: 【 ${data.password} 】`;
                 else resDiv.innerText = `✅ 重置成功！已恢复为内部号码: 【 ${data.password} 】`;
-            } else {
-                resDiv.style.color = "#d32f2f";
-                resDiv.innerText = `❌ 操作失败: ${data.message}`;
-            }
+            } else { resDiv.style.color = "#d32f2f"; resDiv.innerText = `❌ 操作失败: ${data.message}`; }
         } catch(e) { resDiv.innerText = "网络异常，请重试"; resDiv.style.color = "#d32f2f"; }
     }
 
-
     // ==========================================
-    // 模块 3：云盘资源管理器 (所见即所得)
+    // 模块 3：云盘资源管理器 (增加新建文件夹)
     // ==========================================
     async function loadOSSReports(prefix = '') {
         adminCurrentPrefix = prefix;
@@ -358,7 +383,6 @@
             parts.forEach((p) => { path += p + '/'; bcHtml += ` <span style="color:#ccc;cursor:default;">/</span> <span onclick="loadOSSReports('${path}')">${p}</span>`; });
         }
         bc.innerHTML = bcHtml;
-        
         tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:30px; color:#888;">正在拉取目录...</td></tr>`;
         
         try {
@@ -366,7 +390,7 @@
             const result = await res.json();
             if (result.status === 'success') {
                 if (result.data.length === 0) {
-                    tbody.innerHTML = (prefix ? `<tr style="cursor:pointer;" onclick="goUpOSS()"><td colspan="4" style="color:#003E7E; font-weight:bold;">🔙 返回上层</td></tr>` : '') + `<tr><td colspan="4" style="text-align:center; padding:30px; color:#888;">此文件夹为空</td></tr>`;
+                    tbody.innerHTML = (prefix ? `<tr style="cursor:pointer; background:#fdfdfd;" onclick="goUpOSS()"><td colspan="4" style="color:#003E7E; font-weight:bold;">🔙 返回上层...</td></tr>` : '') + `<tr><td colspan="4" style="text-align:center; padding:30px; color:#888;">此文件夹为空</td></tr>`;
                     return;
                 }
                 
@@ -376,10 +400,13 @@
                     if (item.type === 'folder') {
                         const folderName = item.name.replace(prefix, '').replace('/', '');
                         return `<tr style="cursor:pointer;" onclick="loadOSSReports('${item.name}')">
-                            <td style="font-weight:bold;">📁 ${folderName}</td>
+                            <td style="font-weight:bold; color:#333;">📁 ${folderName}</td>
                             <td>-</td><td>-</td><td style="text-align:right; color:#888;">进入文件夹 &gt;</td>
                         </tr>`;
                     } else {
+                        // 过滤掉占位用的 .keep 文件，保持界面干净
+                        if(item.shortName === '.keep') return '';
+                        
                         const dateStr = item.lastModified ? item.lastModified.split('T')[0] : '-';
                         return `<tr>
                             <td style="color:#003E7E;">📄 ${item.shortName}</td>
@@ -398,11 +425,38 @@
 
     function goUpOSS() {
         const parts = adminCurrentPrefix.split('/').filter(p => p);
-        parts.pop(); 
-        loadOSSReports(parts.length > 0 ? parts.join('/') + '/' : '');
+        parts.pop(); loadOSSReports(parts.length > 0 ? parts.join('/') + '/' : '');
     }
 
-    // 智能直传：自动附加当前目录前缀
+    // ★ 新增：新建文件夹 (通过写入 .keep 占位文件实现)
+    async function createFolderOSS() {
+        const folderName = prompt("请输入新建文件夹的名称：\n(例如：2026Q1)");
+        if (!folderName) return;
+        
+        const btn = document.getElementById('btn-create-folder');
+        btn.disabled = true; btn.innerText = "创建中...";
+        
+        try {
+            const signRes = await fetch('/api/oss?action=get-signature');
+            const signData = await signRes.json();
+            
+            const formData = new FormData();
+            const folderPath = `${adminCurrentPrefix}${folderName}/.keep`;
+            formData.append('key', folderPath);
+            formData.append('policy', signData.policy);
+            formData.append('OSSAccessKeyId', signData.OSSAccessKeyId);
+            formData.append('signature', signData.signature);
+            formData.append('success_action_status', '200');
+            
+            const emptyBlob = new Blob([" "], { type: 'text/plain' });
+            formData.append('file', emptyBlob, '.keep');
+            
+            await fetch(signData.host, { method: 'POST', body: formData });
+            loadOSSReports(adminCurrentPrefix);
+        } catch(e) { alert("创建失败。"); }
+        finally { btn.disabled = false; btn.innerText = "📁 新建文件夹"; }
+    }
+
     async function executeOSSUpload() {
         const fileInput = document.getElementById('oss-report-file');
         const files = fileInput.files;
@@ -416,7 +470,6 @@
             const signData = await signRes.json();
             for (let file of files) {
                 const formData = new FormData();
-                // ★ 核心逻辑：自动拼上你当前点进去的文件夹路径
                 formData.append('key', `${adminCurrentPrefix}${file.name}`);
                 formData.append('policy', signData.policy);
                 formData.append('OSSAccessKeyId', signData.OSSAccessKeyId);
@@ -425,11 +478,9 @@
                 formData.append('file', file);
                 await fetch(signData.host, { method: 'POST', body: formData });
             }
-            alert("✅ 上传成功！");
-            fileInput.value = '';
-            loadOSSReports(adminCurrentPrefix); // 刷新当前目录
+            alert("✅ 上传成功！"); fileInput.value = ''; loadOSSReports(adminCurrentPrefix);
         } catch (e) { alert("上传中途出现错误。"); }
-        finally { btn.disabled = false; btn.innerText = "➕ 上传文件到当前目录"; }
+        finally { btn.disabled = false; btn.innerText = "➕ 上传文件到此目录"; }
     }
 
     async function deleteOSSReport(fileName) {
@@ -452,9 +503,7 @@
         if(!newKey || newKey === currentMovingFile) { alert("未做修改"); return; }
         const btn = document.getElementById('btn-confirm-move'); btn.disabled = true; btn.innerText = "保存中...";
         try {
-            const res = await fetch('/api/oss?action=move', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ oldKey: currentMovingFile, newKey: newKey })
-            });
+            const res = await fetch('/api/oss?action=move', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ oldKey: currentMovingFile, newKey: newKey }) });
             if ((await res.json()).status === 'success') { closeMoveModal(); loadOSSReports(adminCurrentPrefix); } 
             else alert("修改失败");
         } catch (e) { alert("请求异常"); } finally { btn.disabled = false; btn.innerText = "确认保存"; }
@@ -462,7 +511,7 @@
 
 
     // ==========================================
-    // 模块 4：日志获取
+    // 模块 4：日志与归档 (加入筛选解析逻辑)
     // ==========================================
     async function loadLogs() {
         try {
@@ -472,11 +521,74 @@
     }
     function downloadLogExcel() { window.open(`/api/download-logs?month=${document.getElementById('log-month').value}`, '_blank'); }
 
+    // ★ 强大的归档解析引擎
     async function loadFiles() {
         try {
-            const res = await fetch('/api/get-uploaded-files'); const result = await res.json();
-            document.getElementById('file-body').innerHTML = result.data.map(f => `<tr><td style="color:#555;">📄 ${f.name}</td><td style="text-align:right;"><a href="${f.download_url}" style="background:#003E7E; color:white; padding:4px 10px; border-radius:2px; text-decoration:none; font-size:11px;">下载附件</a></td></tr>`).join('');
-        } catch(e) {}
+            const res = await fetch('/api/get-uploaded-files'); 
+            const result = await res.json();
+            
+            allArchiveFiles = result.data.map(f => {
+                let user = '未知', type = '未知', month = '未知', dateStr = '-';
+                
+                // 解析规则: Iris_GradeA-1770086693753.xlsx
+                const parts = f.name.split('-'); 
+                if(parts.length >= 2) {
+                    const prefixParts = parts[0].split('_'); // 分割 Iris_GradeA
+                    user = prefixParts[0] || '未知';
+                    type = prefixParts[1] || '未知';
+                    
+                    const timestamp = parseInt(parts[parts.length - 1].split('.')[0]);
+                    if (!isNaN(timestamp) && timestamp > 1000000000000) {
+                        const d = new Date(timestamp);
+                        month = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}`;
+                        dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                    }
+                }
+                return { ...f, user, type, month, dateStr };
+            });
+
+            // 填充下拉选项
+            const users = new Set(allArchiveFiles.map(f => f.user).filter(u => u !== '未知'));
+            const months = new Set(allArchiveFiles.map(f => f.month).filter(m => m !== '未知'));
+            
+            document.getElementById('filter-user').innerHTML = '<option value="ALL">全部填报人</option>' + Array.from(users).map(u => `<option value="${u}">${u}</option>`).join('');
+            document.getElementById('filter-month').innerHTML = '<option value="ALL">全部时间</option>' + Array.from(months).sort().reverse().map(m => `<option value="${m}">${m}</option>`).join('');
+
+            renderFilteredFiles();
+        } catch(e) {
+            document.getElementById('file-body').innerHTML = `<tr><td colspan="2" style="color:red; text-align:center;">加载归档失败</td></tr>`;
+        }
+    }
+
+    // 筛选渲染引擎
+    window.renderFilteredFiles = function() {
+        const fUser = document.getElementById('filter-user').value;
+        const fType = document.getElementById('filter-type').value;
+        const fMonth = document.getElementById('filter-month').value;
+        
+        const filtered = allArchiveFiles.filter(f => {
+            return (fUser === 'ALL' || f.user === fUser) &&
+                   (fType === 'ALL' || f.type === fType) &&
+                   (fMonth === 'ALL' || f.month === fMonth);
+        });
+        
+        const typeMap = { 'GradeA': '🏢 甲级', 'GradeB': '🏢 乙级', 'BP': '🏭 产业园' };
+
+        document.getElementById('file-body').innerHTML = filtered.map(f => `
+            <tr>
+                <td>
+                    <div style="font-weight:bold; color:#003E7E; margin-bottom:4px;">👤 ${f.user} <span style="color:#ccc; margin:0 5px;">|</span> ${typeMap[f.type] || '❓ '+f.type}</div>
+                    <div style="font-size:11px; color:#888;">更新时间: ${f.dateStr} &nbsp;&nbsp; 原名: ${f.name}</div>
+                </td>
+                <td style="text-align:right; vertical-align:middle;">
+                    <a href="${f.download_url}" style="background:#f0f4f8; color:#003E7E; border:1px solid #003E7E; padding:4px 10px; border-radius:2px; text-decoration:none; font-size:11px; display:inline-block;">下载 Excel</a>
+                </td>
+            </tr>
+        `).join('');
+        
+        if(filtered.length === 0) {
+            document.getElementById('file-body').innerHTML = `<tr><td colspan="2" style="text-align:center; padding:30px; color:#999;">该筛选条件下暂无归档记录</td></tr>`;
+        }
     }
 
 </script>
