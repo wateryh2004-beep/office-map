@@ -273,4 +273,90 @@
             const areaDiff = vacArea - lastVacArea;
             const cell = row.querySelector('.area-change');
             cell.innerText = (areaDiff > 0 ? '+' : '') + areaDiff.toLocaleString();
-            cell.style.color = areaDiff > 0 ? '#d32f2f' : (areaDiff < 0 ? '#2e7
+            cell.style.color = areaDiff > 0 ? '#d32f2f' : (areaDiff < 0 ? '#2e7d32' : '#666');
+            row.querySelector('.vac-rate').innerText = ((vacArea / totalArea) * 100).toFixed(1) + '%';
+        } else {
+            row.querySelector('.area-change').innerText = '-';
+            row.querySelector('.vac-rate').innerText = '-';
+        }
+    };
+
+    window.saveDraft = function() {
+        const rows = document.querySelectorAll('#table-body tr[data-id]');
+        if (rows.length === 0) return;
+        const draft = {}; let hasData = false;
+        rows.forEach(row => {
+            const id = row.dataset.id;
+            const qQuote = row.querySelector('.curr-quote').value;
+            const qProp = row.querySelector('.curr-prop').value;
+            const qFace = row.querySelector('.curr-face').value;
+            const qFree = row.querySelector('.curr-free').value;
+            const qVacArea = row.querySelector('.curr-vac-area').value;
+            const qRemark = row.querySelector('.curr-remark').value;
+            if(qQuote || qProp || qFace || qFree || qVacArea || qRemark) {
+                hasData = true; draft[id] = { qQuote, qProp, qFace, qFree, qVacArea, qRemark };
+            }
+        });
+        if (hasData) {
+            localStorage.setItem(getDraftKey(), JSON.stringify(draft));
+            document.getElementById('draft-status').innerText = `已自动存稿 (${new Date().toTimeString().substring(0, 5)})`;
+        } else {
+            localStorage.removeItem(getDraftKey());
+            document.getElementById('draft-status').innerText = '';
+        }
+    };
+
+    window.manualSave = function() { saveDraft(); alert("草稿已暂存！"); };
+
+    async function submitData() {
+        saveDraft();
+        const btn = document.querySelector('.btn-submit');
+        const msg = document.getElementById('status-msg');
+        const rows = document.querySelectorAll('#table-body tr[data-id]');
+        const submission = [];
+        let hasEdits = false;
+
+        rows.forEach((row) => {
+            const originalIndex = row.dataset.id;
+            const building = myBuildings[originalIndex];
+            if(!building) return;
+
+            const qQuote = row.querySelector('.curr-quote').value;
+            const qProp = row.querySelector('.curr-prop').value;
+            const qFace = row.querySelector('.curr-face').value;
+            const qFree = row.querySelector('.curr-free').value;
+            const qVacArea = row.querySelector('.curr-vac-area').value;
+            const qRemark = row.querySelector('.curr-remark').value;
+
+            if(qQuote || qProp || qFace || qFree || qVacArea || qRemark) {
+                hasEdits = true;
+                submission.push({
+                    "写字楼名称": building['写字楼名称'] || building['Project Name CN'],
+                    "子市场": building['子市场'], "业主": building['业主'] || '', "物业": building['物业'] || '', "总面积": building['总面积'], "物业分类": currentTab,
+                    "上季度租金报价": building['上季度租金报价'] || building['报价'] || '', "上季度物业费": building['上季度物业费'] || building['物业费'] || '',
+                    "上季度表面租金": building['上季度表面租金'] || building['表面租金'] || '', "上季度免租期": building['上季度免租期'] || building['免租期'] || '',
+                    "上季度净有效租金": building['净有效租金'], "上季度空置面积": building['空置面积'], "上季度空置率": building['空置率'],
+                    "本季度租金报价": qQuote, "本季度物业费": qProp, "本季度表面租金": qFace, "本季度免租期": qFree, "本季度空置面积": qVacArea,
+                    "本季度净有效租金": row.querySelector('.net-rent').innerText !== '-' ? row.querySelector('.net-rent').innerText : '',
+                    "租金环比变化": row.querySelector('.rent-change').innerText !== '-' ? row.querySelector('.rent-change').innerText : '',
+                    "空置面积变化": row.querySelector('.area-change').innerText !== '-' ? row.querySelector('.area-change').innerText : '',
+                    "本季度空置率": row.querySelector('.vac-rate').innerText !== '-' ? row.querySelector('.vac-rate').innerText : '',
+                    "备注": qRemark, "填报人": currentUser.name, "填报时间": new Date().toLocaleString()
+                });
+            }
+        });
+
+        if (!hasEdits) { alert("没有填写新数据"); return; }
+        btn.disabled = true; btn.innerText = "上传中..."; msg.innerText = "正在打包数据...";
+
+        try {
+            const pseudoUser = `${currentUser.name}_${currentTab}`;
+            const res = await fetch('/api/submit-update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user: pseudoUser, data: submission }) });
+            const result = await res.json();
+            if (result.status === 'success') { localStorage.removeItem(getDraftKey()); alert(`✅ 提交成功`); location.reload(); } 
+            else { alert("失败: " + result.message); btn.disabled = false; btn.innerText = "重新提交"; }
+        } catch (e) { alert("网络错误"); btn.disabled = false; btn.innerText = "重新提交"; }
+    }
+</script>
+</body>
+</html>
