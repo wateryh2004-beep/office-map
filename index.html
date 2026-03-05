@@ -163,13 +163,14 @@
             const cachedUser = localStorage.getItem('colliers_user');
             const cachedToken = localStorage.getItem('colliers_token'); 
             if (cachedUser && cachedToken) {
+                // 如果有缓存，赋值给 currentUser 并直接调用 loginSuccess
                 currentUser = JSON.parse(cachedUser);
                 loginSuccess(currentUser);
             }
             loadNotice(); 
         };
 
-        // ★ 新增：全屏切换逻辑
+        // 全屏切换逻辑
         function toggleFullscreen() {
             const wall = document.getElementById('msg-wall');
             const icon = document.getElementById('expand-icon');
@@ -178,13 +179,12 @@
             
             if (wall.classList.contains('fullscreen')) {
                 icon.classList.remove('fa-expand');
-                icon.classList.add('fa-compress'); // 变成缩小图标
+                icon.classList.add('fa-compress'); 
             } else {
                 icon.classList.remove('fa-compress');
-                icon.classList.add('fa-expand'); // 变回放大图标
+                icon.classList.add('fa-expand'); 
             }
             
-            // 切换后自动滚动到最新消息
             const list = document.getElementById('msg-list');
             list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
         }
@@ -206,8 +206,12 @@
                 });
                 const data = await res.json();
                 if (data.status === 'success') {
+                    // 登录成功时，先赋值给全局 currentUser！
+                    currentUser = data.data; 
+                    
                     localStorage.setItem('colliers_user', JSON.stringify(data.data));
                     localStorage.setItem('colliers_token', data.token); 
+                    
                     loginSuccess(data.data);
                 } else { msg.innerText = data.message || "失败"; msg.style.display = 'block'; }
             } catch (e) { msg.innerText = "网络错误"; msg.style.display = 'block'; }
@@ -215,6 +219,9 @@
         }
 
         function loginSuccess(user) {
+            // ★ 修复点：为确保万无一失，在这里也强行赋值一次
+            currentUser = user;
+
             document.getElementById('login-overlay').style.display = 'none';
             
             // 顶部显示英文全名 (如果存在)，否则显示邮箱
@@ -259,19 +266,37 @@
         async function postMessage() {
             const input = document.getElementById('new-msg');
             const text = input.value.trim();
-            if (!text || !currentUser) return;
+            if (!text) return; // 移除原先 !currentUser 的严苛拦截，改为下方判断
+            
+            if (!currentUser) {
+                alert("登录状态异常，请刷新页面重新登录");
+                return;
+            }
+
             const btn = document.getElementById('btn-send-msg');
             btn.disabled = true; btn.innerText = "...";
             
-            // ★ 修改：优先使用英文全名发送留言，没有再退化为邮箱
+            // 优先使用英文全名发送留言，没有再退化为邮箱
             const sendName = currentUser.fullName || currentUser.name;
             
             try {
                 const res = await fetch('/api/portal?action=post-message', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user: sendName, text: text })
                 });
-                if ((await res.json()).status === 'success') { input.value = ''; await loadMessages(); }
-            } catch (e) {} finally { btn.disabled = false; btn.innerText = "发送"; }
+                
+                const data = await res.json();
+                if (data.status === 'success') { 
+                    input.value = ''; 
+                    await loadMessages(); 
+                } else {
+                    alert("发送失败: " + (data.message || '未知错误'));
+                }
+            } catch (e) { 
+                console.error("发送留言出错: ", e);
+                alert("网络连接异常，发送失败。");
+            } finally { 
+                btn.disabled = false; btn.innerText = "发送"; 
+            }
         }
 
         function startHeartbeat() {
