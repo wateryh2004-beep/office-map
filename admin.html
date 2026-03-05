@@ -254,7 +254,7 @@
     let currentUser = null;
     const CONFIG = { owner: 'wateryh2004-beep', repo: 'office-map', branch: 'main' };
     let adminCurrentPrefix = '';
-    let allArchiveFiles = []; // 存储所有填报日志
+    let allArchiveFiles = []; 
 
     window.onload = function() {
         const userStr = localStorage.getItem('colliers_user');
@@ -369,7 +369,7 @@
     }
 
     // ==========================================
-    // 模块 3：云盘资源管理器 (增加新建文件夹)
+    // 模块 3：云盘资源管理器
     // ==========================================
     async function loadOSSReports(prefix = '') {
         adminCurrentPrefix = prefix;
@@ -404,7 +404,6 @@
                             <td>-</td><td>-</td><td style="text-align:right; color:#888;">进入文件夹 &gt;</td>
                         </tr>`;
                     } else {
-                        // 过滤掉占位用的 .keep 文件，保持界面干净
                         if(item.shortName === '.keep') return '';
                         
                         const dateStr = item.lastModified ? item.lastModified.split('T')[0] : '-';
@@ -428,7 +427,6 @@
         parts.pop(); loadOSSReports(parts.length > 0 ? parts.join('/') + '/' : '');
     }
 
-    // ★ 新增：新建文件夹 (通过写入 .keep 占位文件实现)
     async function createFolderOSS() {
         const folderName = prompt("请输入新建文件夹的名称：\n(例如：一线城市 或 2026Q1)");
         if (!folderName) return;
@@ -438,7 +436,6 @@
         
         try {
             const fullPath = `${adminCurrentPrefix}${folderName}/`;
-            
             const res = await fetch('/api/oss?action=create-folder', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -458,6 +455,7 @@
         }
     }
 
+    // ★ 修复：已修正 OSSAccessKeyId 到 accessid 并且加入了拦截响应检查
     async function executeOSSUpload() {
         const fileInput = document.getElementById('oss-report-file');
         const files = fileInput.files;
@@ -469,19 +467,39 @@
         try {
             const signRes = await fetch('/api/oss?action=get-signature');
             const signData = await signRes.json();
+            
+            if (signData.status !== 'success') {
+                throw new Error("获取上传签名失败：" + (signData.message || "未知错误"));
+            }
+
             for (let file of files) {
                 const formData = new FormData();
                 formData.append('key', `${adminCurrentPrefix}${file.name}`);
                 formData.append('policy', signData.policy);
-                formData.append('OSSAccessKeyId', signData.OSSAccessKeyId);
+                // ★ 修复核心：必须用 signData.accessid
+                formData.append('OSSAccessKeyId', signData.accessid); 
                 formData.append('signature', signData.signature);
                 formData.append('success_action_status', '200');
                 formData.append('file', file);
-                await fetch(signData.host, { method: 'POST', body: formData });
+                
+                const uploadRes = await fetch(signData.host, { method: 'POST', body: formData });
+                
+                // ★ 强制拦截阿里云可能抛出的错误（如 CORS 未设置等）
+                if (!uploadRes.ok) {
+                    const errText = await uploadRes.text();
+                    console.error("阿里云拒收文件:", errText);
+                    throw new Error("阿里云拒绝接收文件，可能是跨域(CORS)未配置或签名失效。");
+                }
             }
-            alert("✅ 上传成功！"); fileInput.value = ''; loadOSSReports(adminCurrentPrefix);
-        } catch (e) { alert("上传中途出现错误。"); }
-        finally { btn.disabled = false; btn.innerText = "➕ 上传文件到此目录"; }
+            alert("✅ 上传成功！"); 
+            fileInput.value = ''; 
+            loadOSSReports(adminCurrentPrefix); 
+        } catch (e) { 
+            console.error(e);
+            alert(`❌ 上传失败: ${e.message}\n(可按 F12 打开控制台查看具体报错)`); 
+        } finally { 
+            btn.disabled = false; btn.innerText = "➕ 上传文件到此目录"; 
+        }
     }
 
     async function deleteOSSReport(fileName) {
@@ -512,7 +530,7 @@
 
 
     // ==========================================
-    // 模块 4：日志与归档 (加入筛选解析逻辑)
+    // 模块 4：日志与归档
     // ==========================================
     async function loadLogs() {
         try {
@@ -522,7 +540,6 @@
     }
     function downloadLogExcel() { window.open(`/api/download-logs?month=${document.getElementById('log-month').value}`, '_blank'); }
 
-    // ★ 强大的归档解析引擎
     async function loadFiles() {
         try {
             const res = await fetch('/api/get-uploaded-files'); 
@@ -530,11 +547,9 @@
             
             allArchiveFiles = result.data.map(f => {
                 let user = '未知', type = '未知', month = '未知', dateStr = '-';
-                
-                // 解析规则: Iris_GradeA-1770086693753.xlsx
                 const parts = f.name.split('-'); 
                 if(parts.length >= 2) {
-                    const prefixParts = parts[0].split('_'); // 分割 Iris_GradeA
+                    const prefixParts = parts[0].split('_'); 
                     user = prefixParts[0] || '未知';
                     type = prefixParts[1] || '未知';
                     
@@ -548,7 +563,6 @@
                 return { ...f, user, type, month, dateStr };
             });
 
-            // 填充下拉选项
             const users = new Set(allArchiveFiles.map(f => f.user).filter(u => u !== '未知'));
             const months = new Set(allArchiveFiles.map(f => f.month).filter(m => m !== '未知'));
             
@@ -561,7 +575,6 @@
         }
     }
 
-    // 筛选渲染引擎
     window.renderFilteredFiles = function() {
         const fUser = document.getElementById('filter-user').value;
         const fType = document.getElementById('filter-type').value;
