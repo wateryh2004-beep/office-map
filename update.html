@@ -19,7 +19,7 @@
 
         /* 复杂表格样式 */
         .table-wrapper { overflow-x: auto; margin-top: 10px; border: 1px solid #ddd; }
-        .data-table { border-collapse: collapse; font-size: 12px; min-width: 1900px; width: 100%; }
+        .data-table { border-collapse: collapse; font-size: 12px; min-width: 2050px; width: 100%; }
         .data-table th, .data-table td { border: 1px solid #e0e0e0; padding: 8px 4px; text-align: center; vertical-align: middle; }
         
         /* 表头分组颜色 */
@@ -70,13 +70,15 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th colspan="3" class="th-group-base">🏢 基础信息</th>
+                    <th colspan="5" class="th-group-base">🏢 基础信息</th>
                     <th colspan="7" class="th-group-last">📉 上季度数据 (Reference)</th>
                     <th colspan="10" class="th-group-curr">✏️ 本季度更新 (Current)</th>
                 </tr>
                 <tr>
                     <th class="th-base col-fixed" style="width:120px;">写字楼名称</th>
                     <th class="th-base" style="width:80px;">子市场</th>
+                    <th class="th-base" style="width:100px;">业主</th>
+                    <th class="th-base" style="width:100px;">物业</th>
                     <th class="th-base" style="width:70px;">总面积</th>
                     
                     <th class="th-last">报价</th>
@@ -100,7 +102,7 @@
                 </tr>
             </thead>
             <tbody id="table-body">
-                <tr><td colspan="20" style="text-align:center; padding: 30px; color:#888;">正在加载您的数据...</td></tr>
+                <tr><td colspan="22" style="text-align:center; padding: 30px; color:#888;">正在加载您的数据...</td></tr>
             </tbody>
         </table>
     </div>
@@ -145,11 +147,11 @@
                 autoSaveTimer = setInterval(saveDraft, 10000);
 
             } else {
-                document.getElementById('table-body').innerHTML = `<tr><td colspan="20" style="color:red;">${data.message}</td></tr>`;
+                document.getElementById('table-body').innerHTML = `<tr><td colspan="22" style="color:red;">${data.message}</td></tr>`;
             }
         } catch (e) {
             console.error(e);
-            document.getElementById('table-body').innerHTML = `<tr><td colspan="20" style="color:red;">数据加载失败</td></tr>`;
+            document.getElementById('table-body').innerHTML = `<tr><td colspan="22" style="color:red;">数据加载失败</td></tr>`;
         }
     };
 
@@ -199,16 +201,18 @@
             // 基础信息
             const name = item['写字楼名称'] || item['Project Name CN'] || item['name'];
             const district = item['子市场'] || item['SUBMARKET'];
+            const owner = item['业主'] || item['Owner'] || '-'; 
+            const propertyManagement = item['物业'] || item['物业管理'] || '-';
             const totalArea = safeNum(item['总面积'] || item['Total Area']);
 
-            // 上季度数据 (从底表对应字段读取)
-            const lastQuote = safeNum(item['上季度租金报价']);
-            const lastPropFee = safeNum(item['上季度物业费']);
-            const lastFace = safeNum(item['上季度表面租金']);
-            const lastFree = safeNum(item['上季度免租期']);
-            const lastNet = safeNum(item['净有效租金']); // 底表"净有效租金"为上季度
-            const lastVacArea = safeNum(item['空置面积']);
-            const lastVacRate = safeNum(item['空置率']);
+            // ★ 容错匹配：支持多种表头命名，防止因 Excel 名字微调导致数据全空
+            const lastQuote = safeNum(item['上季度租金报价'] || item['租金报价'] || item['报价']);
+            const lastPropFee = safeNum(item['上季度物业费'] || item['物业费']);
+            const lastFace = safeNum(item['上季度表面租金'] || item['表面租金'] || item['表面']);
+            const lastFree = safeNum(item['上季度免租期'] || item['免租期']);
+            const lastNet = safeNum(item['上季度净有效租金'] || item['净有效租金'] || item['净有效']);
+            const lastVacArea = safeNum(item['上季度空置面积'] || item['空置面积']);
+            const lastVacRate = safeNum(item['上季度空置率'] || item['空置率']);
 
             // ★★★ 尝试从草稿箱恢复该行的数据 ★★★
             const d = draftData[originalIndex] || {};
@@ -217,15 +221,17 @@
             <tr data-id="${originalIndex}" data-total-area="${totalArea}" data-last-net="${lastNet}" data-last-vac-area="${lastVacArea}">
                 <td class="col-fixed" style="text-align:left; font-weight:bold;">${name}</td>
                 <td>${district}</td>
+                <td style="color:#004080;">${owner}</td>
+                <td style="color:#004080;">${propertyManagement}</td>
                 <td>${totalArea.toLocaleString()}</td>
                 
                 <td style="color:#666;">${lastQuote || '-'}</td>
                 <td style="color:#666;">${lastPropFee || '-'}</td>
                 <td style="color:#666;">${lastFace || '-'}</td>
                 <td style="color:#666;">${lastFree || '-'}</td>
-                <td style="color:#666;">${lastNet.toFixed(1)}</td>
-                <td style="color:#666;">${lastVacArea.toLocaleString()}</td>
-                <td style="color:#666;">${(lastVacRate*100).toFixed(1)}%</td>
+                <td style="color:#666;">${lastNet > 0 ? lastNet.toFixed(1) : '-'}</td>
+                <td style="color:#666;">${lastVacArea > 0 ? lastVacArea.toLocaleString() : '-'}</td>
+                <td style="color:#666;">${lastVacRate > 0 ? (lastVacRate*100).toFixed(1) + '%' : '-'}</td>
 
                 <td class="input-cell"><input type="number" class="curr-quote" value="${d.qQuote || ''}" oninput="calcRow(${originalIndex})"></td>
                 <td class="input-cell"><input type="number" class="curr-prop" value="${d.qProp || ''}" oninput="calcRow(${originalIndex})"></td>
@@ -246,7 +252,7 @@
         });
 
         if (count === 0) {
-            tbody.innerHTML = `<tr><td colspan="20" style="text-align:center; padding:30px;">您名下暂无该类别 (${currentTab}) 的负责项目</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="22" style="text-align:center; padding:30px;">您名下暂无该类别 (${currentTab}) 的负责项目</td></tr>`;
         } else {
             tbody.innerHTML = html;
             // 渲染完毕后，遍历所有行，触发一次自动计算 (以便草稿恢复后，净有效租金等数字能显示出来)
@@ -335,16 +341,14 @@
 
         if (hasData) {
             localStorage.setItem(getDraftKey(), JSON.stringify(draft));
-            const timeStr = new Date().toTimeString().substring(0, 8); // 获取 HH:MM:SS
+            const timeStr = new Date().toTimeString().substring(0, 8); 
             document.getElementById('draft-status').innerText = `✅ 草稿已自动保存 (${timeStr})`;
         } else {
-            // 如果全清空了，就删除草稿
             localStorage.removeItem(getDraftKey());
             document.getElementById('draft-status').innerText = '';
         }
     };
 
-    // 手动点击暂存按钮
     window.manualSave = function() {
         saveDraft();
         alert(`已为您保存当前 [${currentTab}] 标签页的数据草稿！\n即使关闭网页，下次打开也会恢复。`);
@@ -352,7 +356,6 @@
 
     // 提交数据
     async function submitData() {
-        // 提交前，强行保存一次草稿防丢失
         saveDraft();
 
         const btn = document.querySelector('.btn-submit');
@@ -385,16 +388,19 @@
                 submission.push({
                     "写字楼名称": building['写字楼名称'] || building['Project Name CN'],
                     "子市场": building['子市场'],
+                    "业主": building['业主'] || building['Owner'] || '', 
+                    "物业": building['物业'] || building['物业管理'] || '',
                     "总面积": building['总面积'],
-                    "物业分类": currentTab, // 记录这是什么类型的楼
+                    "物业分类": currentTab, 
 
-                    "上季度租金报价": building['上季度租金报价'],
-                    "上季度物业费": building['上季度物业费'],
-                    "上季度表面租金": building['上季度表面租金'],
-                    "上季度免租期": building['上季度免租期'],
-                    "上季度净有效租金": building['净有效租金'],
-                    "上季度空置面积": building['空置面积'],
-                    "上季度空置率": building['空置率'],
+                    // 兼容多种来源名称
+                    "上季度租金报价": building['上季度租金报价'] || building['租金报价'] || building['报价'],
+                    "上季度物业费": building['上季度物业费'] || building['物业费'],
+                    "上季度表面租金": building['上季度表面租金'] || building['表面租金'] || building['表面'],
+                    "上季度免租期": building['上季度免租期'] || building['免租期'],
+                    "上季度净有效租金": building['上季度净有效租金'] || building['净有效租金'] || building['净有效'],
+                    "上季度空置面积": building['上季度空置面积'] || building['空置面积'],
+                    "上季度空置率": building['上季度空置率'] || building['空置率'],
 
                     "本季度租金报价": qQuote,
                     "本季度物业费": qProp,
@@ -421,10 +427,6 @@
         msg.innerText = "正在打包全量数据并上传...";
 
         try {
-            // ★★★ 核心技巧：通过拼接 user 字段，控制后端生成的文件名 ★★★
-            // 后端原逻辑是：`${user}-${timestamp}.xlsx`
-            // 这里我们传：`Iris_GradeA`
-            // 后端就会生成：`Iris_GradeA-1770086693753.xlsx`，完美符合规范！
             const pseudoUser = `${currentUser.name}_${currentTab}`;
 
             const res = await fetch('/api/submit-update', {
@@ -435,10 +437,8 @@
             const result = await res.json();
             
             if (result.status === 'success') {
-                // 上传成功后，清空该分类的本地草稿
                 localStorage.removeItem(getDraftKey());
                 alert(`✅ 提交成功！\n数据已保存至: ${result.filename}`);
-                // 刷新当前页面，继续填写
                 location.reload(); 
             } else {
                 alert("提交失败: " + result.message);
