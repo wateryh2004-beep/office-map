@@ -13,7 +13,15 @@
         
         .container { max-width: 1000px; margin: 20px auto; padding: 0 20px; flex: 1; width: 100%; box-sizing: border-box; }
 
-        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        /* ★ 新增：专业二选一卡片样式 */
+        .lang-grid { display: flex; justify-content: center; gap: 40px; margin-top: 80px; }
+        .lang-card { background: white; border-radius: 16px; width: 320px; padding: 60px 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.05); cursor: pointer; border: 2px solid transparent; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .lang-card:hover { transform: translateY(-10px); box-shadow: 0 15px 40px rgba(0, 64, 128, 0.15); border-color: #004080; }
+        .lang-icon { font-size: 70px; margin-bottom: 25px; text-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .lang-title { font-size: 22px; font-weight: 700; color: #004080; margin-bottom: 10px; letter-spacing: 1px; }
+        .lang-desc { font-size: 14px; color: #888; }
+
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; margin-top: 15px; }
         .breadcrumb { font-size: 14px; font-weight: 500; color: #555; display: flex; align-items: center; gap: 8px; }
         .breadcrumb span { transition: 0.2s; }
         .breadcrumb span:hover { text-decoration: underline; }
@@ -27,7 +35,6 @@
         td { padding: 15px 20px; border-bottom: 1px solid #f0f0f0; color: #444; }
         tr:hover { background: #fcfcfc; }
         
-        /* ★ 修复下载按钮样式歪斜：强制不换行，变成内联块 */
         .btn-download { display: inline-block; background: #e3f2fd; color: #0277bd; padding: 6px 15px; border-radius: 20px; text-decoration: none; font-size: 12px; font-weight: bold; white-space: nowrap; }
         .btn-download:hover { background: #0277bd; color: white; }
         .status-message { text-align: center; padding: 40px; color: #888; }
@@ -41,42 +48,59 @@
 </div>
 
 <div class="container">
-    <div class="toolbar" style="margin-top: 15px;">
-        <div class="breadcrumb" id="breadcrumb">
-            <span style="cursor:pointer;" onclick="fetchReports('')">🏠 根目录</span>
+    
+    <div class="lang-grid" id="lang-view" style="display: none;">
+        <div class="lang-card" onclick="fetchReports('CN/')">
+            <div class="lang-icon">🇨🇳</div>
+            <div class="lang-title">中文报告库</div>
+            <div class="lang-desc">Chinese Reports Archive</div>
         </div>
-        <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" class="search-input" placeholder="过滤当前目录内容..." onkeyup="filterCurrentView()">
+        <div class="lang-card" onclick="fetchReports('EN/')">
+            <div class="lang-icon">🇬🇧</div>
+            <div class="lang-title">英文报告库</div>
+            <div class="lang-desc">English Reports Archive</div>
         </div>
     </div>
 
-    <div class="table-container" style="display: block;">
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 55%;">名称</th>
-                    <th style="width: 15%;">大小</th>
-                    <th style="width: 15%;">修改日期</th>
-                    <th style="width: 15%; text-align: center;">操作</th>
-                </tr>
-            </thead>
-            <tbody id="report-list">
-                <tr><td colspan="4"><div class="status-message">正在连接云端...</div></td></tr>
-            </tbody>
-        </table>
+    <div id="folder-view" style="display: none;">
+        <div class="toolbar">
+            <div class="breadcrumb" id="breadcrumb">
+                <span style="cursor:pointer;" onclick="fetchReports('')">🏠 根目录</span>
+            </div>
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" class="search-input" placeholder="过滤当前目录内容..." onkeyup="filterCurrentView()">
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 55%;">名称</th>
+                        <th style="width: 15%;">大小</th>
+                        <th style="width: 15%;">修改日期</th>
+                        <th style="width: 15%; text-align: center;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="report-list">
+                    <tr><td colspan="4"><div class="status-message">正在连接云端...</div></td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
+
 </div>
 
 <script>
     let currentPrefix = '';
-    let currentData = []; // 存放当前目录下的文件夹和文件
+    let currentData = [];
 
     window.onload = function() {
         const userStr = localStorage.getItem('colliers_user');
         if (!userStr) { alert("请先登录！"); window.location.href = 'index.html'; return; }
         
-        // 初始加载根目录
+        // 初始加载根目录（渲染二选一界面）
         fetchReports(''); 
         
         if (localStorage.getItem('colliers_user') && localStorage.getItem('colliers_token')) {
@@ -84,29 +108,33 @@
         }
     };
 
-    // 核心：基于 prefix 的动态层级拉取（终极诊断版）
     async function fetchReports(prefix) {
         currentPrefix = prefix || '';
+        const langView = document.getElementById('lang-view');
+        const folderView = document.getElementById('folder-view');
+
+        // ★ 如果在根目录，直接展示语言选择卡片，不发送网络请求
+        if (!currentPrefix) {
+            langView.style.display = 'flex';
+            folderView.style.display = 'none';
+            return;
+        }
+
+        // ★ 如果进入了内层目录，显示表格并拉取数据
+        langView.style.display = 'none';
+        folderView.style.display = 'block';
+        document.getElementById('searchInput').value = ''; // 切换目录时清空搜索框
         document.getElementById('report-list').innerHTML = `<tr><td colspan="4" class="status-message">加载中...</td></tr>`;
         
         try {
-            let url = '/api/oss?action=get-list';
-            if (currentPrefix) {
-                url += `&prefix=${encodeURIComponent(currentPrefix)}`;
-            }
-
+            const url = `/api/oss?action=get-list&prefix=${encodeURIComponent(currentPrefix)}`;
             const res = await fetch(url);
-            
-            // 【核心修改】：先不当作 JSON 解析，直接强行把服务器返回的纯文本扒下来！
             const rawText = await res.text(); 
             
             let result;
             try {
-                // 拿到纯文本后，再尝试将其转换为 JSON
                 result = JSON.parse(rawText);
             } catch (jsonErr) {
-                // 如果转换失败（说明 Vercel 吐了一个 HTML 错误页面出来）
-                // 我们直接把这个 rawText 打印在屏幕上！
                 throw new Error(`
                     <b>HTTP状态码：</b> ${res.status} <br><br>
                     <b>服务器返回的原始内容：</b><br>
@@ -133,10 +161,9 @@
         }
     }
 
-    // 渲染动态面包屑
     function renderBreadcrumb() {
         const bc = document.getElementById('breadcrumb');
-        let html = `<span style="cursor:pointer; color:#004080;" onclick="fetchReports('')">🏠 根目录</span>`;
+        let html = `<span style="cursor:pointer; color:#004080;" onclick="fetchReports('')">🏠 首页门户</span>`;
         if (currentPrefix) {
             const parts = currentPrefix.split('/').filter(p => p);
             let cumulativePath = '';
@@ -148,7 +175,6 @@
         bc.innerHTML = html;
     }
 
-    // 渲染文件夹和文件混合列表
     function renderTable(dataList) {
         const tbody = document.getElementById('report-list');
         
@@ -159,7 +185,6 @@
         }
 
         let html = '';
-        // 如果不在根目录，提供返回上一级的快捷行
         if (currentPrefix) {
             html += `<tr style="cursor:pointer; background:#fdfdfd;" onclick="goUp()">
                         <td colspan="4" style="color:#004080; font-weight:bold;">🔙 返回上一级...</td>
@@ -168,7 +193,6 @@
 
         html += dataList.map(item => {
             if (item.type === 'folder') {
-                // 提取纯粹的文件夹名称
                 const folderName = item.name.replace(currentPrefix, '').replace(/\//g, '');
                 return `
                 <tr style="cursor:pointer;" onclick="fetchReports('${item.name}')">
@@ -176,7 +200,6 @@
                     <td style="color:#aaa;">-</td><td style="color:#aaa;">-</td><td style="text-align: center; color:#aaa;">进入</td>
                 </tr>`;
             } else {
-                // 安全解析时间
                 let dateStr = '-';
                 if (item.lastModified) {
                     const dateObj = new Date(item.lastModified);
@@ -198,15 +221,13 @@
         tbody.innerHTML = html;
     }
 
-    // 计算上一级目录路径
     function goUp() {
         const parts = currentPrefix.split('/').filter(p => p);
-        parts.pop(); // 移除最后一级
+        parts.pop(); 
         const newPrefix = parts.length > 0 ? parts.join('/') + '/' : '';
         fetchReports(newPrefix);
     }
 
-    // 仅在当前层级进行前端搜索过滤
     function filterCurrentView() {
         const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
         const filtered = currentData.filter(item => {
