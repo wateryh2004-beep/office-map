@@ -2,6 +2,18 @@ import { kv } from '@vercel/kv';
 import * as XLSX from 'xlsx';
 import { Octokit } from "@octokit/rest";
 
+// 辅助函数：智能匹配 Excel 表头，防止因为多敲空格或改名导致读取失败
+const getExcelValue = (row, possibleKeys) => {
+    const rowKeys = Object.keys(row);
+    for (let pk of possibleKeys) {
+        const exactMatch = rowKeys.find(rk => rk.trim() === pk);
+        if (exactMatch && row[exactMatch] !== undefined) {
+            return String(row[exactMatch]).trim();
+        }
+    }
+    return '';
+};
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
@@ -26,14 +38,14 @@ export default async function handler(req, res) {
         // 功能 2：修改密码逻辑 (Change Password)
         // ==========================================
         else if (action === 'change-pwd') {
-            const { name, id, oldPwd, newPwd } = req.body;
+            const { name, id, oldPwd, newPwd } = req.body; // 这里的 id 实际上是前端传来的 手机号
             if (!name || !id || !oldPwd || !newPwd) return res.status(400).json({ status: 'fail', message: '参数缺失' });
             if (!hasKV) throw new Error("KV 数据库未连接，无法修改密码");
 
             // 1. 验证用户是否存在于 Excel 白名单
             const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
             const response = await octokit.repos.getContent({
-                owner: 'wateryh2004-beep', // 你的 GitHub 用户名
+                owner: 'wateryh2004-beep', // 您的 GitHub 用户名
                 repo: 'office-map',
                 path: 'users.xlsx',
                 ref: 'main'
@@ -42,16 +54,21 @@ export default async function handler(req, res) {
             const workbook = XLSX.read(buffer, { type: 'buffer' });
             const users = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: "" });
             
-            const matchedUser = users.find(u => 
-                (u.name ? String(u.name).trim() : '') === name && 
-                (u.id ? String(u.id).trim() : '') === id
-            );
-            if (!matchedUser) return res.status(401).json({ status: 'fail', message: '查无此人，请核对姓名和工号' });
+            // 匹配：邮箱(即姓名) + 手机号
+            const matchedUser = users.find(u => {
+                const uEmail = getExcelValue(u, ['邮箱（即姓名）', '邮箱', 'name']);
+                const uPhone = getExcelValue(u, ['手机号', '手机', 'id']);
+                return uEmail === name && uPhone === id;
+            });
+            if (!matchedUser) return res.status(401).json({ status: 'fail', message: '查无此人，请核对邮箱和手机号' });
+
+            // 获取该用户的默认初始密码 (内部号码)
+            const defaultPwd = getExcelValue(matchedUser, ['内部号码（COS+手机后四位）', '内部号码', 'COS']) || '123456';
 
             // 2. 验证旧密码
             const pwdKey = `pwd_${name}_${id}`;
             let currentPwd = await kv.get(pwdKey);
-            if (!currentPwd) currentPwd = '123456'; // 没有记录则为默认密码
+            if (!currentPwd) currentPwd = defaultPwd; 
 
             if (String(currentPwd) !== String(oldPwd)) {
                 return res.status(401).json({ status: 'fail', message: '原密码错误' });
@@ -70,8 +87,11 @@ export default async function handler(req, res) {
         // 功能 3：登录验证逻辑 (Login)
         // ==========================================
         else {
-            const { name, id, password } = req.body; // 注意：前端传来的变成了 password
-            if (!name || !id || !password) return res.status(400).json({ status: 'fail', message: '请填写完整信息' });
+            const { name, id, phone, password } = req.body; 
+            // 兼容处理：前端可能通过 id 或 phone 发送手机号
+            const loginPhone = phone || id; 
+
+            if (!name || !loginPhone || !password) return res.status(400).json({ status: 'fail', message: '请填写完整信息' });
 
             const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
             const response = await octokit.repos.getContent({
@@ -85,24 +105,29 @@ export default async function handler(req, res) {
             const workbook = XLSX.read(buffer, { type: 'buffer' });
             const users = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: "" });
 
+            // 匹配：邮箱(即姓名) + 手机号
             const matchedUser = users.find(u => {
-                const uName = u.name ? String(u.name).trim() : '';
-                const uId = u.id ? String(u.id).trim() : '';
-                return uName === name && uId === id;
+                const uEmail = getExcelValue(u, ['邮箱（即姓名）', '邮箱', 'name']);
+                const uPhone = getExcelValue(u, ['手机号', '手机', 'id']);
+                return uEmail === name && uPhone === loginPhone;
             });
 
             if (matchedUser) {
+                // 获取初始密码
+                const defaultPwd = getExcelValue(matchedUser, ['内部号码（COS+手机后四位）', '内部号码', 'COS']) || '123456';
+                const userRole = getExcelValue(matchedUser, ['Role', 'role']) || 'viewer';
+                
                 // 核对密码逻辑
                 let isValid = false;
                 if (hasKV) {
-                    const pwdKey = `pwd_${name}_${id}`;
+                    const pwdKey = `pwd_${name}_${loginPhone}`;
                     let realPwd = await kv.get(pwdKey);
-                    if (!realPwd) realPwd = '123456'; // 默认初始密码
+                    if (!realPwd) realPwd = defaultPwd; // 如果没有修改过，则比对内部号码
                     
                     if (String(password) === String(realPwd)) isValid = true;
                 } else {
-                    // 如果 KV 没连上，临时退化为默认密码登录
-                    if (password === '123456') isValid = true;
+                    // 如果 KV 没连上，仅比对内部号码
+                    if (String(password) === defaultPwd) isValid = true;
                 }
 
                 if (isValid) {
@@ -112,14 +137,14 @@ export default async function handler(req, res) {
                     }
                     return res.status(200).json({ 
                         status: 'success', 
-                        data: { name: matchedUser.name, role: matchedUser.role || 'viewer' },
+                        data: { name: name, role: userRole },
                         token: sessionToken 
                     });
                 } else {
-                    return res.status(401).json({ status: 'fail', message: '密码错误' });
+                    return res.status(401).json({ status: 'fail', message: '密码(内部号码)错误' });
                 }
             } else {
-                return res.status(401).json({ status: 'fail', message: '账号不存在或姓名工号不匹配' });
+                return res.status(401).json({ status: 'fail', message: '账号不存在或邮箱与手机号不匹配' });
             }
         }
     } catch (e) {
