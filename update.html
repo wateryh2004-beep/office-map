@@ -10,7 +10,6 @@
         h2 { border-bottom: 2px solid #f57c00; padding-bottom: 10px; color: #333; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .back-link { font-size: 14px; color: #004080; text-decoration: none; font-weight: normal; }
         
-        /* ★★★ 新增 Tab 切换栏样式 ★★★ */
         .tab-container { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; border-bottom: 1px solid #e0e0e0; padding-bottom: 15px; }
         .tab-btn { padding: 10px 20px; border: none; background: #f0f2f5; color: #555; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; transition: all 0.2s; }
         .tab-btn:hover { background: #e0e0e0; }
@@ -19,7 +18,7 @@
 
         /* 复杂表格样式 */
         .table-wrapper { overflow-x: auto; margin-top: 10px; border: 1px solid #ddd; }
-        .data-table { border-collapse: collapse; font-size: 12px; min-width: 2050px; width: 100%; }
+        .data-table { border-collapse: collapse; font-size: 12px; min-width: 2000px; width: 100%; }
         .data-table th, .data-table td { border: 1px solid #e0e0e0; padding: 8px 4px; text-align: center; vertical-align: middle; }
         
         /* 表头分组颜色 */
@@ -38,7 +37,6 @@
         .input-cell input:focus { border-color: #f57c00; outline: none; background: #fffde7; box-shadow: 0 0 0 2px rgba(245, 124, 0, 0.2); }
         .calc-cell { background: #f5f5f5; color: #666; font-weight: bold; }
         
-        /* ★★★ 新增 底部操作栏 ★★★ */
         .action-bar { display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-top: 20px; }
         .btn-save { background: white; color: #004080; border: 1px solid #004080; padding: 12px 25px; font-size: 15px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,64,128,0.1); }
         .btn-save:hover { background: #f0f8ff; transform: translateY(-1px); }
@@ -77,8 +75,8 @@
                 <tr>
                     <th class="th-base col-fixed" style="width:120px;">写字楼名称</th>
                     <th class="th-base" style="width:80px;">子市场</th>
-                    <th class="th-base" style="width:100px;">业主</th>
-                    <th class="th-base" style="width:100px;">物业</th>
+                    <th class="th-base" style="width:80px;">业主</th>
+                    <th class="th-base" style="width:80px;">物业</th>
                     <th class="th-base" style="width:70px;">总面积</th>
                     
                     <th class="th-last">报价</th>
@@ -133,7 +131,7 @@
             
             if (data.status === 'success') {
                 myBuildings = data.data;
-                // ★★★ 步骤1：为每一栋楼打上分类标签 ★★★
+                // 为每一栋楼打上分类标签
                 myBuildings.forEach(b => {
                     const g = String(b['写字楼等级'] || b['Grade'] || '').toUpperCase().trim();
                     if (g.includes('BP') || g === 'BUSINESS PARK') b._category = 'BP';
@@ -155,7 +153,6 @@
         }
     };
 
-    // 获取当前用户、当前Tab对应的本地存储 Key
     function getDraftKey() {
         return `colliers_draft_${currentUser.name}_${currentTab}`;
     }
@@ -167,9 +164,8 @@
         return parseFloat(val) || 0;
     };
 
-    // ★★★ Tab 切换逻辑 ★★★
     window.switchTab = function(tabName) {
-        if (currentTab === tabName) return; // 重复点击无效
+        if (currentTab === tabName) return; 
         
         saveDraft(); // 切换前，先把刚才写的存入当前 Tab 的草稿箱
         
@@ -180,49 +176,49 @@
             if(btn.dataset.tab === tabName) btn.classList.add('active');
         });
         
-        document.getElementById('draft-status').innerText = ''; // 清空保存提示
-        renderTable(); // 重新渲染表格
+        document.getElementById('draft-status').innerText = ''; 
+        renderTable(); 
     };
 
     function renderTable() {
         const tbody = document.getElementById('table-body');
-        
-        // 读取当前 Tab 的草稿数据
         const draftData = JSON.parse(localStorage.getItem(getDraftKey()) || '{}');
 
         let html = '';
         let count = 0;
 
         myBuildings.forEach((item, originalIndex) => {
-            // 只渲染属于当前 Tab 的楼宇
             if (item._category !== currentTab) return;
             count++;
 
             // 基础信息
-            const name = item['写字楼名称'] || item['Project Name CN'] || item['name'];
-            const district = item['子市场'] || item['SUBMARKET'];
-            const owner = item['业主'] || item['Owner'] || '-'; 
-            const propertyManagement = item['物业'] || item['物业管理'] || '-';
+            const name = item['写字楼名称'] || item['Project Name CN'] || item['name'] || '-';
+            const district = item['子市场'] || item['SUBMARKET'] || '-';
             const totalArea = safeNum(item['总面积'] || item['Total Area']);
+            
+            // ★ 新增获取业主和物业
+            const owner = item['业主'] || item['Landlord'] || '-';
+            const propertyMan = item['物业'] || item['物业公司'] || item['Property Management'] || '-';
 
-            // ★ 容错匹配：支持多种表头命名，防止因 Excel 名字微调导致数据全空
-            const lastQuote = safeNum(item['上季度租金报价'] || item['租金报价'] || item['报价']);
+            // ★ 增加了容错机制：不管 Excel 里的列名是完整的还是简写的，都能读到
+            const lastQuote = safeNum(item['上季度租金报价'] || item['报价'] || item['租金报价']);
             const lastPropFee = safeNum(item['上季度物业费'] || item['物业费']);
             const lastFace = safeNum(item['上季度表面租金'] || item['表面租金'] || item['表面']);
             const lastFree = safeNum(item['上季度免租期'] || item['免租期']);
-            const lastNet = safeNum(item['上季度净有效租金'] || item['净有效租金'] || item['净有效']);
-            const lastVacArea = safeNum(item['上季度空置面积'] || item['空置面积']);
-            const lastVacRate = safeNum(item['上季度空置率'] || item['空置率']);
+            const lastNet = safeNum(item['净有效租金'] || item['上季度净有效租金']); 
+            const lastVacArea = safeNum(item['空置面积'] || item['上季度空置面积']);
+            const lastVacRate = safeNum(item['空置率'] || item['上季度空置率']);
 
-            // ★★★ 尝试从草稿箱恢复该行的数据 ★★★
+            // 尝试从草稿箱恢复该行的数据
             const d = draftData[originalIndex] || {};
 
+            // ★ 注意由于增加了业主和物业，这里的列数改变了，colspan也要对应改变
             html += `
             <tr data-id="${originalIndex}" data-total-area="${totalArea}" data-last-net="${lastNet}" data-last-vac-area="${lastVacArea}">
                 <td class="col-fixed" style="text-align:left; font-weight:bold;">${name}</td>
                 <td>${district}</td>
-                <td style="color:#004080;">${owner}</td>
-                <td style="color:#004080;">${propertyManagement}</td>
+                <td style="color:#555; font-size:11px;">${owner}</td>
+                <td style="color:#555; font-size:11px;">${propertyMan}</td>
                 <td>${totalArea.toLocaleString()}</td>
                 
                 <td style="color:#666;">${lastQuote || '-'}</td>
@@ -255,7 +251,6 @@
             tbody.innerHTML = `<tr><td colspan="22" style="text-align:center; padding:30px;">您名下暂无该类别 (${currentTab}) 的负责项目</td></tr>`;
         } else {
             tbody.innerHTML = html;
-            // 渲染完毕后，遍历所有行，触发一次自动计算 (以便草稿恢复后，净有效租金等数字能显示出来)
             setTimeout(() => {
                 document.querySelectorAll('#table-body tr[data-id]').forEach(row => {
                     calcRow(row.dataset.id);
@@ -264,7 +259,6 @@
         }
     }
 
-    // 核心：自动计算逻辑
     window.calcRow = function(index) {
         const row = document.querySelector(`tr[data-id="${index}"]`);
         if (!row) return;
@@ -315,7 +309,6 @@
         }
     };
 
-    // ★★★ 保存草稿到本地存储 ★★★
     window.saveDraft = function() {
         const rows = document.querySelectorAll('#table-body tr[data-id]');
         if (rows.length === 0) return;
@@ -332,7 +325,6 @@
             const qVacArea = row.querySelector('.curr-vac-area').value;
             const qRemark = row.querySelector('.curr-remark').value;
 
-            // 只要填了一项，就把这行存草稿
             if(qQuote || qProp || qFace || qFree || qVacArea || qRemark) {
                 hasData = true;
                 draft[id] = { qQuote, qProp, qFace, qFree, qVacArea, qRemark };
@@ -354,7 +346,6 @@
         alert(`已为您保存当前 [${currentTab}] 标签页的数据草稿！\n即使关闭网页，下次打开也会恢复。`);
     };
 
-    // 提交数据
     async function submitData() {
         saveDraft();
 
@@ -388,19 +379,18 @@
                 submission.push({
                     "写字楼名称": building['写字楼名称'] || building['Project Name CN'],
                     "子市场": building['子市场'],
-                    "业主": building['业主'] || building['Owner'] || '', 
-                    "物业": building['物业'] || building['物业管理'] || '',
+                    "业主": building['业主'] || '',
+                    "物业": building['物业'] || '',
                     "总面积": building['总面积'],
-                    "物业分类": currentTab, 
+                    "物业分类": currentTab,
 
-                    // 兼容多种来源名称
-                    "上季度租金报价": building['上季度租金报价'] || building['租金报价'] || building['报价'],
-                    "上季度物业费": building['上季度物业费'] || building['物业费'],
-                    "上季度表面租金": building['上季度表面租金'] || building['表面租金'] || building['表面'],
-                    "上季度免租期": building['上季度免租期'] || building['免租期'],
-                    "上季度净有效租金": building['上季度净有效租金'] || building['净有效租金'] || building['净有效'],
-                    "上季度空置面积": building['上季度空置面积'] || building['空置面积'],
-                    "上季度空置率": building['上季度空置率'] || building['空置率'],
+                    "上季度租金报价": building['上季度租金报价'] || building['报价'] || '',
+                    "上季度物业费": building['上季度物业费'] || building['物业费'] || '',
+                    "上季度表面租金": building['上季度表面租金'] || building['表面租金'] || '',
+                    "上季度免租期": building['上季度免租期'] || building['免租期'] || '',
+                    "上季度净有效租金": building['净有效租金'],
+                    "上季度空置面积": building['空置面积'],
+                    "上季度空置率": building['空置率'],
 
                     "本季度租金报价": qQuote,
                     "本季度物业费": qProp,
