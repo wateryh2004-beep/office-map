@@ -19,25 +19,21 @@
         /* --- 基础布局 --- */
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; overflow: hidden; display: flex; height: 100vh; background: #f0f2f5; }
         
-        /* 登录遮罩层 (保留给直接访问map页面的用户使用) */
+        /* 初始加载全屏遮罩 (性能优化体验升级) */
+        #global-loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f4f6f9; z-index: 100000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #ddd; border-top-color: #004080; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 登录遮罩层 */
         #login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 64, 128, 0.95); z-index: 9999;
             display: flex; align-items: center; justify-content: center;
         }
-        .login-box {
-            background: white; padding: 40px; border-radius: 8px; width: 320px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center;
-        }
+        .login-box { background: white; padding: 40px; border-radius: 8px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
         .login-box h2 { margin: 0 0 20px 0; color: #004080; }
-        .login-input {
-            width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd;
-            border-radius: 4px; box-sizing: border-box; font-size: 14px;
-        }
-        .login-btn {
-            width: 100%; padding: 12px; background: #004080; color: white;
-            border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px;
-        }
+        .login-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        .login-btn { width: 100%; padding: 12px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px; }
         .login-btn:hover { background: #003366; }
         .login-error { color: red; font-size: 12px; margin-top: 10px; display: none; }
 
@@ -69,17 +65,10 @@
         .btn-clear { padding: 0 10px; background: #9e9e9e; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; transition: background 0.2s; }
         .btn-clear:hover { background: #757575; }
         
-        /* 高级筛选样式 */
+        /* 高级筛选样式 (多重筛选) */
         .filter-row { display: flex; gap: 5px; margin-bottom: 8px; }
-        .filter-select, .filter-val-input { 
-            padding: 8px; 
-            border: 1px solid #ddd; 
-            border-radius: 4px; 
-            font-size: 12px; 
-            outline: none; 
-            box-sizing: border-box;
-        }
-        .filter-btn { width: 100%; padding: 8px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .filter-select, .filter-val-input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; outline: none; box-sizing: border-box; }
+        .filter-btn { width: 100%; padding: 8px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; margin-top: 5px;}
         .filter-btn:hover { background: #003366; }
 
         /* 商圈筛选 2列网格 */
@@ -99,7 +88,7 @@
         /* 状态条 */
         #status-bar { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
 
-        /* 右上角悬浮功能区 - 已清理冗余按钮，保留返回门户 */
+        /* 右上角悬浮功能区 */
         #top-right-panel { position: absolute; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: row; gap: 10px; }
         .top-btn { padding: 10px 15px; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-decoration: none; font-weight: bold; font-size: 13px; color: #333; transition: all 0.2s; display: flex; align-items: center; gap: 5px; }
         .top-btn:hover { background: #f9f9f9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
@@ -110,7 +99,6 @@
 
         /* 弹窗样式 */
         .info-window-card { width: 340px; font-family: sans-serif; }
-        .chart-container { height: 160px; width: 100%; margin-top: 10px; }
         .tag-row { display: flex; gap: 5px; margin-top: 6px; }
         .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; }
         
@@ -124,7 +112,13 @@
 </head>
 <body>
 
-    <div id="login-overlay">
+    <div id="global-loader">
+        <div class="spinner"></div>
+        <div style="margin-top:20px; font-size:16px; font-weight:bold; color:#004080;">正在加载地图与数据引擎，请稍候...</div>
+        <div style="margin-top:8px; font-size:12px; color:#888;">优化性能中，首次加载可能需要几秒</div>
+    </div>
+
+    <div id="login-overlay" style="display:none;">
         <div class="login-box">
             <h2>COLLIERS DATA</h2>
             <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据查询系统 v6.5</p>
@@ -162,23 +156,40 @@
             </div>
 
             <div class="control-group">
-                <span class="control-title">高级数值筛选 (Advanced Filter)</span>
+                <span class="control-title">多重数值筛选 (Multi-Filter)</span>
                 <div class="filter-row">
-                    <select id="adv-metric" class="filter-select" style="flex:1;">
+                    <select id="adv-metric-1" class="filter-select" style="flex:1;">
                         <option value="pCurrent">租金 (Rent)</option>
                         <option value="vCurrent">空置率 (Vacancy)</option>
                         <option value="vacArea">空置面积 (Area)</option>
+                        <option value="totalArea">总面积 (Total Area)</option>
                     </select>
-                    <select id="adv-op" class="filter-select" style="width:60px;">
-                        <option value=">">></option>
+                    <select id="adv-op-1" class="filter-select" style="width:50px;">
                         <option value="<"><</option>
+                        <option value=">">></option>
                         <option value="=">=</option>
                         <option value=">=">≥</option>
                         <option value="<=">≤</option>
                     </select>
-                    <input type="text" id="adv-val" class="filter-val-input" style="width:80px;" placeholder="数值/百分比">
+                    <input type="text" id="adv-val-1" class="filter-val-input" style="width:70px;" placeholder="数值">
                 </div>
-                <button class="filter-btn" onclick="executeFilters()">执行筛选 (Apply)</button>
+                <div class="filter-row">
+                    <select id="adv-metric-2" class="filter-select" style="flex:1;">
+                        <option value="vCurrent" selected>空置率 (Vacancy)</option>
+                        <option value="pCurrent">租金 (Rent)</option>
+                        <option value="vacArea">空置面积 (Area)</option>
+                        <option value="totalArea">总面积 (Total Area)</option>
+                    </select>
+                    <select id="adv-op-2" class="filter-select" style="width:50px;">
+                        <option value="<"><</option>
+                        <option value=">">></option>
+                        <option value="=">=</option>
+                        <option value=">=">≥</option>
+                        <option value="<=">≤</option>
+                    </select>
+                    <input type="text" id="adv-val-2" class="filter-val-input" style="width:70px;" placeholder="数值">
+                </div>
+                <button class="filter-btn" onclick="executeFilters()">执行组合筛选 (Apply)</button>
             </div>
 
             <div class="control-group">
@@ -219,6 +230,10 @@
             const user = JSON.parse(cachedUser);
             loginSuccess(user);
             init(); 
+        } else {
+            // 没有登录缓存时，显示登录框，隐藏加载器
+            document.getElementById('global-loader').style.display = 'none';
+            document.getElementById('login-overlay').style.display = 'flex';
         }
     };
 
@@ -240,6 +255,7 @@
             if (data.status === 'success') {
                 localStorage.setItem('colliers_user', JSON.stringify(data.data));
                 loginSuccess(data.data);
+                document.getElementById('global-loader').style.display = 'flex'; // 重新显示加载器
                 init();
             } else { msg.innerText = data.message || "认证失败"; msg.style.display = 'block'; }
         } catch (e) { console.error(e); msg.innerText = "系统连接错误"; msg.style.display = 'block'; }
@@ -250,7 +266,6 @@
         CURRENT_USER.role = user.role;
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('user-display').innerText = `${user.name} (${user.role})`;
-        
         loadVersionInfo();
     }
 
@@ -264,13 +279,11 @@
                 document.getElementById('last-update-time').innerText = data.lastUpdated;
                 document.getElementById('version-tag').style.display = 'block';
             }
-        } catch (e) { console.error("版本获取失败", e); }
+        } catch (e) {}
     }
 
-    async function logSearchAction(keyword, metric, op, val) {
+    async function logSearchAction(keyword, actionDesc) {
         if (CURRENT_USER.role === 'admin') return; 
-        if (!keyword && !val) return; 
-
         try {
             fetch('/api/log-search', {
                 method: 'POST',
@@ -278,21 +291,21 @@
                 body: JSON.stringify({
                     user: CURRENT_USER.name,
                     action: 'search',
-                    details: {
-                        keyword: keyword || '无',
-                        filter: val ? `${metric} ${op} ${val}` : '无'
-                    },
+                    details: { keyword: keyword || '无', filter: actionDesc || '无' },
                     time: new Date().toLocaleString()
                 })
             });
-        } catch (e) { console.error(e); }
+        } catch (e) {}
     }
 
     function clearAllFilters() {
         document.getElementById('search-input').value = '';
-        document.getElementById('adv-metric').value = 'pCurrent';
-        document.getElementById('adv-op').value = '>';
-        document.getElementById('adv-val').value = '';
+        document.getElementById('adv-metric-1').value = 'pCurrent';
+        document.getElementById('adv-op-1').value = '<';
+        document.getElementById('adv-val-1').value = '';
+        document.getElementById('adv-metric-2').value = 'vCurrent';
+        document.getElementById('adv-op-2').value = '<';
+        document.getElementById('adv-val-2').value = '';
         
         const checkAllBox = document.getElementById('check-all');
         if (checkAllBox) {
@@ -304,31 +317,46 @@
 
         isCompareMode = false;
         document.getElementById('reset-map-btn').style.display = 'none';
-
         executeFilters();
         showStatus("🔄 地图及筛选已重置");
     }
 
     // --- 地图与数据核心逻辑 ---
     const DEMO_DATA = [
-        {"写字楼名称": "国贸写字楼1座", "子市场": "CBD", "写字楼等级": "A", "竣工时间": "1990 Q3", "净有效租金": 288.75, "空置率": "13.0%", "LEEDS": "", "经纬度": "116.458363,39.909473", "空置面积": 9400, "总面积": 72308},
-        {"写字楼名称": "国贸写字楼2座", "子市场": "CBD", "写字楼等级": "A", "竣工时间": "1999 Q4", "净有效租金": 307.08, "空置率": "2.0%", "LEEDS": "Gold", "经纬度": "116.460469,39.910838", "空置面积": 1450, "总面积": 72308}
+        {"写字楼名称": "备份数据1", "子市场": "CBD", "写字楼等级": "A", "竣工时间": "1990 Q3", "净有效租金": 288.75, "空置率": "13.0%", "LEEDS": "", "经纬度": "116.458363,39.909473", "空置面积": 9400, "总面积": 72308}
     ];
 
-    let map, infoWindow, chartInstance;
+    let map, infoWindow;
     let rawData = [], markers = [], circleOverlay = null;
     let activeDistricts = new Set(), allDistrictsList = [];
     let currentMode = 'price', isCompareMode = false;
 
+    // ★ 性能优化 1：引入智能键名字典缓存，将 O(N*M) 查找变成 O(1) 查找
+    const keyCache = {};
+    function findVal(item, keys) {
+        const cacheKey = keys.join('|');
+        if (keyCache[cacheKey] && item[keyCache[cacheKey]] !== undefined) {
+            return item[keyCache[cacheKey]];
+        }
+        for (let k of keys) {
+            if (item[k] !== undefined) { keyCache[cacheKey] = k; return item[k]; }
+        }
+        const itemKeys = Object.keys(item);
+        for (let k of keys) {
+            const match = itemKeys.find(ik => ik.trim().toLowerCase() === k.toLowerCase());
+            if (match) { keyCache[cacheKey] = match; return item[match]; }
+        }
+        return null;
+    }
+
     function init() {
         map = new AMap.Map('map-container', { zoom: 11, center: [116.460787, 39.905477], viewMode: '2D', mapStyle: 'amap://styles/whitesmoke' });
         infoWindow = new AMap.InfoWindow({ isCustom: false, offset: new AMap.Pixel(0, -35), autoMove: true }); 
-        infoWindow.on('close', () => { if(chartInstance) { chartInstance.destroy(); chartInstance = null; } });
         loadExcel();
     }
 
     async function loadExcel() {
-        showStatus("📥 正在读取数据...");
+        showStatus("📥 正在高速读取数据...");
         try {
             const response = await fetch('./data.xlsx');
             if (response.ok) {
@@ -343,16 +371,6 @@
             processData(DEMO_DATA); 
             showStatus("⚠️ 使用内置备份数据");
         }
-    }
-
-    function findVal(item, keys) {
-        for (let k of keys) { if (item[k] !== undefined) return item[k]; }
-        const itemKeys = Object.keys(item);
-        for (let k of keys) {
-            const match = itemKeys.find(ik => ik.trim().toLowerCase() === k.toLowerCase());
-            if (match) return item[match];
-        }
-        return null;
     }
 
     function processData(json) {
@@ -402,9 +420,12 @@
             };
         }).filter(d => d.isValid);
 
-        if (rawData.length === 0) { showStatus("❌ 数据为空"); return; }
+        // ★ 隐藏首屏加载动画
+        document.getElementById('global-loader').style.display = 'none';
 
-        showStatus(`✅ 加载 ${rawData.length} 个项目`);
+        if (rawData.length === 0) { showStatus("❌ 数据为空"); return; }
+        
+        showStatus(`✅ 极速加载 ${rawData.length} 个项目`);
         initFilters();
         renderMap(rawData);
         setTimeout(() => document.getElementById('status-bar').style.display = 'none', 3000);
@@ -434,39 +455,55 @@
         executeFilters(); 
     }
 
+    // 辅助提取表单数值
+    function getFilterValue(valStr, metric) {
+        let v = valStr.trim();
+        if (v === '') return null;
+        v = v.replace(/,/g, '');
+        if (metric === 'vCurrent' && v.includes('%')) return parseFloat(v) / 100;
+        return parseFloat(v);
+    }
+
+    function checkCondition(itemVal, op, targetVal) {
+        if (targetVal === null || isNaN(targetVal)) return true;
+        switch (op) {
+            case '>': return itemVal > targetVal;
+            case '<': return itemVal < targetVal;
+            case '=': return Math.abs(itemVal - targetVal) < 0.0001; 
+            case '>=': return itemVal >= targetVal;
+            case '<=': return itemVal <= targetVal;
+        }
+        return true;
+    }
+
     function executeFilters() {
         if(isCompareMode) resetMapState();
 
         const keyword = document.getElementById('search-input').value.trim().toLowerCase();
-        const advMetric = document.getElementById('adv-metric').value;
-        const advOp = document.getElementById('adv-op').value; 
-        let advValRaw = document.getElementById('adv-val').value.trim();
-        let advVal = null;
+        
+        // 读取第一组条件
+        const metric1 = document.getElementById('adv-metric-1').value;
+        const op1 = document.getElementById('adv-op-1').value;
+        const val1 = getFilterValue(document.getElementById('adv-val-1').value, metric1);
+        
+        // 读取第二组条件
+        const metric2 = document.getElementById('adv-metric-2').value;
+        const op2 = document.getElementById('adv-op-2').value;
+        const val2 = getFilterValue(document.getElementById('adv-val-2').value, metric2);
 
-        if (advValRaw !== '') {
-            advValRaw = advValRaw.replace(/,/g, ''); 
-            if (advMetric === 'vCurrent' && advValRaw.includes('%')) {
-                advVal = parseFloat(advValRaw) / 100;
-            } else {
-                advVal = parseFloat(advValRaw);
-            }
-        }
-
-        logSearchAction(keyword, advMetric, advOp, advValRaw);
+        let logDesc = [];
+        if(val1 !== null) logDesc.push(`${metric1}${op1}${val1}`);
+        if(val2 !== null) logDesc.push(`${metric2}${op2}${val2}`);
+        logSearchAction(keyword, logDesc.join(' AND '));
 
         const filtered = rawData.filter(item => {
             if (!activeDistricts.has(item.district)) return false;
             if (keyword && !item.name.toLowerCase().includes(keyword)) return false;
-            if (advVal !== null && !isNaN(advVal)) {
-                const itemVal = item[advMetric];
-                switch (advOp) {
-                    case '>': if (!(itemVal > advVal)) return false; break;
-                    case '<': if (!(itemVal < advVal)) return false; break;
-                    case '=': if (!(Math.abs(itemVal - advVal) < 0.0001)) return false; break; 
-                    case '>=': if (!(itemVal >= advVal)) return false; break;
-                    case '<=': if (!(itemVal <= advVal)) return false; break;
-                }
-            }
+            
+            // ★ 应用双重过滤逻辑 (AND 关系)
+            if (!checkCondition(item[metric1], op1, val1)) return false;
+            if (!checkCondition(item[metric2], op2, val2)) return false;
+            
             return true;
         });
 
@@ -474,7 +511,7 @@
             showStatus("⚠️ 未找到匹配项目");
             renderMap([]); 
         } else {
-            if(keyword || (advVal !== null && !isNaN(advVal))) showStatus(`🔍 筛选出 ${filtered.length} 个项目`);
+            if(keyword || val1 !== null || val2 !== null) showStatus(`🔍 筛选出 ${filtered.length} 个项目`);
             renderMap(filtered);
             if (filtered.length === 1 && keyword) {
                 const target = filtered[0];
@@ -484,10 +521,11 @@
         }
     }
 
+    // ★ 性能优化 2：批量打点渲染引擎
     function renderMap(dataToRender) {
-        map.clearMap();
+        map.clearMap(); // 一键清空老坐标
         if (circleOverlay) { map.remove(circleOverlay); circleOverlay = null; }
-        markers = [];
+        markers = []; // 准备存储新坐标
         
         const prices = dataToRender.map(d => d.pCurrent);
         const maxP = Math.max(...prices, 100); 
@@ -514,10 +552,16 @@
             const zIndex = (currentMode === 'leed' && color === '#eeeeee') ? 50 : 100;
             const textColor = (color==='#fbc02d'||color==='#eeeeee') ? '#555' : 'white';
             const content = `<div style="width:26px; height:26px; background:${color}; border:2px solid white; border-radius:50%; box-shadow:0 3px 6px rgba(0,0,0,0.3); color:${textColor}; display:flex; justify-content:center; align-items:center; font-size:11px; font-weight:bold;">${label}</div>`;
-            const marker = new AMap.Marker({ position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-13, -13), map: map, zIndex: zIndex, extData: item });
+            
+            // 绝不在构造函数里传 map: map 触发单点重绘
+            const marker = new AMap.Marker({ position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-13, -13), zIndex: zIndex, extData: item });
             marker.on('click', () => showDetail(item));
-            markers.push(marker);
+            markers.push(marker); // 存入内存数组
         });
+        
+        // ★ 将几百上千个点一次性挂载给显卡处理，彻底告别卡死！
+        map.add(markers); 
+        
         updateDashboard(dataToRender);
     }
 
@@ -583,15 +627,21 @@
             const itemLngLat = new AMap.LngLat(item.lng, item.lat);
             return targetLngLat.distance(itemLngLat) <= 1500 && item.pCurrent < targetItem.pCurrent;
         });
-        const targetMarker = new AMap.Marker({ position: targetLngLat, content: `<div style="width:34px;height:34px;background:#FFD700;border:3px solid #fff;border-radius:50%;box-shadow:0 0 15px rgba(255,215,0,0.6);display:flex;justify-content:center;align-items:center;font-size:20px;">⭐️</div>`, offset: new AMap.Pixel(-17, -17), map: map, zIndex: 999 });
+        
+        const targetMarker = new AMap.Marker({ position: targetLngLat, content: `<div style="width:34px;height:34px;background:#FFD700;border:3px solid #fff;border-radius:50%;box-shadow:0 0 15px rgba(255,215,0,0.6);display:flex;justify-content:center;align-items:center;font-size:20px;">⭐️</div>`, offset: new AMap.Pixel(-17, -17), zIndex: 999 });
         targetMarker.on('click', () => showDetail(targetItem));
+        markers.push(targetMarker);
+
         competitors.forEach(item => {
             const priceDiff = (targetItem.pCurrent - item.pCurrent).toFixed(1);
             const content = `<div style="min-width:40px;padding:0 5px;height:24px;background:#2ecc71;border:2px solid white;border-radius:12px;box-shadow:0 3px 6px rgba(0,0,0,0.2);color:white;display:flex;justify-content:center;align-items:center;font-size:11px;font-weight:bold;">📉${priceDiff}</div>`;
-            const marker = new AMap.Marker({ position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-20, -12), map: map, zIndex: 500 });
+            const marker = new AMap.Marker({ position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-20, -12), zIndex: 500 });
             marker.on('click', () => showDetail(item));
             markers.push(marker);
         });
+        
+        map.add(markers);
+
         circleOverlay = new AMap.Circle({ center: targetLngLat, radius: 1500, borderWeight: 1, strokeColor: "#007AFF", strokeOpacity: 0.5, strokeWeight: 1, fillOpacity: 0.1, strokeStyle: 'dashed', strokeDasharray: [10, 10], fillColor: '#1791fc', zIndex: 50 });
         circleOverlay.setMap(map);
         map.setFitView(null, false, [50, 50, 50, 420]);
