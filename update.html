@@ -134,11 +134,13 @@
         if (!userStr) { alert("请先登录"); window.location.href = 'index.html'; return; }
         
         currentUser = JSON.parse(userStr);
-        document.getElementById('page-title').innerText = `季度填报 - ${currentUser.name}`;
+        // 优先使用英文名，如果没有再退化使用邮箱
+        const matchName = currentUser.fullName || currentUser.name; 
+        document.getElementById('page-title').innerText = `季度填报 - ${matchName}`;
 
         try {
-            const res = await fetch(`/api/get-my-buildings?user=${encodeURIComponent(currentUser.name)}`);
-            const data = await res.json();
+            // 拿着真实的英文名去后端查数据
+            const res = await fetch(`/api/get-my-buildings?user=${encodeURIComponent(matchName)}`);
             
             if (data.status === 'success') {
                 myBuildings = data.data;
@@ -341,7 +343,7 @@
                     "租金环比变化": row.querySelector('.rent-change').innerText !== '-' ? row.querySelector('.rent-change').innerText : '',
                     "空置面积变化": row.querySelector('.area-change').innerText !== '-' ? row.querySelector('.area-change').innerText : '',
                     "本季度空置率": row.querySelector('.vac-rate').innerText !== '-' ? row.querySelector('.vac-rate').innerText : '',
-                    "备注": qRemark, "填报人": currentUser.name, "填报时间": new Date().toLocaleString()
+                    "备注": qRemark, "填报人": matchName, "填报时间": new Date().toLocaleString()
                 });
             }
         });
@@ -350,7 +352,8 @@
         btn.disabled = true; btn.innerText = "上传中..."; msg.innerText = "正在打包数据...";
 
         try {
-            const pseudoUser = `${currentUser.name}_${currentTab}`;
+            const matchName = currentUser.fullName || currentUser.name;
+            const pseudoUser = `${matchName}_${currentTab}`;
             const res = await fetch('/api/submit-update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user: pseudoUser, data: submission }) });
             const result = await res.json();
             if (result.status === 'success') { localStorage.removeItem(getDraftKey()); alert(`✅ 提交成功`); location.reload(); } 
