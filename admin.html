@@ -184,30 +184,45 @@
 
     <div id="tab-logs" class="tab-content">
         <div class="grid-2">
-            <div class="card">
-                <div class="card-header">
-                    <span>📁 季度数据填报归档</span>
-                    <button class="btn btn-outline" style="padding:2px 8px;" onclick="loadFiles()">刷新</button>
+            
+            <div>
+                <div class="card" style="margin-bottom: 15px;">
+                    <div class="card-header">📋 填报任务分配表 (assignments.xlsx)</div>
+                    <div class="card-body" style="padding: 15px;">
+                        <p style="font-size:12px; color:#666; margin:0 0 10px 0;">管理季度填报系统中，哪个员工负责填写哪栋楼。</p>
+                        <div class="input-group">
+                            <input type="file" id="assign-file" accept=".xlsx" class="input-box" style="padding: 4px;">
+                            <button class="btn btn-primary" id="btn-upload-assign" onclick="directUpload('assign-file', 'assignments.xlsx', 'btn-upload-assign')">上传更新</button>
+                            <button class="btn btn-outline" onclick="downloadRawFile('assignments.xlsx')">⬇️ 下载原件</button>
+                        </div>
+                    </div>
                 </div>
-                <div class="filter-bar">
-                    <select id="filter-user" class="input-box" style="padding:4px; font-size:12px; width:auto;" onchange="renderFilteredFiles()">
-                        <option value="ALL">全部填报人</option>
-                    </select>
-                    <select id="filter-type" class="input-box" style="padding:4px; font-size:12px; width:auto;" onchange="renderFilteredFiles()">
-                        <option value="ALL">全部物业类型</option>
-                        <option value="GradeA">甲级写字楼 (GradeA)</option>
-                        <option value="GradeB">乙级写字楼 (GradeB)</option>
-                        <option value="BP">产业园 (BP)</option>
-                    </select>
-                    <select id="filter-month" class="input-box" style="padding:4px; font-size:12px; width:auto;" onchange="renderFilteredFiles()">
-                        <option value="ALL">全部时间</option>
-                    </select>
-                </div>
-                <div style="height: 400px; overflow-y: auto;">
-                    <table>
-                        <thead><tr><th>解析信息 (人员/分类/时间)</th><th style="text-align:right; width:80px;">操作</th></tr></thead>
-                        <tbody id="file-body"></tbody>
-                    </table>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>📁 季度数据填报归档</span>
+                        <button class="btn btn-outline" style="padding:2px 8px;" onclick="loadFiles()">刷新</button>
+                    </div>
+                    <div class="filter-bar">
+                        <select id="filter-user" class="input-box" style="padding:4px; font-size:12px; width:auto;" onchange="renderFilteredFiles()">
+                            <option value="ALL">全部填报人</option>
+                        </select>
+                        <select id="filter-type" class="input-box" style="padding:4px; font-size:12px; width:auto;" onchange="renderFilteredFiles()">
+                            <option value="ALL">全部物业类型</option>
+                            <option value="GradeA">甲级写字楼 (GradeA)</option>
+                            <option value="GradeB">乙级写字楼 (GradeB)</option>
+                            <option value="BP">产业园 (BP)</option>
+                        </select>
+                        <select id="filter-month" class="input-box" style="padding:4px; font-size:12px; width:auto;" onchange="renderFilteredFiles()">
+                            <option value="ALL">全部时间</option>
+                        </select>
+                    </div>
+                    <div style="height: 250px; overflow-y: auto;">
+                        <table>
+                            <thead><tr><th>解析信息 (人员/分类/时间)</th><th style="text-align:right; width:80px;">操作</th></tr></thead>
+                            <tbody id="file-body"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             
@@ -455,7 +470,6 @@
         }
     }
 
-    // ★ 修复：已修正 OSSAccessKeyId 到 accessid 并且加入了拦截响应检查
     async function executeOSSUpload() {
         const fileInput = document.getElementById('oss-report-file');
         const files = fileInput.files;
@@ -476,7 +490,6 @@
                 const formData = new FormData();
                 formData.append('key', `${adminCurrentPrefix}${file.name}`);
                 formData.append('policy', signData.policy);
-                // ★ 修复核心：必须用 signData.accessid
                 formData.append('OSSAccessKeyId', signData.accessid); 
                 formData.append('signature', signData.signature);
                 formData.append('success_action_status', '200');
@@ -484,7 +497,6 @@
                 
                 const uploadRes = await fetch(signData.host, { method: 'POST', body: formData });
                 
-                // ★ 强制拦截阿里云可能抛出的错误（如 CORS 未设置等）
                 if (!uploadRes.ok) {
                     const errText = await uploadRes.text();
                     console.error("阿里云拒收文件:", errText);
