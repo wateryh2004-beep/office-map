@@ -1,5 +1,5 @@
-const XLSX = require('xlsx');
-const path = require('path');
+import * as XLSX from 'xlsx';
+import { Octokit } from "@octokit/rest";
 
 // 辅助提取器，防止表头空格或轻微改名导致匹配失败
 const getExcelValue = (row, possibleKeys) => {
@@ -13,22 +13,34 @@ const getExcelValue = (row, possibleKeys) => {
     return '';
 };
 
-export default function handler(req, res) {
+// 辅助函数：从 GitHub 拉取文件并解析
+async function fetchExcelFromGithub(octokit, owner, repo, path) {
+    try {
+        const response = await octokit.repos.getContent({ owner, repo, path, ref: 'main' });
+        const buffer = Buffer.from(response.data.content, 'base64');
+        const workbook = XLSX.read(buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        return XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
+    } catch (e) {
+        throw new Error(`无法从 GitHub 读取文件: ${path}`);
+    }
+}
+
+export default async function handler(req, res) {
     try {
         const userName = req.query.user;
         if (!userName) return res.status(400).json({ status: 'fail', message: '未指定用户' });
 
+        const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+        const repoConfig = { owner: 'wateryh2004-beep', repo: 'office-map' }; // 替换为你的库
+
         // ==========================================
-        // 步骤 1：读取新增的“任务分配表” (assignments.xlsx)
+        // 步骤 1：动态读取新增的“任务分配表” (assignments.xlsx)
         // ==========================================
-        const assignPath = path.join(process.cwd(), 'assignments.xlsx');
         let assignData = [];
         try {
-            const assignWorkbook = XLSX.readFile(assignPath);
-            const assignSheet = assignWorkbook.Sheets[assignWorkbook.SheetNames[0]];
-            assignData = XLSX.utils.sheet_to_json(assignSheet, { defval: "" });
+            assignData = await fetchExcelFromGithub(octokit, repoConfig.owner, repoConfig.repo, 'assignments.xlsx');
         } catch (err) {
-            // 如果文件还没上传，友好提示
             return res.status(500).json({ status: 'error', message: '系统找不到分配表 assignments.xlsx，请管理员先上传。' });
         }
 
@@ -37,35 +49,29 @@ export default function handler(req, res) {
         // ==========================================
         const myAssignedBuildings = assignData
             .filter(item => {
-                // 智能匹配负责人列名
-                const owner = getExcelValue(item, ['负责人名称', '负责人', 'User', 'USER']);
+                const owner = getExcelValue(item, ['负责人名称', '负责人', 'User', 'USER', '姓名']);
                 return owner && owner === String(userName).trim();
             })
             .map(item => {
-                // 提取楼宇名称
-                return getExcelValue(item, ['写字楼名称', '名称', 'Project Name CN']);
+                return getExcelValue(item, ['写字楼名称', '名称', 'Project Name CN', '项目名称']);
             })
-            .filter(name => name !== ''); // 过滤掉空名字
+            .filter(name => name !== '');
 
-        // 如果分配表里没有他的名字，直接返回空数组
+        // 如果分配表里没有他的名字，直接返回空数组，前端会显示“无负责项目”
         if (myAssignedBuildings.length === 0) {
             return res.status(200).json({ status: 'success', data: [] });
         }
 
         // ==========================================
-        // 步骤 3：读取“核心底表” (data.xlsx)
+        // 步骤 3：动态读取“核心底表” (data.xlsx)
         // ==========================================
-        const dataPath = path.join(process.cwd(), 'data.xlsx');
-        const workbook = XLSX.readFile(dataPath);
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const allData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+        const allData = await fetchExcelFromGithub(octokit, repoConfig.owner, repoConfig.repo, 'data.xlsx');
 
         // ==========================================
-        // 步骤 4：终极匹配 (拿分配表里的名字去底表里捞数据)
+        // 步骤 4：终极匹配
         // ==========================================
         const myData = allData.filter(item => {
             const buildingName = getExcelValue(item, ['写字楼名称', 'Project Name CN', 'name']);
-            // 判断这栋楼的名字，是否在当前用户的分配名单里
             return myAssignedBuildings.includes(buildingName);
         });
 
@@ -74,6 +80,6 @@ export default function handler(req, res) {
 
     } catch (e) {
         console.error(e);
-        return res.status(500).json({ status: 'error', message: '服务器读取数据失败: ' + e.message });
+        return res.status(500).json({ status: 'error', message: e.message || '服务器内部错误' });
     }
 }
