@@ -123,7 +123,6 @@
 </div>
 
 <script>
-    // --- 这里的 JS 逻辑与之前完全一致，未做任何改动 ---
     let currentUser = null;
     let myBuildings = [];
     let currentTab = 'GradeA'; 
@@ -141,6 +140,7 @@
         try {
             // 拿着真实的英文名去后端查数据
             const res = await fetch(`/api/get-my-buildings?user=${encodeURIComponent(matchName)}`);
+            const data = await res.json();
             
             if (data.status === 'success') {
                 myBuildings = data.data;
@@ -154,10 +154,12 @@
                 renderTable();
                 autoSaveTimer = setInterval(saveDraft, 10000);
             } else {
-                document.getElementById('table-body').innerHTML = `<tr><td colspan="22" style="color:red;">${data.message}</td></tr>`;
+                // 如果后端返回失败，把具体原因打印在表格里
+                document.getElementById('table-body').innerHTML = `<tr><td colspan="22" style="color:red; text-align:center; padding:20px;">数据拉取失败: ${data.message}</td></tr>`;
             }
         } catch (e) {
-            document.getElementById('table-body').innerHTML = `<tr><td colspan="22" style="color:red;">网络加载失败</td></tr>`;
+            console.error("Fetch Error:", e);
+            document.getElementById('table-body').innerHTML = `<tr><td colspan="22" style="color:red; text-align:center; padding:20px;">网络请求崩溃，请检查控制台(F12)</td></tr>`;
         }
     };
 
@@ -240,7 +242,7 @@
         });
 
         if (count === 0) {
-            tbody.innerHTML = `<tr><td colspan="22" style="text-align:center; padding:30px;">无负责项目</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="22" style="text-align:center; padding:30px; font-size:14px; font-weight:bold; color:#003E7E;">当前分类 (${currentTab}) 下没有为您分配需要填报的项目。</td></tr>`;
         } else {
             tbody.innerHTML = html;
             setTimeout(() => { document.querySelectorAll('#table-body tr[data-id]').forEach(row => { calcRow(row.dataset.id); }); }, 0);
@@ -318,6 +320,9 @@
         const submission = [];
         let hasEdits = false;
 
+        // 获取用于文件名和记录的名称
+        const matchName = currentUser.fullName || currentUser.name; 
+
         rows.forEach((row) => {
             const originalIndex = row.dataset.id;
             const building = myBuildings[originalIndex];
@@ -352,7 +357,6 @@
         btn.disabled = true; btn.innerText = "上传中..."; msg.innerText = "正在打包数据...";
 
         try {
-            const matchName = currentUser.fullName || currentUser.name;
             const pseudoUser = `${matchName}_${currentTab}`;
             const res = await fetch('/api/submit-update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user: pseudoUser, data: submission }) });
             const result = await res.json();
