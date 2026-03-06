@@ -7,49 +7,32 @@
     <style>
         /* 核心防御：锁屏高度，弹性布局 */
         body { font-family: "Segoe UI", sans-serif; background: #f4f6f9; margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        
-        /* 顶部导航 */
         .header { background: #003E7E; color: white; padding: 0 20px; height: 44px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
         .header h1 { margin: 0; font-size: 15px; font-weight: normal; }
         .back-link { color: rgba(255,255,255,0.8); text-decoration: none; font-size: 12px; }
         .back-link:hover { color: white; }
-
-        /* 主体容器 */
         .container { flex: 1; display: flex; flex-direction: column; min-height: 0; background: white; margin: 10px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 15px; box-sizing: border-box; }
-        
         .tab-container { display: flex; gap: 8px; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; flex-shrink: 0; }
         .tab-btn { padding: 8px 16px; border: 1px solid transparent; background: #f8f9fa; color: #555; border-radius: 2px; cursor: pointer; font-size: 13px; transition: 0.2s; }
         .tab-btn:hover { background: #e9ecef; }
         .tab-btn.active { background: #003E7E; color: white; font-weight: bold; }
         .draft-status { margin-left: auto; font-size: 12px; color: #2e7d32; }
-
-        /* 表格滚动区 (flex:1 占据剩余空间) */
         .table-wrapper { flex: 1; overflow: auto; min-height: 0; border: 1px solid #e0e0e0; border-radius: 2px; }
         .data-table { border-collapse: separate; border-spacing: 0; font-size: 11px; min-width: 2000px; width: 100%; }
         .data-table th, .data-table td { border-right: 1px solid #eee; border-bottom: 1px solid #eee; padding: 6px 4px; text-align: center; vertical-align: middle; }
-        
-        /* 表头设计 (纯净商务风) */
         .th-group-base { background: #f8f9fa; color: #333; border-bottom: 2px solid #ccc !important; }
         .th-group-last { background: #eef2f5; color: #003E7E; border-bottom: 2px solid #90caf9 !important; }
         .th-group-curr { background: #fff8e1; color: #f57f17; border-bottom: 2px solid #ffe082 !important; }
-        
         .th-base, .th-last, .th-curr { position: sticky; top: 27px; z-index: 10; font-weight: 600; box-shadow: 0 1px 0 #eee; }
         .th-group-base, .th-group-last, .th-group-curr { position: sticky; top: 0; z-index: 11; }
-        
         .th-base { background: #fafafa; color: #555; }
         .th-last { background: #f4f6f8; color: #003E7E; width: 60px; } 
         .th-curr { background: #fffde7; color: #d84315; width: 85px; }
-        
-        /* 冻结首列 */
         .col-fixed { position: sticky; left: 0; z-index: 20; background: #fff; border-right: 2px solid #ddd !important; }
         th.col-fixed { z-index: 30; background: #fafafa; }
-
-        /* 输入框紧凑样式 */
         .input-cell input { width: 100%; padding: 4px 2px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-family: inherit; font-size: 11px; text-align: center; }
         .input-cell input:focus { border-color: #003E7E; outline: none; background: #e3f2fd; }
         .calc-cell { background: #fcfcfc; color: #666; font-weight: bold; }
-        
-        /* 吸底操作栏 */
         .action-bar { flex-shrink: 0; display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
         .btn-save { background: white; color: #333; border: 1px solid #ccc; padding: 8px 20px; font-size: 13px; border-radius: 2px; cursor: pointer; transition: 0.2s; }
         .btn-save:hover { background: #f5f5f5; }
@@ -133,17 +116,26 @@
         if (!userStr) { alert("请先登录"); window.location.href = 'index.html'; return; }
         
         currentUser = JSON.parse(userStr);
-        // 优先使用英文名，如果没有再退化使用邮箱
-        const matchName = currentUser.fullName || currentUser.name; 
-        document.getElementById('page-title').innerText = `季度填报 - ${matchName}`;
+        // 前端统一发送邮箱 (name)，后端会自己去翻译
+        document.getElementById('page-title').innerText = `季度填报 - 载入中...`;
 
         try {
-            // 拿着真实的英文名去后端查数据
-            const res = await fetch(`/api/get-my-buildings?user=${encodeURIComponent(matchName)}`);
+            // ★ 发送邮箱给后端
+            const res = await fetch(`/api/get-my-buildings?user=${encodeURIComponent(currentUser.name)}`);
+            // ★ 修复：补回刚才被你删掉的 res.json() !!!
             const data = await res.json();
             
             if (data.status === 'success') {
+                // 如果有 message 说明找到了人，但是没分配楼
+                if(data.message) {
+                    document.getElementById('page-title').innerText = `季度填报 - 无任务`;
+                    document.getElementById('table-body').innerHTML = `<tr><td colspan="22" style="color:#004080; text-align:center; padding:20px; font-weight:bold;">${data.message}</td></tr>`;
+                    return;
+                }
+
                 myBuildings = data.data;
+                document.getElementById('page-title').innerText = `季度填报 - 任务已加载`;
+
                 myBuildings.forEach(b => {
                     const g = String(b['写字楼等级'] || b['Grade'] || '').toUpperCase().trim();
                     if (g.includes('BP') || g === 'BUSINESS PARK') b._category = 'BP';
@@ -154,12 +146,10 @@
                 renderTable();
                 autoSaveTimer = setInterval(saveDraft, 10000);
             } else {
-                // 如果后端返回失败，把具体原因打印在表格里
-                document.getElementById('table-body').innerHTML = `<tr><td colspan="22" style="color:red; text-align:center; padding:20px;">数据拉取失败: ${data.message}</td></tr>`;
+                document.getElementById('table-body').innerHTML = `<tr><td colspan="22" style="color:red; text-align:center;">读取失败: ${data.message}</td></tr>`;
             }
         } catch (e) {
-            console.error("Fetch Error:", e);
-            document.getElementById('table-body').innerHTML = `<tr><td colspan="22" style="color:red; text-align:center; padding:20px;">网络请求崩溃，请检查控制台(F12)</td></tr>`;
+            document.getElementById('table-body').innerHTML = `<tr><td colspan="22" style="color:red; text-align:center;">网络加载异常，或者后端报错了: ${e.message}</td></tr>`;
         }
     };
 
@@ -242,7 +232,7 @@
         });
 
         if (count === 0) {
-            tbody.innerHTML = `<tr><td colspan="22" style="text-align:center; padding:30px; font-size:14px; font-weight:bold; color:#003E7E;">当前分类 (${currentTab}) 下没有为您分配需要填报的项目。</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="22" style="text-align:center; padding:30px; font-size:14px; font-weight:bold; color:#003E7E;">当前分类 (${currentTab}) 下没有需要填报的项目。</td></tr>`;
         } else {
             tbody.innerHTML = html;
             setTimeout(() => { document.querySelectorAll('#table-body tr[data-id]').forEach(row => { calcRow(row.dataset.id); }); }, 0);
@@ -320,7 +310,6 @@
         const submission = [];
         let hasEdits = false;
 
-        // 获取用于文件名和记录的名称
         const matchName = currentUser.fullName || currentUser.name; 
 
         rows.forEach((row) => {
