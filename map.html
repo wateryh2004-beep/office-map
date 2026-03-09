@@ -18,17 +18,11 @@
         /* --- 基础布局 --- */
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; overflow: hidden; display: flex; height: 100vh; background: #f0f2f5; }
         
-        /* 初始加载全屏遮罩 (性能优化体验升级) */
         #global-loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f4f6f9; z-index: 100000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .spinner { width: 50px; height: 50px; border: 5px solid #ddd; border-top-color: #004080; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* 登录遮罩层 */
-        #login-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 64, 128, 0.95); z-index: 9999;
-            display: flex; align-items: center; justify-content: center;
-        }
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 64, 128, 0.95); z-index: 9999; display: flex; align-items: center; justify-content: center; }
         .login-box { background: white; padding: 40px; border-radius: 8px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
         .login-box h2 { margin: 0 0 20px 0; color: #004080; }
         .login-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
@@ -36,65 +30,62 @@
         .login-btn:hover { background: #003366; }
         .login-error { color: red; font-size: 12px; margin-top: 10px; display: none; }
 
-        /* 左侧侧边栏 */
-        #sidebar { width: 350px; background: #fff; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; z-index: 200; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
-        .brand-header { padding: 20px; background: #004080; color: white; }
-        .brand-header h2 { margin: 0; font-size: 20px; font-weight: 700; }
-        .brand-header p { margin: 5px 0 0; opacity: 0.8; font-size: 12px; }
+        /* 左侧侧边栏 (优化紧凑度) */
+        #sidebar { width: 320px; background: #fff; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; z-index: 200; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
+        .brand-header { padding: 15px; background: #004080; color: white; }
+        .brand-header h2 { margin: 0; font-size: 18px; font-weight: 700; }
+        .brand-header p { margin: 4px 0 0; opacity: 0.8; font-size: 11px; }
         
-        .user-info-bar { background: #e3f2fd; padding: 10px 20px; font-size: 12px; color: #004080; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #bbdefb; }
+        .user-info-bar { background: #e3f2fd; padding: 8px 15px; font-size: 11px; color: #004080; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #bbdefb; }
         .logout-link { cursor: pointer; text-decoration: underline; }
 
-        /* 统计卡片 (2x2 布局) */
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; }
-        .stat-card { background: #fff; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #eee; }
-        .stat-value { font-size: 16px; font-weight: 800; color: #004080; margin-bottom: 2px; }
-        .stat-label { font-size: 11px; color: #888; }
+        /* 统计卡片 (优化紧凑度) */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; background: #f8f9fa; border-bottom: 1px solid #eee; }
+        .stat-card { background: #fff; padding: 8px; border-radius: 4px; text-align: center; border: 1px solid #eee; }
+        .stat-value { font-size: 15px; font-weight: 800; color: #004080; margin-bottom: 2px; }
+        .stat-label { font-size: 10px; color: #888; }
         
-        /* 中间滚动控制区 */
-        .controls { flex: 1; padding: 15px; overflow-y: auto; overflow-x: hidden; }
-        .control-group { margin-bottom: 20px; }
-        .control-title { font-weight: bold; font-size: 13px; margin-bottom: 8px; display: block; color: #333; }
+        /* 中间控制区 (优化紧凑度) */
+        .controls { flex: 1; padding: 12px; overflow-y: auto; overflow-x: hidden; }
+        .control-group { margin-bottom: 15px; }
+        .control-title { font-weight: bold; font-size: 12px; margin-bottom: 6px; display: block; color: #333; }
         
-        /* 搜索框及重置按钮 */
-        .search-box { display: flex; gap: 5px; margin-bottom: 20px; }
-        #search-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; outline: none; box-sizing: border-box; }
-        #search-btn { padding: 0 12px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        /* 搜索框 */
+        .search-box { display: flex; gap: 5px; margin-bottom: 15px; }
+        #search-input { flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; outline: none; box-sizing: border-box; }
+        #search-btn { padding: 0 10px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
         #search-btn:hover { background: #003366; }
-        .btn-clear { padding: 0 10px; background: #9e9e9e; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; transition: background 0.2s; }
+        .btn-clear { padding: 0 8px; background: #9e9e9e; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; transition: background 0.2s; }
         .btn-clear:hover { background: #757575; }
         
-        /* 高级筛选样式 (多重筛选) */
-        .filter-row { display: flex; gap: 5px; margin-bottom: 8px; }
-        .filter-select, .filter-val-input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; outline: none; box-sizing: border-box; }
-        .filter-btn { width: 100%; padding: 8px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; margin-top: 5px;}
+        /* 高级筛选样式 */
+        .filter-row { display: flex; gap: 5px; margin-bottom: 6px; }
+        .filter-select, .filter-val-input { padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; outline: none; box-sizing: border-box; }
+        .filter-btn { width: 100%; padding: 8px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; margin-top: 4px;}
         .filter-btn:hover { background: #003366; }
 
-        /* 商圈筛选 2列网格 */
-        .checkbox-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
-        .checkbox-group label { display: flex; align-items: center; font-size: 12px; color: #555; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .checkbox-group input { margin-right: 6px; }
-        .check-all-label { grid-column: span 2; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 0 !important; font-weight: bold; color: #004080 !important; font-size: 13px !important; }
+        /* 商圈筛选 */
+        .checkbox-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; }
+        .checkbox-group label { display: flex; align-items: center; font-size: 11px; color: #555; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .checkbox-group input { margin-right: 4px; }
+        .check-all-label { grid-column: span 2; border-bottom: 1px solid #eee; padding-bottom: 6px; margin-bottom: 0 !important; font-weight: bold; color: #004080 !important; font-size: 12px !important; }
 
-        /* 左下角 2x2 网格布局 */
-        .actions { padding: 15px; border-top: 1px solid #eee; background: white; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .btn-mode { width: 100%; padding: 10px 5px; border: 1px solid #e0e0e0; background: white; color: #555; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 12px; transition: all 0.2s; text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px; box-sizing: border-box; }
+        /* 左下角网格 */
+        .actions { padding: 12px; border-top: 1px solid #eee; background: white; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .btn-mode { width: 100%; padding: 8px 4px; border: 1px solid #e0e0e0; background: white; color: #555; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 11px; transition: all 0.2s; text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px; box-sizing: border-box; }
         .btn-mode.active { background: #e6f0fa; color: #004080; border-color: #004080; }
         
         /* 地图区 */
         #map-container { flex: 1; position: relative; }
         
-        /* 状态条 */
-        #status-bar { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        #status-bar { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(0,0,0,0.8); color: white; padding: 8px 15px; border-radius: 30px; font-size: 12px; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
 
-        /* 右上角悬浮功能区 */
         #top-right-panel { position: absolute; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: row; gap: 10px; }
-        .top-btn { padding: 10px 15px; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-decoration: none; font-weight: bold; font-size: 13px; color: #333; transition: all 0.2s; display: flex; align-items: center; gap: 5px; }
+        .top-btn { padding: 8px 12px; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-decoration: none; font-weight: bold; font-size: 12px; color: #333; transition: all 0.2s; display: flex; align-items: center; gap: 4px; }
         .top-btn:hover { background: #f9f9f9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         
-        /* 右下角版本号 */
-        #version-tag { position: absolute; bottom: 20px; right: 20px; background: rgba(0, 64, 128, 0.9); color: white; padding: 8px 15px; border-radius: 4px; font-size: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 999; display: none; pointer-events: none; }
-        #version-tag strong { color: #f57c00; margin-left: 5px; }
+        #version-tag { position: absolute; bottom: 20px; right: 20px; background: rgba(0, 64, 128, 0.9); color: white; padding: 6px 12px; border-radius: 4px; font-size: 11px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 999; display: none; pointer-events: none; }
+        #version-tag strong { color: #f57c00; margin-left: 4px; }
 
         /* 弹窗样式 */
         .info-window-card { width: 340px; font-family: sans-serif; }
@@ -106,7 +97,7 @@
         .badge-silver { background: #9e9e9e; color: #333; } .badge-none { background: #eeeeee; color: #999; } 
 
         .btn-plan-b { width: 100%; margin-top: 10px; padding: 8px; background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%); border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 4px 10px rgba(56, 239, 125, 0.3); transition: transform 0.1s; }
-        .btn-reset { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: white; padding: 10px 20px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-weight: bold; cursor: pointer; z-index: 999; display: none; border: 1px solid #ccc; }
+        .btn-reset { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: white; padding: 10px 20px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-weight: bold; cursor: pointer; z-index: 999; display: none; border: 1px solid #ccc; font-size: 12px;}
     </style>
 </head>
 <body>
@@ -142,35 +133,37 @@
 
         <div class="stat-grid">
             <div class="stat-card"><div class="stat-value" id="stat-count">-</div><div class="stat-label">视野项目</div></div>
-            <div class="stat-card"><div class="stat-value" id="stat-price">-</div><div class="stat-label">平均租金</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-price">-</div><div class="stat-label">加权平均租金</div></div>
             <div class="stat-card"><div class="stat-value" id="stat-leed">-</div><div class="stat-label">LEED认证</div></div>
-            <div class="stat-card"><div class="stat-value" id="stat-vacancy" style="color:#d32f2f">-</div><div class="stat-label">平均空置率</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-vacancy" style="color:#d32f2f">-</div><div class="stat-label">整体空置率</div></div>
         </div>
         
         <div class="controls">
             <div class="search-box">
                 <input type="text" id="search-input" placeholder="🔍 搜项目名..." onkeydown="if(event.key==='Enter') executeFilters()">
                 <button id="search-btn" onclick="executeFilters()">查询</button>
-                <button class="btn-clear" onclick="clearAllFilters()" title="清除筛选条件">🔄 重置</button>
+                <button class="btn-clear" onclick="clearAllFilters()" title="重置">🔄</button>
             </div>
 
             <div class="control-group">
-                <span class="control-title">多重数值筛选 (Multi-Filter)</span>
+                <span class="control-title">多重筛选 (Multi-Filter)</span>
                 <div class="filter-row">
                     <select id="adv-metric-1" class="filter-select" style="flex:1;">
                         <option value="pCurrent">租金 (Rent)</option>
                         <option value="vCurrent">空置率 (Vacancy)</option>
                         <option value="vacArea">空置面积 (Area)</option>
                         <option value="totalArea">总面积 (Total Area)</option>
+                        <option value="grade" style="color:#004080;font-weight:bold;">🏆 楼宇等级 (PA/A/B)</option>
+                        <option value="leed" style="color:#004080;font-weight:bold;">🌿 LEED (金/银/铂金)</option>
                     </select>
-                    <select id="adv-op-1" class="filter-select" style="width:50px;">
+                    <select id="adv-op-1" class="filter-select" style="width:45px;">
+                        <option value="=">=</option>
                         <option value="<"><</option>
                         <option value=">">></option>
-                        <option value="=">=</option>
                         <option value=">=">≥</option>
                         <option value="<=">≤</option>
                     </select>
-                    <input type="text" id="adv-val-1" class="filter-val-input" style="width:70px;" placeholder="数值">
+                    <input type="text" id="adv-val-1" class="filter-val-input" style="width:75px;" placeholder="数值/内容">
                 </div>
                 <div class="filter-row">
                     <select id="adv-metric-2" class="filter-select" style="flex:1;">
@@ -178,17 +171,19 @@
                         <option value="pCurrent">租金 (Rent)</option>
                         <option value="vacArea">空置面积 (Area)</option>
                         <option value="totalArea">总面积 (Total Area)</option>
+                        <option value="grade" style="color:#004080;font-weight:bold;">🏆 楼宇等级 (PA/A/B)</option>
+                        <option value="leed" style="color:#004080;font-weight:bold;">🌿 LEED (金/银/铂金)</option>
                     </select>
-                    <select id="adv-op-2" class="filter-select" style="width:50px;">
+                    <select id="adv-op-2" class="filter-select" style="width:45px;">
                         <option value="<"><</option>
                         <option value=">">></option>
                         <option value="=">=</option>
                         <option value=">=">≥</option>
                         <option value="<=">≤</option>
                     </select>
-                    <input type="text" id="adv-val-2" class="filter-val-input" style="width:70px;" placeholder="数值">
+                    <input type="text" id="adv-val-2" class="filter-val-input" style="width:75px;" placeholder="数值/内容">
                 </div>
-                <button class="filter-btn" onclick="executeFilters()">执行组合筛选 (Apply)</button>
+                <button class="filter-btn" onclick="executeFilters()">执行组合筛选</button>
             </div>
 
             <div class="control-group">
@@ -298,7 +293,7 @@
     function clearAllFilters() {
         document.getElementById('search-input').value = '';
         document.getElementById('adv-metric-1').value = 'pCurrent';
-        document.getElementById('adv-op-1').value = '<';
+        document.getElementById('adv-op-1').value = '=';
         document.getElementById('adv-val-1').value = '';
         document.getElementById('adv-metric-2').value = 'vCurrent';
         document.getElementById('adv-op-2').value = '<';
@@ -350,7 +345,6 @@
         loadExcel();
     }
 
-    // ★ 修改点：接入新 API，取代读取静态文件的逻辑
     async function loadExcel() {
         showStatus("📥 正在从云端拉取最新数据...");
         try {
@@ -398,11 +392,11 @@
             let leed = "无";
             if (lRaw && lRaw !== 'N' && lRaw !== 'No' && lRaw !== '-') {
                 let lLower = lRaw.toLowerCase();
-                if (lLower.includes('platinum') || lLower.includes('铂金')) leed = 'LEED 铂金级';
-                else if (lLower.includes('gold') || lLower.includes('金')) leed = 'LEED 金级';
-                else if (lLower.includes('silver') || lLower.includes('银')) leed = 'LEED 银级';
-                else if (lLower.includes('cert') || lLower.includes('认证')) leed = 'LEED 认证级';
-                else leed = lRaw.toUpperCase().includes('LEED') ? lRaw : `LEED ${lRaw}`;
+                if (lLower.includes('platinum') || lLower.includes('铂金')) leed = '铂金级';
+                else if (lLower.includes('gold') || lLower.includes('金')) leed = '金级';
+                else if (lLower.includes('silver') || lLower.includes('银')) leed = '银级';
+                else if (lLower.includes('cert') || lLower.includes('认证')) leed = '认证级';
+                else leed = lRaw.toUpperCase().includes('LEED') ? lRaw : `${lRaw}`;
             }
 
             return {
@@ -447,22 +441,35 @@
         executeFilters(); 
     }
 
-    function getFilterValue(valStr, metric) {
-        let v = valStr.trim();
-        if (v === '') return null;
-        v = v.replace(/,/g, '');
-        if (metric === 'vCurrent' && v.includes('%')) return parseFloat(v) / 100;
-        return parseFloat(v);
-    }
+    // ★ 核心扩充：支持非数值判定
+    function checkCondition(itemVal, metric, op, targetVal) {
+        // 1. 如果输入框为空，直接放行该条件
+        if (targetVal === '' || targetVal === null) return true;
 
-    function checkCondition(itemVal, op, targetVal) {
-        if (targetVal === null || isNaN(targetVal)) return true;
+        // 2. 如果是文本类型字段 (grade 或 leed)
+        if (metric === 'grade' || metric === 'leed') {
+            const valStr = String(itemVal).toLowerCase();
+            const targetStr = String(targetVal).trim().toLowerCase();
+            // 文本类型只认包含逻辑（忽略下拉框选的 >, < 号）
+            return valStr.includes(targetStr);
+        }
+
+        // 3. 如果是数值类型字段，先将目标值转为数字
+        let tNum = targetVal;
+        if (typeof targetVal === 'string') {
+            tNum = targetVal.replace(/,/g, '');
+            if (metric === 'vCurrent' && tNum.includes('%')) tNum = parseFloat(tNum) / 100;
+            else tNum = parseFloat(tNum);
+        }
+        if (isNaN(tNum)) return true; // 如果填了非数字，忽略该条件
+
+        // 执行数值判断
         switch (op) {
-            case '>': return itemVal > targetVal;
-            case '<': return itemVal < targetVal;
-            case '=': return Math.abs(itemVal - targetVal) < 0.0001; 
-            case '>=': return itemVal >= targetVal;
-            case '<=': return itemVal <= targetVal;
+            case '>': return itemVal > tNum;
+            case '<': return itemVal < tNum;
+            case '=': return Math.abs(itemVal - tNum) < 0.0001; 
+            case '>=': return itemVal >= tNum;
+            case '<=': return itemVal <= tNum;
         }
         return true;
     }
@@ -474,23 +481,24 @@
         
         const metric1 = document.getElementById('adv-metric-1').value;
         const op1 = document.getElementById('adv-op-1').value;
-        const val1 = getFilterValue(document.getElementById('adv-val-1').value, metric1);
+        const val1 = document.getElementById('adv-val-1').value.trim();
         
         const metric2 = document.getElementById('adv-metric-2').value;
         const op2 = document.getElementById('adv-op-2').value;
-        const val2 = getFilterValue(document.getElementById('adv-val-2').value, metric2);
+        const val2 = document.getElementById('adv-val-2').value.trim();
 
         let logDesc = [];
-        if(val1 !== null) logDesc.push(`${metric1}${op1}${val1}`);
-        if(val2 !== null) logDesc.push(`${metric2}${op2}${val2}`);
+        if(val1 !== '') logDesc.push(`${metric1}${op1}${val1}`);
+        if(val2 !== '') logDesc.push(`${metric2}${op2}${val2}`);
         logSearchAction(keyword, logDesc.join(' AND '));
 
         const filtered = rawData.filter(item => {
             if (!activeDistricts.has(item.district)) return false;
             if (keyword && !item.name.toLowerCase().includes(keyword)) return false;
             
-            if (!checkCondition(item[metric1], op1, val1)) return false;
-            if (!checkCondition(item[metric2], op2, val2)) return false;
+            // 调用升级后的超级检查器
+            if (!checkCondition(item[metric1], metric1, op1, val1)) return false;
+            if (!checkCondition(item[metric2], metric2, op2, val2)) return false;
             
             return true;
         });
@@ -499,7 +507,7 @@
             showStatus("⚠️ 未找到匹配项目");
             renderMap([]); 
         } else {
-            if(keyword || val1 !== null || val2 !== null) showStatus(`🔍 筛选出 ${filtered.length} 个项目`);
+            if(keyword || val1 !== '' || val2 !== '') showStatus(`🔍 筛选出 ${filtered.length} 个项目`);
             renderMap(filtered);
             if (filtered.length === 1 && keyword) {
                 const target = filtered[0];
@@ -562,6 +570,8 @@
         if (lCheck.includes('铂金') || lCheck.includes('platinum')) leedClass = 'badge-platinum';
         else if (lCheck.includes('金') || lCheck.includes('gold')) leedClass = 'badge-gold';
         else if (item.leed === '无') leedClass = 'badge-none';
+        
+        const leedDisplay = item.leed !== '无' ? `LEED ${item.leed}` : '无 LEED 认证';
 
         const content = `
             <div class="info-window-card">
@@ -569,7 +579,7 @@
                     <h3 style="margin:0;font-size:18px;">${item.name}</h3>
                     <div style="color:#666;font-size:12px;margin-top:4px;">${item.district} | ${item.built_year}</div>
                     <div class="tag-row">
-                        <span class="badge ${leedClass}">${item.leed}</span>
+                        <span class="badge ${leedClass}">${leedDisplay}</span>
                     </div>
                 </div>
                 <div style="padding:15px; border-bottom:1px solid #eee;">
@@ -640,22 +650,39 @@
         executeFilters();
     }
 
+    // ★ 核心修改：加权平均计算引擎
     function updateDashboard(data) {
         const count = data.length;
         document.getElementById('stat-count').innerText = count;
 
-        const validRentData = data.filter(d => d.pCurrent > 0);
-        const avgRent = validRentData.length ? 
-            (validRentData.reduce((a,b)=>a+b.pCurrent,0) / validRentData.length).toFixed(2) : '-';
-        document.getElementById('stat-price').innerText = avgRent;
+        let totalValidRentArea = 0;
+        let rentWeightSum = 0;
         
-        const validVacData = data.filter(d => d.vCurrent > 0);
-        const avgVac = validVacData.length ? 
-            ((validVacData.reduce((a,b)=>a+b.vCurrent,0) / validVacData.length) * 100).toFixed(1) : '-';
-        document.getElementById('stat-vacancy').innerText = avgVac + '%';
+        let totalValidVacArea = 0;
+        let totalOverallArea = 0;
+
+        data.forEach(d => {
+            const tArea = d.totalArea || 0;
+            // 计算加权平均租金（仅统计有租金和总面积的数据）
+            if (d.pCurrent > 0 && tArea > 0) {
+                totalValidRentArea += tArea;
+                rentWeightSum += (d.pCurrent * tArea);
+            }
+            // 计算整体空置率（统计所有有总面积的数据）
+            if (tArea > 0) {
+                totalOverallArea += tArea;
+                totalValidVacArea += (d.vacArea || 0);
+            }
+        });
+
+        const weightedAvgRent = totalValidRentArea > 0 ? (rentWeightSum / totalValidRentArea).toFixed(1) : '-';
+        document.getElementById('stat-price').innerText = weightedAvgRent;
+        
+        const overallVacRate = totalOverallArea > 0 ? ((totalValidVacArea / totalOverallArea) * 100).toFixed(1) : '-';
+        document.getElementById('stat-vacancy').innerText = overallVacRate + '%';
         
         const leedCount = data.filter(d => d.leed !== '无').length;
-        document.getElementById('stat-leed').innerText = leedCount + '个';
+        document.getElementById('stat-leed').innerText = leedCount + ' 个';
     }
 
     function showStatus(msg) {
