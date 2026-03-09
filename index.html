@@ -38,7 +38,7 @@
         .card-title { font-size: 14px; font-weight: 600; }
         .nav-card.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; background: #fafafa; }
 
-        /* 留言墙 */
+        /* 留言墙升级 (加入全屏样式) */
         .msg-wall { flex: 1; min-height: 0; width: 100%; max-width: 850px; background: white; border-radius: 4px; border: 1px solid #e0e0e0; display: flex; flex-direction: column; overflow: hidden; transition: all 0.3s ease; }
 
         /* 激活全屏时的样式 */
@@ -59,12 +59,12 @@
         .msg-input-group input:focus { border-color: #003E7E; }
         .msg-input-group button { background: #003E7E; color: white; border: none; padding: 0 25px; border-radius: 0 2px 2px 0; cursor: pointer; font-size: 13px; font-weight: bold; }
 
-        /* ★ 核心修复：吸底公告栏，取消跑马灯，改为多行自适应堆叠 */
+        /* ★ 修改点：吸底公告栏彻底改为多行自适应布局 */
         .notice-bar { background: #fffde7; color: #f57f17; padding: 12px 20px; display: flex; align-items: flex-start; border-top: 1px solid #fff59d; flex-shrink: 0; font-size: 13px; }
-        .notice-title { font-weight: bold; margin-right: 15px; white-space: nowrap; margin-top: 2px;}
-        .notice-content { flex: 1; display: flex; flex-direction: column; gap: 6px; color: #d32f2f; font-weight: 500;}
-        .notice-item-line { word-break: break-word; line-height: 1.4; }
-        #admin-settings-btn { display: none; margin-left: 15px; background: #003E7E; color: white; border: none; padding: 6px 12px; border-radius: 2px; cursor: pointer; font-size: 12px; margin-top: -2px;}
+        .notice-title { font-weight: bold; margin-right: 15px; white-space: nowrap; margin-top: 2px; }
+        .notice-content { flex: 1; display: flex; flex-direction: column; gap: 6px; color: #d32f2f; font-weight: 500; }
+        .notice-line { line-height: 1.4; word-break: break-all; }
+        #admin-settings-btn { display: none; margin-left: 15px; background: #003E7E; color: white; border: none; padding: 4px 10px; border-radius: 2px; cursor: pointer; font-size: 11px; margin-top: 2px; }
 
         /* 模态框 */
         #pwd-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; }
@@ -150,7 +150,7 @@
 <div class="notice-bar">
     <div class="notice-title">📢 公告</div>
     <div class="notice-content" id="notice-content">
-        <div class="notice-item-line">加载中...</div>
+        <div class="notice-line">加载中...</div>
     </div>
     <button id="admin-settings-btn" onclick="window.location.href='admin.html'">后台管理</button>
 </div>
@@ -228,31 +228,29 @@
 
     function logout() { localStorage.clear(); location.reload(); }
 
-    // ★ 核心修复：解析从后台传来的 JSON 数组，并生成多行 div，强制换行显示！
+    // ★ 修改点：智能解析并强制生成独立行的 HTML 结构
     async function loadNotice() {
         try {
             const res = await fetch(`/api/portal?action=get-notice&_t=${Date.now()}`);
             const data = await res.json();
             
-            let finalHtml = '<div class="notice-item-line">欢迎使用系统！</div>';
-            
+            let finalHtml = '<div class="notice-line">欢迎使用系统！</div>';
             if (data.status === 'success' && data.text) {
                 try {
-                    // 解析 admin 页面传过来的数组
+                    // 如果后端存的是数组格式，将其解构成多个 div 行
                     const notices = JSON.parse(data.text);
                     if (Array.isArray(notices) && notices.length > 0) {
-                        // 有几个公告，就生成几个 <div>，保证绝对换行
-                        finalHtml = notices.map(n => `<div class="notice-item-line">🔹 ${n}</div>`).join('');
+                        finalHtml = notices.map(n => `<div class="notice-line">🔹 ${n}</div>`).join('');
                     } else {
-                        finalHtml = `<div class="notice-item-line">🔹 ${data.text}</div>`;
+                        finalHtml = `<div class="notice-line">🔹 ${data.text}</div>`;
                     }
                 } catch(e) {
-                    // 兼容纯文本老数据
-                    finalHtml = `<div class="notice-item-line">🔹 ${data.text}</div>`;
+                    // 如果解析 JSON 失败（兼容之前存的纯文本），直接单行显示
+                    finalHtml = `<div class="notice-line">🔹 ${data.text}</div>`;
                 }
             }
             document.getElementById('notice-content').innerHTML = finalHtml;
-        } catch (e) { document.getElementById('notice-content').innerHTML = '<div class="notice-item-line">系统运行中</div>'; }
+        } catch (e) { document.getElementById('notice-content').innerHTML = '<div class="notice-line">系统运行中</div>'; }
     }
 
     async function loadMessages() {
