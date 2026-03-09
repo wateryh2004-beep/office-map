@@ -1,11 +1,12 @@
 import * as XLSX from 'xlsx';
 import { Octokit } from "@octokit/rest";
 
-// 辅助提取器，忽略表头的空格和换行
+// 提取器：暴力去空格、换行符、转小写匹配表头
 const getExcelValue = (row, possibleKeys) => {
     const rowKeys = Object.keys(row);
     for (let pk of possibleKeys) {
-        const exactMatch = rowKeys.find(rk => rk.trim() === pk);
+        const normalizedPk = pk.replace(/\s+/g, '').toLowerCase();
+        const exactMatch = rowKeys.find(rk => rk.replace(/\s+/g, '').toLowerCase() === normalizedPk);
         if (exactMatch && row[exactMatch] !== undefined) {
             return String(row[exactMatch]).trim();
         }
@@ -13,7 +14,6 @@ const getExcelValue = (row, possibleKeys) => {
     return '';
 };
 
-// 从 GitHub 读取 Excel 文件的通用函数
 async function fetchExcelFromGithub(octokit, path) {
     try {
         const response = await octokit.repos.getContent({ 
@@ -32,55 +32,55 @@ async function fetchExcelFromGithub(octokit, path) {
 
 export default async function handler(req, res) {
     try {
-        // 1. 获取前端传来的用户邮箱
-        const loginEmail = req.query.user;
-        if (!loginEmail) return res.status(400).json({ status: 'fail', message: '未指定用户' });
+        const loginStr = req.query.user;
+        if (!loginStr) return res.status(400).json({ status: 'fail', message: '未指定用户' });
 
         const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
-        // 2. 翻译身份：去 users.xlsx 里找这个邮箱，提取英文名
+        // ==========================================
+        // 步骤 1：确认身份，去 users.xlsx 提取准确的英文名
+        // ==========================================
         const usersData = await fetchExcelFromGithub(octokit, 'users.xlsx');
         const matchedUser = usersData.find(u => {
-            const email = getExcelValue(u, ['邮箱（即姓名）', '邮箱', 'name', '姓名']);
-            return email.toLowerCase() === String(loginEmail).trim().toLowerCase();
+            const email = getExcelValue(u, ['邮箱（即姓名）', '邮箱', 'email']);
+            const fullName = getExcelValue(u, ['FullName', 'FullName(First/Middle/Last)', '英文名']);
+            const searchTarget = String(loginStr).trim().toLowerCase();
+            return email.toLowerCase() === searchTarget || fullName.toLowerCase() === searchTarget;
         });
 
         if (!matchedUser) {
-            return res.status(200).json({ status: 'fail', message: '在 users.xlsx 中找不到此账号' });
+            return res.status(200).json({ status: 'fail', message: `在 users.xlsx 中找不到账号: ${loginStr}` });
         }
 
-        // 提取 Full Name
-        const englishName = getExcelValue(matchedUser, [
-            'Full Name', 
-            'Full Name (First/Middle/Last)', 
-            'Full Name\n(First/Middle/Last)'
-        ]);
-
+        const englishName = getExcelValue(matchedUser, ['FullName', 'FullName(First/Middle/Last)', '英文名', 'name']);
         if (!englishName) {
-            return res.status(200).json({ status: 'fail', message: '该账号未配置英文名，无法匹配分配表' });
+            return res.status(200).json({ status: 'fail', message: '在 users.xlsx 找到该账号，但未配置有效的 Full Name 列' });
         }
 
-        // 3. 查分配表：去 assignments.xlsx 里找这个英文名
-        const assignData = await fetchExcelFromGithub(octokit, 'assignments.xlsx');
-        const myAssignedBuildings = assignData
-            .filter(item => {
-                const ownerName = getExcelValue(item, ['负责人名称', '负责人']);
-                // 统一转小写对比，防止大小写填错
-                return ownerName.toLowerCase() === englishName.toLowerCase();
-            })
-            .map(item => getExcelValue(item, ['写字楼名称', '名称']).toUpperCase())
-            .filter(name => name !== '');
-
-        if (myAssignedBuildings.length === 0) {
-            return res.status(200).json({ status: 'success', data: [], message: `未给 [${englishName}] 分配楼宇` });
-        }
-
-        // 4. 查底表：去 data.xlsx 捞数据
+        // ==========================================
+        // 步骤 2：直接去底表 data.xlsx 捞数据（抛弃 assignments.xlsx）
+        // ==========================================
         const allData = await fetchExcelFromGithub(octokit, 'data.xlsx');
+        
         const myData = allData.filter(item => {
-            const buildingName = getExcelValue(item, ['写字楼名称', '名称']).toUpperCase();
-            return myAssignedBuildings.includes(buildingName);
+            // 抓取底表中的 USER 列（支持命名为 USER, User, 负责人 等）
+            const ownerStr = getExcelValue(item, ['USER', 'User', '负责人', '负责人名称']);
+            if (!ownerStr) return false;
+
+            // 支持一栋楼分配给多个人（用逗号或中文逗号隔开）
+            const owners = ownerStr.toLowerCase().split(/[,，]/).map(n => n.trim());
+            
+            // 检查当前用户的英文名是否在这一行的名单里
+            return owners.includes(englishName.toLowerCase());
         });
+
+        if (myData.length === 0) {
+            return res.status(200).json({ 
+                status: 'success', 
+                data: [], 
+                message: `底表 data.xlsx 中没有为 [${englishName}] 分配需要填报的项目（请检查 USER 列）。` 
+            });
+        }
 
         return res.status(200).json({ status: 'success', data: myData });
 
