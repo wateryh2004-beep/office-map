@@ -88,7 +88,7 @@
                     <th class="th-last">表面</th>
                     <th class="th-last">免租期</th>
                     <th class="th-last">净有效</th>
-                    <th class="th-last">空置㎡</th>
+                    <th class="th-last">空置面积</th>
                     <th class="th-last">空置率</th>
 
                     <th class="th-curr">报价</th>
@@ -97,7 +97,7 @@
                     <th class="th-curr" style="width:50px;">免租期</th>
                     <th class="th-curr" style="background:#fff3e0;">净有效</th>
                     <th class="th-curr" style="background:#fff3e0;">变化率</th>
-                    <th class="th-curr">空置㎡</th>
+                    <th class="th-curr">空置面积</th>
                     <th class="th-curr" style="background:#fff3e0;">面积变化</th>
                     <th class="th-curr" style="background:#fff3e0;">空置率</th>
                     <th class="th-curr" style="width:100px;">备注</th> 
@@ -237,15 +237,15 @@
                 
                 <td>${totalArea.toLocaleString()}</td>
                 
-                <td style="color:#888;">${lastQuote || '-'}</td>
+                <td style="color:#888;">${lastQuote > 0 ? lastQuote.toFixed(2) : '-'}</td>
                 <td style="color:#888;">${lastPropFee || '-'}</td>
                 <td style="color:#888;">${lastFace || '-'}</td>
                 <td style="color:#888;">${lastFree || '-'}</td>
                 <td style="color:#888; font-weight:bold;">${lastNet > 0 ? lastNet.toFixed(1) : '-'}</td>
-                <td style="color:#888;">${lastVacArea > 0 ? lastVacArea.toLocaleString() : '-'}</td>
+                <td style="color:#888;">${lastVacArea > 0 ? Math.round(lastVacArea).toLocaleString() : '-'}</td>
                 <td style="color:#888;">${lastVacRate > 0 ? (lastVacRate*100).toFixed(1) + '%' : '-'}</td>
 
-                <td class="input-cell"><input type="number" class="curr-quote" value="${d.qQuote || ''}" oninput="calcRow(${originalIndex})"></td>
+                <td class="input-cell"><input type="number" class="curr-quote" value="${d.qQuote || ''}" step="0.01" oninput="calcRow(${originalIndex})"></td>
                 <td class="input-cell"><input type="number" class="curr-prop" value="${d.qProp || ''}" oninput="calcRow(${originalIndex})"></td>
                 <td class="input-cell"><input type="number" class="curr-face" value="${d.qFace || ''}" oninput="calcRow(${originalIndex})"></td>
                 <td class="input-cell"><input type="number" class="curr-free" value="${d.qFree || ''}" oninput="calcRow(${originalIndex})"></td>
@@ -253,7 +253,7 @@
                 <td class="calc-cell net-rent" style="color:#d84315;">-</td>
                 <td class="calc-cell rent-change">-</td>
                 
-                <td class="input-cell"><input type="number" class="curr-vac-area" value="${d.qVacArea || ''}" oninput="calcRow(${originalIndex})"></td>
+                <td class="input-cell"><input type="number" class="curr-vac-area" value="${d.qVacArea || ''}" step="1" oninput="calcRow(${originalIndex})"></td>
                 
                 <td class="calc-cell area-change">-</td>
                 <td class="calc-cell vac-rate" style="color:#003E7E;">-</td>
@@ -296,7 +296,7 @@
         } else { row.querySelector('.rent-change').innerText = '-'; }
 
         if (row.querySelector('.curr-vac-area').value !== '') {
-            const areaDiff = vacArea - lastVacArea;
+            const areaDiff = Math.round(vacArea - lastVacArea);
             const cell = row.querySelector('.area-change');
             cell.innerText = (areaDiff > 0 ? '+' : '') + areaDiff.toLocaleString();
             cell.style.color = areaDiff > 0 ? '#d32f2f' : (areaDiff < 0 ? '#2e7d32' : '#666');
@@ -365,7 +365,7 @@
             if(qQuote || qProp || qFace || qFree || qVacArea || qRemark || qOwner || qPropMan) {
                 hasEdits = true;
                 submission.push({
-                    "USER": matchName, // ★ 新增：输出文件直接带上 USER 列，明确填报人
+                    "USER": matchName, 
                     "写字楼名称": getVal(building, ['写字楼名称', 'Project Name CN']),
                     "子市场": getVal(building, ['子市场', 'SUBMARKET']), 
                     "业主": qOwner, 
@@ -380,11 +380,11 @@
                     "上季度空置面积": getVal(building, ['上季度空置面积', '空置面积']), 
                     "上季度空置率": getVal(building, ['上季度空置率', '空置率']),
                     
-                    "本季度租金报价": qQuote, 
+                    "本季度租金报价": qQuote ? Number(qQuote).toFixed(2) : '', 
                     "本季度物业费": qProp, 
                     "本季度表面租金": qFace, 
                     "本季度免租期": qFree, 
-                    "本季度空置面积": qVacArea,
+                    "本季度空置面积": qVacArea ? Math.round(Number(qVacArea)) : '',
                     "本季度净有效租金": row.querySelector('.net-rent').innerText !== '-' ? row.querySelector('.net-rent').innerText : '',
                     "租金环比变化": row.querySelector('.rent-change').innerText !== '-' ? row.querySelector('.rent-change').innerText : '',
                     "空置面积变化": row.querySelector('.area-change').innerText !== '-' ? row.querySelector('.area-change').innerText : '',
