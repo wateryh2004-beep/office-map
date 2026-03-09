@@ -32,14 +32,23 @@ async function fetchExcelFromGithub(octokit, path) {
 
 export default async function handler(req, res) {
     try {
-        const loginStr = req.query.user;
-        if (!loginStr) return res.status(400).json({ status: 'fail', message: '未指定用户' });
-
+        const action = req.query.action;
         const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
         // ==========================================
-        // 步骤 1：确认身份，去 users.xlsx 提取准确的英文名
+        // 模式 A：为 map.html 地图提供全部底表数据
         // ==========================================
+        if (action === 'map') {
+            const allData = await fetchExcelFromGithub(octokit, 'data.xlsx');
+            return res.status(200).json({ status: 'success', data: allData });
+        }
+
+        // ==========================================
+        // 模式 B：为 update.html 提供个人负责的楼宇数据
+        // ==========================================
+        const loginStr = req.query.user;
+        if (!loginStr) return res.status(400).json({ status: 'fail', message: '未指定用户' });
+
         const usersData = await fetchExcelFromGithub(octokit, 'users.xlsx');
         const matchedUser = usersData.find(u => {
             const email = getExcelValue(u, ['邮箱（即姓名）', '邮箱', 'email']);
@@ -57,20 +66,13 @@ export default async function handler(req, res) {
             return res.status(200).json({ status: 'fail', message: '在 users.xlsx 找到该账号，但未配置有效的 Full Name 列' });
         }
 
-        // ==========================================
-        // 步骤 2：直接去底表 data.xlsx 捞数据（抛弃 assignments.xlsx）
-        // ==========================================
         const allData = await fetchExcelFromGithub(octokit, 'data.xlsx');
         
         const myData = allData.filter(item => {
-            // 抓取底表中的 USER 列（支持命名为 USER, User, 负责人 等）
             const ownerStr = getExcelValue(item, ['USER', 'User', '负责人', '负责人名称']);
             if (!ownerStr) return false;
 
-            // 支持一栋楼分配给多个人（用逗号或中文逗号隔开）
             const owners = ownerStr.toLowerCase().split(/[,，]/).map(n => n.trim());
-            
-            // 检查当前用户的英文名是否在这一行的名单里
             return owners.includes(englishName.toLowerCase());
         });
 
