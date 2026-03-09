@@ -3,72 +3,79 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>高力国际内部数据系统 | Colliers</title>
+    <title>高力国际 | 办公楼市场监测系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background: #f4f6f9; margin: 0; padding: 0; color: #333; height: 100vh; display: flex; flex-direction: column; overflow: hidden;}
-        
-        .top-nav { background: #003E7E; color: white; padding: 0 25px; height: 60px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10;}
-        .logo { font-size: 22px; font-weight: bold; letter-spacing: 1px; }
-        .user-info { font-size: 14px; }
-        .user-info a { color: #bbdefb; text-decoration: none; margin-left: 10px; transition: color 0.2s;}
-        .user-info a:hover { color: white; }
+        /* 商务扁平化 & 100vh 锁屏布局 */
+        body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background: #f4f6f9; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; color: #333; }
 
-        .layout-wrapper { display: flex; max-width: 1200px; margin: 0 auto; padding: 20px; gap: 20px; height: calc(100vh - 60px); box-sizing: border-box; }
-        
-        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-
-        .welcome-section { margin-bottom: 20px; }
-        .welcome-section h2 { margin: 0 0 5px 0; font-size: 24px; color: #003E7E; }
-        .welcome-section p { margin: 0; color: #666; font-size: 14px; }
-
-        /* ★ 核心修改：模块卡片变窄，去掉图标 */
-        .modules-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
-        .module-card {
-            background: white; border-radius: 8px; padding: 15px; text-align: center;
-            text-decoration: none; color: inherit; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            transition: all 0.3s; border: 1px solid #eee; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; min-height: 70px;
-        }
-        .module-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,62,126,0.15); border-color: #003E7E; }
-        .module-title { font-size: 15px; font-weight: bold; color: #003E7E; margin-bottom: 5px; }
-        .module-desc { font-size: 12px; color: #666; line-height: 1.4; }
-
-        /* ★ 核心修改：全新的多行自适应公告板 */
-        .notice-board {
-            background: white; border-radius: 8px; padding: 15px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            flex: 1; display: flex; flex-direction: column; overflow-y: auto; border: 1px solid #eee;
-        }
-        .notice-title-bar { font-size: 14px; font-weight: bold; color: #003E7E; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; display: flex; align-items: center;}
-        .notice-item { display: flex; align-items: flex-start; margin-bottom: 10px; font-size: 14px; color: #d32f2f; line-height: 1.5; font-weight: 500;}
-        .notice-bullet { margin-right: 8px; font-size: 14px; }
-
-        /* 聊天板 */
-        .chat-section { width: 350px; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #eee; }
-        .chat-header { background: #f8f9fa; padding: 15px 20px; font-weight: bold; font-size: 15px; color: #003E7E; border-bottom: 1px solid #eee; }
-        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; background: #fafbfc; display: flex; flex-direction: column; gap: 15px; }
-        
-        .msg-box { display: flex; flex-direction: column; }
-        .msg-info { font-size: 11px; color: #888; margin-bottom: 4px; }
-        .msg-info span.author { color: #003E7E; font-weight: bold; margin-right: 5px; }
-        .msg-content { background: white; padding: 10px 12px; border-radius: 0 8px 8px 8px; font-size: 13px; line-height: 1.5; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #eee; width: fit-content; max-width: 85%; word-wrap: break-word;}
-        .msg-box.self .msg-info { text-align: right; }
-        .msg-box.self .msg-info span.author { margin-right: 0; margin-left: 5px; }
-        .msg-box.self .msg-content { background: #e3f2fd; border-color: #bbdefb; border-radius: 8px 0 8px 8px; align-self: flex-end; color: #003E7E;}
-
-        .chat-input-area { padding: 15px; background: white; border-top: 1px solid #eee; display: flex; gap: 10px; }
-        .chat-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; outline: none; transition: 0.2s; }
-        .chat-input:focus { border-color: #003E7E; }
-        .chat-send-btn { background: #003E7E; color: white; border: none; padding: 0 15px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .chat-send-btn:hover { background: #002b5e; }
-
-        /* 登录遮罩 */
-        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 64, 128, 0.95); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        .login-box { background: white; padding: 40px; border-radius: 8px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
-        .login-box h2 { margin: 0 0 20px 0; color: #004080; }
-        .login-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
-        .login-btn { width: 100%; padding: 12px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.2s;}
+        /* 登录框 */
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 62, 126, 0.95); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: white; padding: 35px; border-radius: 4px; width: 300px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); text-align: center; }
+        .login-box h2 { margin: 0 0 15px 0; color: #003E7E; font-size: 22px; letter-spacing: 1px; }
+        .login-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-size: 13px; outline: none; }
+        .login-input:focus { border-color: #003E7E; }
+        .login-btn { width: 100%; padding: 10px; background: #003E7E; color: white; border: none; border-radius: 2px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; }
         .login-btn:hover { background: #002b5e; }
-        .login-error { color: red; font-size: 12px; margin-top: 10px; display: none; }
+        .login-error { color: #d32f2f; font-size: 12px; margin-top: 10px; display: none; }
+
+        /* 顶部导航 */
+        .header { background: #003E7E; color: white; padding: 0 25px; height: 50px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .header h1 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: 0.5px; }
+        .user-info { font-size: 12px; display: flex; gap: 15px; align-items: center; }
+        .logout-btn { color: #e0e0e0; cursor: pointer; transition: 0.2s; }
+        .logout-btn:hover { color: white; }
+
+        /* 主内容区 */
+        .main-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 20px; overflow: hidden; }
+        .welcome-text { font-size: 13px; color: #555; margin-bottom: 20px; flex-shrink: 0; }
+
+        /* ★ 导航卡片 (已去掉图标，变窄以留出更多空间) */
+        .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 850px; width: 100%; margin-bottom: 20px; flex-shrink: 0; }
+        .nav-card { background: white; padding: 15px; border-radius: 4px; text-align: center; text-decoration: none; color: #333; border: 1px solid #e0e0e0; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+        .nav-card:hover { transform: translateY(-2px); border-color: #003E7E; box-shadow: 0 4px 12px rgba(0,62,126,0.08); }
+        .card-title { font-size: 16px; font-weight: bold; color: #003E7E; }
+        .nav-card.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; background: #fafafa; color: #999; }
+
+        /* 留言墙升级 (加入全屏样式) */
+        .msg-wall { flex: 1; min-height: 0; width: 100%; max-width: 850px; background: white; border-radius: 4px; border: 1px solid #e0e0e0; display: flex; flex-direction: column; overflow: hidden; transition: all 0.3s ease; }
+
+        /* 激活全屏时的样式 */
+        .msg-wall.fullscreen { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; max-width: 100% !important; border-radius: 0 !important; z-index: 100000 !important; border: none !important; }
+
+        .msg-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #fcfcfc; border-bottom: 1px solid #eee; flex-shrink: 0; }
+        .msg-header h3 { margin: 0; font-size: 14px; color: #003E7E; }
+        .expand-btn { cursor: pointer; color: #003E7E; font-size: 16px; transition: 0.2s; padding: 4px; }
+        .expand-btn:hover { color: #f57f17; transform: scale(1.1); }
+
+        .msg-list { flex: 1; overflow-y: auto; padding: 15px; background: #fff; }
+        .msg-item { background: #f8f9fa; padding: 10px; border-radius: 2px; margin-bottom: 8px; border-left: 3px solid #003E7E; font-size: 12px; }
+        .msg-info { font-size: 11px; color: #888; margin-bottom: 4px; }
+        .msg-content { color: #222; word-break: break-all; line-height: 1.4; white-space: pre-wrap; }
+
+        .msg-input-group { display: flex; padding: 10px 15px; background: #fcfcfc; border-top: 1px solid #eee; flex-shrink: 0; }
+        .msg-input-group input { flex: 1; padding: 10px 12px; border: 1px solid #ccc; border-radius: 2px 0 0 2px; font-size: 13px; outline: none; }
+        .msg-input-group input:focus { border-color: #003E7E; }
+        .msg-input-group button { background: #003E7E; color: white; border: none; padding: 0 25px; border-radius: 0 2px 2px 0; cursor: pointer; font-size: 13px; font-weight: bold; }
+
+        /* ★ 吸底公告栏升级：变宽、变大，容纳多个公告 */
+        .notice-bar { background: #fffde7; color: #f57f17; padding: 12px 25px; display: flex; align-items: center; border-top: 1px solid #fff59d; flex-shrink: 0; font-size: 14px; box-shadow: 0 -2px 10px rgba(0,0,0,0.03); z-index: 10; }
+        .notice-title { font-weight: bold; margin-right: 20px; white-space: nowrap; font-size: 15px; color: #d84315; }
+        .marquee-wrapper { flex: 1; overflow: hidden; position: relative; }
+        .marquee-text { display: inline-block; white-space: nowrap; animation: marquee 40s linear infinite; font-weight: 500; letter-spacing: 0.5px;}
+        .marquee-text:hover { animation-play-state: paused; } /* 鼠标悬停可暂停滚动查看 */
+        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        
+        #admin-settings-btn { display: none; margin-left: 20px; background: #003E7E; color: white; border: none; padding: 6px 15px; border-radius: 2px; cursor: pointer; font-size: 12px; font-weight: bold;}
+
+        /* 模态框 */
+        #pwd-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; }
+        .pwd-box { background: white; padding: 25px; border-radius: 4px; width: 280px; text-align: center; }
+        .pwd-box h3 { margin-top: 0; font-size: 16px; color: #003E7E; }
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-group button { flex: 1; padding: 8px; border-radius: 2px; cursor: pointer; font-size: 12px; }
+        .btn-cancel { border: 1px solid #ccc; background: #f9f9f9; color: #333; }
+        .btn-confirm { border: none; background: #003E7E; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -76,217 +83,250 @@
 <div id="login-overlay">
     <div class="login-box">
         <h2>COLLIERS DATA</h2>
-        <p style="color:#666; font-size:13px; margin-bottom:20px;">内部数据查询系统 v6.5</p>
-        <input type="text" id="login-name" class="login-input" placeholder="姓名 (Name)">
-        <input type="text" id="login-id" class="login-input" placeholder="工号 (Employee ID)">
-        <input type="text" id="login-phone" class="login-input" placeholder="手机号 (Phone)">
+        <p style="color:#666; font-size:12px; margin-bottom:20px;">内部数据系统门户 (SSO)</p>
+        <input type="text" id="login-name" class="login-input" placeholder="邮箱 (例如: cassie.gao@colliers.com)">
+        <input type="text" id="login-phone" class="login-input" placeholder="手机号">
+        <input type="password" id="login-pwd" class="login-input" placeholder="密码 (内部号码, 如 COS1234)">
         <button class="login-btn" onclick="handleLogin()">认证进入</button>
-        <div id="login-msg" class="login-error">认证失败</div>
+        <div id="login-msg" class="login-error"></div>
     </div>
 </div>
 
-<div class="top-nav">
-    <div class="logo">COLLIERS DATA PORTAL</div>
+<div id="pwd-modal">
+    <div class="pwd-box">
+        <h3>修改密码</h3>
+        <input type="text" id="cp-name" class="login-input" readonly style="background:#f5f5f5;">
+        <input type="text" id="cp-id" class="login-input" placeholder="输入手机号验证">
+        <input type="password" id="cp-old" class="login-input" placeholder="原密码 (内部号码)">
+        <input type="password" id="cp-new" class="login-input" placeholder="新密码 (最少6位)">
+        <div class="btn-group">
+            <button class="btn-cancel" onclick="closePwdModal()">取消</button>
+            <button class="btn-confirm" onclick="submitChangePwd()">确认</button>
+        </div>
+        <div id="pwd-msg" class="login-error"></div>
+    </div>
+</div>
+
+<div class="header">
+    <h1>高力国际内部数据平台</h1>
     <div class="user-info">
-        <span id="user-name">未登录</span> | <a href="#" onclick="logout()">退出</a>
-        <a href="admin.html" id="admin-link" style="display:none; margin-left:15px; color:#fbc02d; font-weight:bold;">⚙️ 管理后台</a>
+        <span id="user-display"></span>
+        <span class="logout-btn" onclick="openPwdModal()">修改密码</span>
+        <span class="logout-btn" onclick="logout()">退出登录</span>
     </div>
 </div>
 
-<div class="layout-wrapper">
-    <div class="main-content">
-        <div class="welcome-section">
-            <h2>欢迎回来，<span id="welcome-name"></span></h2>
-            <p>请选择您需要使用的系统模块。</p>
-        </div>
+<div class="main-content">
+    <div class="welcome-text">欢迎使用数据终端，请选择业务模块。</div>
 
-        <div class="modules-grid">
-            <a href="map.html" class="module-card">
-                <div class="module-title">项目地图</div>
-                <div class="module-desc">查看全景写字楼地图分布及租金热力图</div>
-            </a>
-            <a href="reports.html" class="module-card">
-                <div class="module-title">资料库</div>
-                <div class="module-desc">下载最新季度的市场报告与研究文件</div>
-            </a>
-            <a id="nav-update" href="update.html" class="module-card" style="display:none;">
-                <div class="module-title">季度数据填报</div>
-                <div class="module-desc">录入并更新您负责项目的最新租赁数据</div>
-            </a>
-        </div>
-
-        <div class="notice-board">
-            <div class="notice-title-bar">📢 最新系统公告</div>
-            <div id="notice-container">
-                <div class="notice-item"><span class="notice-bullet">📣</span><span>数据拉取中...</span></div>
-            </div>
-        </div>
+    <div class="grid-container">
+        <a href="map.html" class="nav-card">
+            <div class="card-title">项目地图</div>
+        </a>
+        <a href="reports.html" class="nav-card">
+            <div class="card-title">资料库</div>
+        </a>
+        <a href="update.html" class="nav-card" id="btn-data-collect">
+            <div class="card-title">季度数据填报</div>
+        </a>
     </div>
 
-    <div class="chat-section">
-        <div class="chat-header">💬 市场信息交流</div>
-        <div class="chat-messages" id="chat-box">
-            <div style="text-align:center; color:#999; font-size:12px; margin-top:50px;">正在连接云端服务器...</div>
+    <div class="msg-wall" id="msg-wall">
+        <div class="msg-header">
+            <h3><i class="fas fa-comment-dots"></i> 市场信息交流</h3>
+            <i class="fas fa-expand expand-btn" id="expand-icon" onclick="toggleFullscreen()" title="全屏放大"></i>
         </div>
-        <div class="chat-input-area">
-            <input type="text" id="chat-input" class="chat-input" placeholder="输入你想分享的市场信息..." onkeydown="if(event.key==='Enter') sendMessage()">
-            <button class="chat-send-btn" onclick="sendMessage()">发送</button>
+        <div id="msg-list" class="msg-list">
+            <p style="color:#999; font-size:12px; text-align:center; padding:20px;">正在同步数据...</p>
+        </div>
+        <div class="msg-input-group">
+            <input type="text" id="new-msg" placeholder="输入留言 (支持长文本)..." maxlength="1000" onkeydown="if(event.key==='Enter') postMessage()">
+            <button id="btn-send-msg" onclick="postMessage()">发送</button>
         </div>
     </div>
+</div>
+
+<div class="notice-bar">
+    <div class="notice-title">📢 公告栏</div>
+    <div class="marquee-wrapper">
+        <div class="marquee-text" id="marquee-content">加载中...</div>
+    </div>
+    <button id="admin-settings-btn" onclick="window.location.href='admin.html'">后台管理</button>
 </div>
 
 <script>
     let currentUser = null;
 
     window.onload = function() {
-        const userStr = localStorage.getItem('colliers_user');
-        if (userStr) {
-            currentUser = JSON.parse(userStr);
-            loginSuccess();
-        } else {
-            document.getElementById('login-overlay').style.display = 'flex';
+        const cachedUser = localStorage.getItem('colliers_user');
+        const cachedToken = localStorage.getItem('colliers_token'); 
+        if (cachedUser && cachedToken) {
+            currentUser = JSON.parse(cachedUser);
+            loginSuccess(currentUser);
         }
+        loadNotice(); 
     };
+
+    function toggleFullscreen() {
+        const wall = document.getElementById('msg-wall');
+        const icon = document.getElementById('expand-icon');
+        wall.classList.toggle('fullscreen');
+
+        if (wall.classList.contains('fullscreen')) {
+            icon.classList.remove('fa-expand');
+            icon.classList.add('fa-compress'); 
+        } else {
+            icon.classList.remove('fa-compress');
+            icon.classList.add('fa-expand'); 
+        }
+
+        const list = document.getElementById('msg-list');
+        list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
+    }
 
     async function handleLogin() {
         const name = document.getElementById('login-name').value.trim();
-        const id = document.getElementById('login-id').value.trim();
         const phone = document.getElementById('login-phone').value.trim();
+        const password = document.getElementById('login-pwd').value.trim();
         const msg = document.getElementById('login-msg');
 
-        if (!name || !id || !phone) { msg.innerText = "请填写完整信息"; msg.style.display = 'block'; return; }
-        
-        msg.innerText = "认证中..."; msg.style.color = "#003E7E"; msg.style.display = 'block';
-        
+        if (!name || !phone || !password) { msg.innerText = "请填写完整"; msg.style.display = 'block'; return; }
+        const btn = document.querySelector('.login-btn'); btn.innerText = "认证中...";
+
         try {
             const res = await fetch('/api/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, id, phone })
+                body: JSON.stringify({ name: name, id: phone, phone: phone, password: password })
             });
             const data = await res.json();
-            
             if (data.status === 'success') {
+                currentUser = data.data; 
                 localStorage.setItem('colliers_user', JSON.stringify(data.data));
-                currentUser = data.data;
-                loginSuccess();
-            } else { 
-                msg.style.color = "red"; msg.innerText = data.message || "认证失败"; 
-            }
-        } catch (e) { 
-            msg.style.color = "red"; msg.innerText = "系统连接错误"; 
-        }
+                localStorage.setItem('colliers_token', data.token); 
+                loginSuccess(data.data);
+            } else { msg.innerText = data.message || "失败"; msg.style.display = 'block'; }
+        } catch (e) { msg.innerText = "网络错误"; msg.style.display = 'block'; }
+        finally { btn.innerText = "认证进入"; }
     }
 
-    function loginSuccess() {
+    function loginSuccess(user) {
+        currentUser = user;
         document.getElementById('login-overlay').style.display = 'none';
-        document.getElementById('user-name').innerText = currentUser.name;
-        document.getElementById('welcome-name').innerText = currentUser.name;
-        
-        if (currentUser.role === 'admin' || currentUser.role === 'editor') {
-            document.getElementById('nav-update').style.display = 'flex';
-        }
-        if (currentUser.role === 'admin') {
-            document.getElementById('admin-link').style.display = 'inline';
-        }
 
-        initPortal();
+        const displayName = user.fullName || user.name;
+        document.getElementById('user-display').innerText = `${displayName} (${user.role})`;
+
+        if (user.role === 'viewer') document.getElementById('btn-data-collect').classList.add('disabled');
+        if (user.role === 'admin') document.getElementById('admin-settings-btn').style.display = 'block';
+
+        startHeartbeat();
+        loadMessages(); 
     }
 
-    function logout() {
-        localStorage.removeItem('colliers_user');
-        location.reload();
-    }
+    function logout() { localStorage.clear(); location.reload(); }
 
-    async function initPortal() {
-        // 1. 获取公告 (★ 核心修复：解析 JSON 数组)
+    async function loadNotice() {
         try {
-            const noticeRes = await fetch('/api/portal?action=get-notice');
-            const noticeData = await noticeRes.json();
-            const container = document.getElementById('notice-container');
+            const res = await fetch(`/api/portal?action=get-notice&_t=${Date.now()}`);
+            const data = await res.json();
             
-            if (noticeData.status === 'success' && noticeData.text) {
+            let finalHtml = "欢迎使用系统！";
+            if (data.status === 'success' && data.text) {
                 try {
-                    // 尝试将后端传来的 JSON 字符串解析为数组
-                    const notices = JSON.parse(noticeData.text);
+                    // ★ 核心修复：解析数组，并用美观的间距和星星隔开，防止粘连
+                    const notices = JSON.parse(data.text);
                     if (Array.isArray(notices) && notices.length > 0) {
-                        container.innerHTML = notices.map(n => `<div class="notice-item"><span class="notice-bullet">📣</span><span>${n}</span></div>`).join('');
+                        finalHtml = notices.join('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🌟&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;');
                     } else {
-                        container.innerHTML = `<div class="notice-item"><span class="notice-bullet">📣</span><span>${noticeData.text}</span></div>`;
+                        finalHtml = data.text;
                     }
                 } catch(e) {
-                    // 如果解析失败（说明是旧版本存的纯文本单条公告）
-                    container.innerHTML = `<div class="notice-item"><span class="notice-bullet">📣</span><span>${noticeData.text}</span></div>`;
+                    finalHtml = data.text; // 兼容老版本的纯文本
                 }
-            } else {
-                container.innerHTML = `<div class="notice-item"><span class="notice-bullet">📣</span><span style="color:#999;">暂无最新公告</span></div>`;
             }
-        } catch (e) {
-            document.getElementById('notice-container').innerHTML = `<div class="notice-item"><span class="notice-bullet">⚠️</span><span>公告加载失败</span></div>`;
-        }
-
-        // 2. 加载留言板
-        loadMessages();
-        setInterval(loadMessages, 10000); // 10秒自动刷新聊天
+            document.getElementById('marquee-content').innerHTML = finalHtml;
+        } catch (e) { document.getElementById('marquee-content').innerText = "系统运行中"; }
     }
 
     async function loadMessages() {
+        const list = document.getElementById('msg-list');
         try {
-            const res = await fetch('/api/portal?action=get-messages');
+            const res = await fetch(`/api/portal?action=get-messages&_t=${Date.now()}`);
             const msgs = await res.json();
-            const chatBox = document.getElementById('chat-box');
-            
-            if (msgs.length === 0) {
-                chatBox.innerHTML = `<div style="text-align:center; color:#999; font-size:12px; margin-top:50px;">今天是新的一天，快来分享第一条市场动态吧！</div>`;
-                return;
+            if (!Array.isArray(msgs) || msgs.length === 0) { 
+                list.innerHTML = '<p style="color:#999; font-size:12px; text-align:center; padding:20px;">暂无留言</p>'; return; 
             }
-
-            // 记住当前是否在最底部
-            const isScrolledToBottom = chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 20;
-
-            chatBox.innerHTML = msgs.map(m => {
-                const isSelf = m.user === currentUser.name;
-                return `
-                    <div class="msg-box ${isSelf ? 'self' : ''}">
-                        <div class="msg-info">
-                            ${isSelf ? `<span>${m.time}</span> <span class="author">${m.user}</span>` : `<span class="author">${m.user}</span> <span>${m.time}</span>`}
-                        </div>
-                        <div class="msg-content">${m.text}</div>
-                    </div>
-                `;
-            }).join('');
-
-            // 如果原本在底部，有新消息就继续滚到底部
-            if (isScrolledToBottom) {
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }
-        } catch(e) {}
+            list.innerHTML = msgs.map(m => `
+                <div class="msg-item">
+                    <div class="msg-info"><strong>${m.user}</strong> · ${m.time}</div>
+                    <div class="msg-content">${m.text}</div>
+                </div>
+            `).join('');
+            list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
+        } catch (e) { list.innerHTML = '<p style="color:red; font-size:12px; text-align:center;">加载异常</p>'; }
     }
 
-    async function sendMessage() {
-        const input = document.getElementById('chat-input');
+    async function postMessage() {
+        const input = document.getElementById('new-msg');
         const text = input.value.trim();
         if (!text) return;
 
-        input.value = ''; // 立即清空输入框提升体验
-        
-        try {
-            await fetch('/api/portal?action=post-message', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user: currentUser.name, text: text })
-            });
-            loadMessages(); // 发送完立即刷新
-            
-            // 强行滚动到底部
-            setTimeout(() => {
-                const chatBox = document.getElementById('chat-box');
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }, 100);
-            
-        } catch(e) {
-            alert("发送失败，请检查网络。");
+        if (!currentUser) {
+            alert("登录状态异常，请刷新页面重新登录");
+            return;
         }
+
+        const btn = document.getElementById('btn-send-msg');
+        btn.disabled = true; btn.innerText = "...";
+
+        const sendName = currentUser.fullName || currentUser.name;
+
+        try {
+            const res = await fetch('/api/portal?action=post-message', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user: sendName, text: text })
+            });
+
+            const data = await res.json();
+            if (data.status === 'success') { 
+                input.value = ''; 
+                await loadMessages(); 
+            } else {
+                alert("发送失败: " + (data.message || '未知错误'));
+            }
+        } catch (e) { 
+            console.error("发送留言出错: ", e);
+            alert("网络连接异常，发送失败。");
+        } finally { 
+            btn.disabled = false; btn.innerText = "发送"; 
+        }
+    }
+
+    function startHeartbeat() {
+        setInterval(async () => {
+            const userStr = localStorage.getItem('colliers_user');
+            const token = localStorage.getItem('colliers_token');
+            if (!userStr || !token) return;
+            const user = JSON.parse(userStr);
+            try {
+                const res = await fetch('/api/login?action=check', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: user.name, token: token })
+                });
+                if ((await res.json()).status === 'invalid') { logout(); alert("账号已在别处登录。"); }
+            } catch (e) { }
+        }, 60000);
+    }
+
+    function openPwdModal() { document.getElementById('pwd-modal').style.display = 'flex'; document.getElementById('cp-name').value = JSON.parse(localStorage.getItem('colliers_user')).name; }
+    function closePwdModal() { document.getElementById('pwd-modal').style.display = 'none'; }
+    async function submitChangePwd() {
+        const id = document.getElementById('cp-id').value.trim(), oldPwd = document.getElementById('cp-old').value.trim(), newPwd = document.getElementById('cp-new').value.trim(), msg = document.getElementById('pwd-msg');
+        if(!id || !oldPwd || !newPwd) { msg.innerText = "请填满所有字段"; msg.style.display='block'; return; }
+        try {
+            const res = await fetch('/api/login?action=change-pwd', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: document.getElementById('cp-name').value, id, oldPwd, newPwd }) });
+            const data = await res.json();
+            if(data.status === 'success') { alert("修改成功，请重登"); logout(); } else { msg.innerText = data.message; msg.style.display='block'; }
+        } catch(e) { msg.innerText = "修改失败"; msg.style.display='block'; }
     }
 </script>
 </body>
