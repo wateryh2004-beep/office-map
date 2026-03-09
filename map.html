@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>高力国际Colliers | 内部数据系统</title>
     
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <script type="text/javascript">
@@ -114,8 +113,8 @@
 
     <div id="global-loader">
         <div class="spinner"></div>
-        <div style="margin-top:20px; font-size:16px; font-weight:bold; color:#004080;">正在加载地图与数据引擎，请稍候...</div>
-        <div style="margin-top:8px; font-size:12px; color:#888;">优化性能中，首次加载可能需要几秒</div>
+        <div style="margin-top:20px; font-size:16px; font-weight:bold; color:#004080;">正在连接云端数据引擎...</div>
+        <div style="margin-top:8px; font-size:12px; color:#888;">正在获取实时更新的楼宇数据，请稍候</div>
     </div>
 
     <div id="login-overlay" style="display:none;">
@@ -221,7 +220,6 @@
     </div>
 
 <script>
-    // --- 认证模块 ---
     const CURRENT_USER = { name: '', role: 'viewer' };
 
     window.onload = function() {
@@ -231,7 +229,6 @@
             loginSuccess(user);
             init(); 
         } else {
-            // 没有登录缓存时，显示登录框，隐藏加载器
             document.getElementById('global-loader').style.display = 'none';
             document.getElementById('login-overlay').style.display = 'flex';
         }
@@ -255,17 +252,17 @@
             if (data.status === 'success') {
                 localStorage.setItem('colliers_user', JSON.stringify(data.data));
                 loginSuccess(data.data);
-                document.getElementById('global-loader').style.display = 'flex'; // 重新显示加载器
+                document.getElementById('global-loader').style.display = 'flex'; 
                 init();
             } else { msg.innerText = data.message || "认证失败"; msg.style.display = 'block'; }
         } catch (e) { console.error(e); msg.innerText = "系统连接错误"; msg.style.display = 'block'; }
     }
 
     function loginSuccess(user) {
-        CURRENT_USER.name = user.name;
+        CURRENT_USER.name = user.fullName || user.name;
         CURRENT_USER.role = user.role;
         document.getElementById('login-overlay').style.display = 'none';
-        document.getElementById('user-display').innerText = `${user.name} (${user.role})`;
+        document.getElementById('user-display').innerText = `${CURRENT_USER.name} (${user.role})`;
         loadVersionInfo();
     }
 
@@ -321,7 +318,6 @@
         showStatus("🔄 地图及筛选已重置");
     }
 
-    // --- 地图与数据核心逻辑 ---
     const DEMO_DATA = [
         {"写字楼名称": "备份数据1", "子市场": "CBD", "写字楼等级": "A", "竣工时间": "1990 Q3", "净有效租金": 288.75, "空置率": "13.0%", "LEEDS": "", "经纬度": "116.458363,39.909473", "空置面积": 9400, "总面积": 72308}
     ];
@@ -331,7 +327,6 @@
     let activeDistricts = new Set(), allDistrictsList = [];
     let currentMode = 'price', isCompareMode = false;
 
-    // ★ 性能优化 1：引入智能键名字典缓存，将 O(N*M) 查找变成 O(1) 查找
     const keyCache = {};
     function findVal(item, keys) {
         const cacheKey = keys.join('|');
@@ -343,7 +338,7 @@
         }
         const itemKeys = Object.keys(item);
         for (let k of keys) {
-            const match = itemKeys.find(ik => ik.trim().toLowerCase() === k.toLowerCase());
+            const match = itemKeys.find(ik => ik.replace(/\s+/g,'').toLowerCase() === k.replace(/\s+/g,'').toLowerCase());
             if (match) { keyCache[cacheKey] = match; return item[match]; }
         }
         return null;
@@ -355,21 +350,19 @@
         loadExcel();
     }
 
+    // ★ 修改点：接入新 API，取代读取静态文件的逻辑
     async function loadExcel() {
-        showStatus("📥 正在高速读取数据...");
+        showStatus("📥 正在从云端拉取最新数据...");
         try {
-            const response = await fetch('./data.xlsx');
-            if (response.ok) {
-                const buffer = await response.arrayBuffer();
-                const workbook = XLSX.read(buffer);
-                const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                const json = XLSX.utils.sheet_to_json(sheet);
-                processData(json);
-            } else { throw new Error("File 404"); }
+            const response = await fetch('/api/get-my-buildings?action=map');
+            const result = await response.json();
+            if (result.status === 'success') {
+                processData(result.data);
+            } else { throw new Error(result.message); }
         } catch (err) {
-            console.warn("读取失败，启用备份数据");
+            console.warn("读取失败，启用备份数据", err);
             processData(DEMO_DATA); 
-            showStatus("⚠️ 使用内置备份数据");
+            showStatus("⚠️ 无法连接服务器，使用内置备份数据");
         }
     }
 
@@ -420,12 +413,11 @@
             };
         }).filter(d => d.isValid);
 
-        // ★ 隐藏首屏加载动画
         document.getElementById('global-loader').style.display = 'none';
 
         if (rawData.length === 0) { showStatus("❌ 数据为空"); return; }
         
-        showStatus(`✅ 极速加载 ${rawData.length} 个项目`);
+        showStatus(`✅ 已实时加载 ${rawData.length} 个项目`);
         initFilters();
         renderMap(rawData);
         setTimeout(() => document.getElementById('status-bar').style.display = 'none', 3000);
@@ -455,7 +447,6 @@
         executeFilters(); 
     }
 
-    // 辅助提取表单数值
     function getFilterValue(valStr, metric) {
         let v = valStr.trim();
         if (v === '') return null;
@@ -481,12 +472,10 @@
 
         const keyword = document.getElementById('search-input').value.trim().toLowerCase();
         
-        // 读取第一组条件
         const metric1 = document.getElementById('adv-metric-1').value;
         const op1 = document.getElementById('adv-op-1').value;
         const val1 = getFilterValue(document.getElementById('adv-val-1').value, metric1);
         
-        // 读取第二组条件
         const metric2 = document.getElementById('adv-metric-2').value;
         const op2 = document.getElementById('adv-op-2').value;
         const val2 = getFilterValue(document.getElementById('adv-val-2').value, metric2);
@@ -500,7 +489,6 @@
             if (!activeDistricts.has(item.district)) return false;
             if (keyword && !item.name.toLowerCase().includes(keyword)) return false;
             
-            // ★ 应用双重过滤逻辑 (AND 关系)
             if (!checkCondition(item[metric1], op1, val1)) return false;
             if (!checkCondition(item[metric2], op2, val2)) return false;
             
@@ -521,11 +509,10 @@
         }
     }
 
-    // ★ 性能优化 2：批量打点渲染引擎
     function renderMap(dataToRender) {
-        map.clearMap(); // 一键清空老坐标
+        map.clearMap(); 
         if (circleOverlay) { map.remove(circleOverlay); circleOverlay = null; }
-        markers = []; // 准备存储新坐标
+        markers = []; 
         
         const prices = dataToRender.map(d => d.pCurrent);
         const maxP = Math.max(...prices, 100); 
@@ -553,15 +540,12 @@
             const textColor = (color==='#fbc02d'||color==='#eeeeee') ? '#555' : 'white';
             const content = `<div style="width:26px; height:26px; background:${color}; border:2px solid white; border-radius:50%; box-shadow:0 3px 6px rgba(0,0,0,0.3); color:${textColor}; display:flex; justify-content:center; align-items:center; font-size:11px; font-weight:bold;">${label}</div>`;
             
-            // 绝不在构造函数里传 map: map 触发单点重绘
             const marker = new AMap.Marker({ position: [item.lng, item.lat], content: content, offset: new AMap.Pixel(-13, -13), zIndex: zIndex, extData: item });
             marker.on('click', () => showDetail(item));
-            markers.push(marker); // 存入内存数组
+            markers.push(marker); 
         });
         
-        // ★ 将几百上千个点一次性挂载给显卡处理，彻底告别卡死！
         map.add(markers); 
-        
         updateDashboard(dataToRender);
     }
 
