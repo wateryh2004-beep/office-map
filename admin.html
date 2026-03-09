@@ -323,7 +323,7 @@
         } catch(e) { alert("下载失败，可能文件不存在。"); }
     }
 
-    // ★ 核心修改：支持收集并发送多条公告
+    // ★ 核心修改：打包多个公告发送
     async function updateNotice() {
         const n1 = document.getElementById('notice-input-1').value.trim();
         const n2 = document.getElementById('notice-input-2').value.trim();
@@ -336,7 +336,6 @@
             return;
         }
 
-        // 转成 JSON 字符串发给后端，后端无需修改
         const text = JSON.stringify(notices);
         
         const btn = document.getElementById('btn-update-notice'); 
