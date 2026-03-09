@@ -543,7 +543,7 @@
             const result = await res.json();
             
             allArchiveFiles = result.data.map(f => {
-                let user = '未知', type = '未知', month = '未知', dateStr = '-';
+                let user = '未知', type = '未知', month = '未知', dateStr = '-', rawTimestamp = 0;
                 const parts = f.name.split('-'); 
                 if(parts.length >= 2) {
                     const prefixParts = parts[0].split('_'); 
@@ -552,13 +552,17 @@
                     
                     const timestamp = parseInt(parts[parts.length - 1].split('.')[0]);
                     if (!isNaN(timestamp) && timestamp > 1000000000000) {
+                        rawTimestamp = timestamp; // ★ 保存原始时间戳用于排序
                         const d = new Date(timestamp);
                         month = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}`;
                         dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
                     }
                 }
-                return { ...f, user, type, month, dateStr };
+                return { ...f, user, type, month, dateStr, rawTimestamp };
             });
+
+            // ★ 核心修改：强制按照时间戳从大到小（最新在前，最老在后）排序
+            allArchiveFiles.sort((a, b) => b.rawTimestamp - a.rawTimestamp);
 
             const users = new Set(allArchiveFiles.map(f => f.user).filter(u => u !== '未知'));
             const months = new Set(allArchiveFiles.map(f => f.month).filter(m => m !== '未知'));
