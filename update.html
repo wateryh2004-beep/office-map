@@ -101,20 +101,20 @@
                     
                     <th class="th-last">报价</th>
                     <th class="th-last">物业费</th>
-                    <th class="th-last">表面</th>
-                    <th class="th-last" style="width:80px;">免租期(三年租约)</th>
-                    <th class="th-last">净有效</th>
+                    <th class="th-last">表面租金</th>
+                    <th class="th-last" style="width:115px; white-space:nowrap;">免租期(三年租约)</th>
+                    <th class="th-last">净有效租金</th>
                     <th class="th-last">空置面积</th>
                     <th class="th-last">空置率</th>
 
                     <th class="th-curr">报价</th>
                     <th class="th-curr">物业费</th>
-                    <th class="th-curr">表面</th>
-                    <th class="th-curr" style="width:80px;">免租期(三年租约)</th>
-                    <th class="th-curr" style="background:#fff3e0;">净有效</th>
-                    <th class="th-curr" style="background:#fff3e0;">变化率</th>
+                    <th class="th-curr">表面租金</th>
+                    <th class="th-curr" style="width:115px; white-space:nowrap;">免租期(三年租约)</th>
+                    <th class="th-curr" style="background:#fff3e0;">净有效租金</th>
+                    <th class="th-curr" style="background:#fff3e0; white-space:nowrap;">租金变化率</th>
                     <th class="th-curr">空置面积</th>
-                    <th class="th-curr" style="background:#fff3e0;">空置面积变化</th>
+                    <th class="th-curr" style="background:#fff3e0; white-space:nowrap;">空置面积变化</th>
                     <th class="th-curr" style="background:#fff3e0;">空置率</th>
                     <th class="th-curr" style="width:100px;">备注</th> 
                 </tr>
@@ -269,15 +269,15 @@
                 <td style="color:#888;">${lastVacArea > 0 ? Math.round(lastVacArea).toLocaleString() : '-'}</td>
                 <td style="color:#888;">${lastVacRate > 0 ? (lastVacRate*100).toFixed(1) + '%' : '-'}</td>
 
-                <td class="input-cell"><input type="number" class="curr-quote" value="${d.qQuote || ''}" step="1" oninput="calcRow(${originalIndex})"></td>
-                <td class="input-cell"><input type="number" class="curr-prop" value="${d.qProp || ''}" step="1" oninput="calcRow(${originalIndex})"></td>
-                <td class="input-cell"><input type="number" class="curr-face" value="${d.qFace || ''}" step="0.01" oninput="calcRow(${originalIndex})"></td>
-                <td class="input-cell"><input type="number" class="curr-free" value="${d.qFree || ''}" step="0.1" oninput="calcRow(${originalIndex})"></td>
+                <td class="input-cell"><input type="number" class="curr-quote req-field" value="${d.qQuote || ''}" step="1" oninput="calcRow(${originalIndex})"></td>
+                <td class="input-cell"><input type="number" class="curr-prop req-field" value="${d.qProp || ''}" step="1" oninput="calcRow(${originalIndex})"></td>
+                <td class="input-cell"><input type="number" class="curr-face req-field" value="${d.qFace || ''}" step="0.01" oninput="calcRow(${originalIndex})"></td>
+                <td class="input-cell"><input type="number" class="curr-free req-field" value="${d.qFree || ''}" step="0.1" oninput="calcRow(${originalIndex})"></td>
                 
                 <td class="calc-cell net-rent" style="color:#d84315;">-</td>
                 <td class="calc-cell rent-change">-</td>
                 
-                <td class="input-cell"><input type="number" class="curr-vac-area" value="${d.qVacArea || ''}" step="1" oninput="calcRow(${originalIndex})"></td>
+                <td class="input-cell"><input type="number" class="curr-vac-area req-field" value="${d.qVacArea || ''}" step="1" oninput="calcRow(${originalIndex})"></td>
                 
                 <td class="calc-cell area-change">-</td>
                 <td class="calc-cell vac-rate" style="color:#003E7E;">-</td>
