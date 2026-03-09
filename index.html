@@ -28,13 +28,13 @@
 
         /* 主内容区 */
         .main-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 20px; overflow: hidden; }
-        .welcome-text { font-size: 13px; color: #555; margin-bottom: 20px; flex-shrink: 0; }
+        .welcome-text { font-size: 13px; color: #555; margin-bottom: 15px; flex-shrink: 0; }
 
-        /* ★ 导航卡片 (已去掉图标，变窄以留出更多空间) */
+        /* ★ 核心修改：导航卡片变窄，去掉图标，仅留文字 */
         .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 850px; width: 100%; margin-bottom: 20px; flex-shrink: 0; }
         .nav-card { background: white; padding: 15px; border-radius: 4px; text-align: center; text-decoration: none; color: #333; border: 1px solid #e0e0e0; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
         .nav-card:hover { transform: translateY(-2px); border-color: #003E7E; box-shadow: 0 4px 12px rgba(0,62,126,0.08); }
-        .card-title { font-size: 16px; font-weight: bold; color: #003E7E; }
+        .card-title { font-size: 15px; font-weight: bold; color: #003E7E; }
         .nav-card.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; background: #fafafa; color: #999; }
 
         /* 留言墙升级 (加入全屏样式) */
@@ -58,9 +58,9 @@
         .msg-input-group input:focus { border-color: #003E7E; }
         .msg-input-group button { background: #003E7E; color: white; border: none; padding: 0 25px; border-radius: 0 2px 2px 0; cursor: pointer; font-size: 13px; font-weight: bold; }
 
-        /* ★ 吸底公告栏升级：变宽、变大，容纳多个公告 */
-        .notice-bar { background: #fffde7; color: #f57f17; padding: 12px 25px; display: flex; align-items: center; border-top: 1px solid #fff59d; flex-shrink: 0; font-size: 14px; box-shadow: 0 -2px 10px rgba(0,0,0,0.03); z-index: 10; }
-        .notice-title { font-weight: bold; margin-right: 20px; white-space: nowrap; font-size: 15px; color: #d84315; }
+        /* ★ 吸底公告栏升级：加高加宽，视觉更明显 */
+        .notice-bar { background: #fffde7; color: #f57f17; padding: 12px 25px; display: flex; align-items: center; border-top: 1px solid #fff59d; flex-shrink: 0; font-size: 15px; box-shadow: 0 -2px 10px rgba(0,0,0,0.03); z-index: 10; }
+        .notice-title { font-weight: bold; margin-right: 20px; white-space: nowrap; color: #d84315; }
         .marquee-wrapper { flex: 1; overflow: hidden; position: relative; }
         .marquee-text { display: inline-block; white-space: nowrap; animation: marquee 40s linear infinite; font-weight: 500; letter-spacing: 0.5px;}
         .marquee-text:hover { animation-play-state: paused; } /* 鼠标悬停可暂停滚动查看 */
@@ -155,179 +155,181 @@
 </div>
 
 <script>
-    let currentUser = null;
+let currentUser = null;
 
-    window.onload = function() {
-        const cachedUser = localStorage.getItem('colliers_user');
-        const cachedToken = localStorage.getItem('colliers_token'); 
-        if (cachedUser && cachedToken) {
-            currentUser = JSON.parse(cachedUser);
-            loginSuccess(currentUser);
-        }
-        loadNotice(); 
-    };
+window.onload = function() {
+    const cachedUser = localStorage.getItem('colliers_user');
+    const cachedToken = localStorage.getItem('colliers_token'); 
+    if (cachedUser && cachedToken) {
+        currentUser = JSON.parse(cachedUser);
+        loginSuccess(currentUser);
+    }
+    loadNotice(); 
+};
 
-    function toggleFullscreen() {
-        const wall = document.getElementById('msg-wall');
-        const icon = document.getElementById('expand-icon');
-        wall.classList.toggle('fullscreen');
+// 全屏切换逻辑
+function toggleFullscreen() {
+    const wall = document.getElementById('msg-wall');
+    const icon = document.getElementById('expand-icon');
 
-        if (wall.classList.contains('fullscreen')) {
-            icon.classList.remove('fa-expand');
-            icon.classList.add('fa-compress'); 
-        } else {
-            icon.classList.remove('fa-compress');
-            icon.classList.add('fa-expand'); 
-        }
+    wall.classList.toggle('fullscreen');
 
-        const list = document.getElementById('msg-list');
-        list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
+    if (wall.classList.contains('fullscreen')) {
+        icon.classList.remove('fa-expand');
+        icon.classList.add('fa-compress'); 
+    } else {
+        icon.classList.remove('fa-compress');
+        icon.classList.add('fa-expand'); 
     }
 
-    async function handleLogin() {
-        const name = document.getElementById('login-name').value.trim();
-        const phone = document.getElementById('login-phone').value.trim();
-        const password = document.getElementById('login-pwd').value.trim();
-        const msg = document.getElementById('login-msg');
+    const list = document.getElementById('msg-list');
+    list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
+}
 
-        if (!name || !phone || !password) { msg.innerText = "请填写完整"; msg.style.display = 'block'; return; }
-        const btn = document.querySelector('.login-btn'); btn.innerText = "认证中...";
+async function handleLogin() {
+    const name = document.getElementById('login-name').value.trim();
+    const phone = document.getElementById('login-phone').value.trim();
+    const password = document.getElementById('login-pwd').value.trim();
+    const msg = document.getElementById('login-msg');
 
-        try {
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: name, id: phone, phone: phone, password: password })
-            });
-            const data = await res.json();
-            if (data.status === 'success') {
-                currentUser = data.data; 
-                localStorage.setItem('colliers_user', JSON.stringify(data.data));
-                localStorage.setItem('colliers_token', data.token); 
-                loginSuccess(data.data);
-            } else { msg.innerText = data.message || "失败"; msg.style.display = 'block'; }
-        } catch (e) { msg.innerText = "网络错误"; msg.style.display = 'block'; }
-        finally { btn.innerText = "认证进入"; }
-    }
+    if (!name || !phone || !password) { msg.innerText = "请填写完整"; msg.style.display = 'block'; return; }
+    const btn = document.querySelector('.login-btn'); btn.innerText = "认证中...";
 
-    function loginSuccess(user) {
-        currentUser = user;
-        document.getElementById('login-overlay').style.display = 'none';
+    try {
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name, id: phone, phone: phone, password: password })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+            currentUser = data.data; 
+            localStorage.setItem('colliers_user', JSON.stringify(data.data));
+            localStorage.setItem('colliers_token', data.token); 
+            loginSuccess(data.data);
+        } else { msg.innerText = data.message || "失败"; msg.style.display = 'block'; }
+    } catch (e) { msg.innerText = "网络错误"; msg.style.display = 'block'; }
+    finally { btn.innerText = "认证进入"; }
+}
 
-        const displayName = user.fullName || user.name;
-        document.getElementById('user-display').innerText = `${displayName} (${user.role})`;
+function loginSuccess(user) {
+    currentUser = user;
+    document.getElementById('login-overlay').style.display = 'none';
 
-        if (user.role === 'viewer') document.getElementById('btn-data-collect').classList.add('disabled');
-        if (user.role === 'admin') document.getElementById('admin-settings-btn').style.display = 'block';
+    const displayName = user.fullName || user.name;
+    document.getElementById('user-display').innerText = `${displayName} (${user.role})`;
 
-        startHeartbeat();
-        loadMessages(); 
-    }
+    if (user.role === 'viewer') document.getElementById('btn-data-collect').classList.add('disabled');
+    if (user.role === 'admin') document.getElementById('admin-settings-btn').style.display = 'block';
 
-    function logout() { localStorage.clear(); location.reload(); }
+    startHeartbeat();
+    loadMessages(); 
+}
 
-    async function loadNotice() {
-        try {
-            const res = await fetch(`/api/portal?action=get-notice&_t=${Date.now()}`);
-            const data = await res.json();
-            
-            let finalHtml = "欢迎使用系统！";
-            if (data.status === 'success' && data.text) {
-                try {
-                    // ★ 核心修复：解析数组，并用美观的间距和星星隔开，防止粘连
-                    const notices = JSON.parse(data.text);
-                    if (Array.isArray(notices) && notices.length > 0) {
-                        finalHtml = notices.join('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🌟&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;');
-                    } else {
-                        finalHtml = data.text;
-                    }
-                } catch(e) {
-                    finalHtml = data.text; // 兼容老版本的纯文本
-                }
-            }
-            document.getElementById('marquee-content').innerHTML = finalHtml;
-        } catch (e) { document.getElementById('marquee-content').innerText = "系统运行中"; }
-    }
+function logout() { localStorage.clear(); location.reload(); }
 
-    async function loadMessages() {
-        const list = document.getElementById('msg-list');
-        try {
-            const res = await fetch(`/api/portal?action=get-messages&_t=${Date.now()}`);
-            const msgs = await res.json();
-            if (!Array.isArray(msgs) || msgs.length === 0) { 
-                list.innerHTML = '<p style="color:#999; font-size:12px; text-align:center; padding:20px;">暂无留言</p>'; return; 
-            }
-            list.innerHTML = msgs.map(m => `
-                <div class="msg-item">
-                    <div class="msg-info"><strong>${m.user}</strong> · ${m.time}</div>
-                    <div class="msg-content">${m.text}</div>
-                </div>
-            `).join('');
-            list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
-        } catch (e) { list.innerHTML = '<p style="color:red; font-size:12px; text-align:center;">加载异常</p>'; }
-    }
-
-    async function postMessage() {
-        const input = document.getElementById('new-msg');
-        const text = input.value.trim();
-        if (!text) return;
-
-        if (!currentUser) {
-            alert("登录状态异常，请刷新页面重新登录");
-            return;
-        }
-
-        const btn = document.getElementById('btn-send-msg');
-        btn.disabled = true; btn.innerText = "...";
-
-        const sendName = currentUser.fullName || currentUser.name;
-
-        try {
-            const res = await fetch('/api/portal?action=post-message', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user: sendName, text: text })
-            });
-
-            const data = await res.json();
-            if (data.status === 'success') { 
-                input.value = ''; 
-                await loadMessages(); 
-            } else {
-                alert("发送失败: " + (data.message || '未知错误'));
-            }
-        } catch (e) { 
-            console.error("发送留言出错: ", e);
-            alert("网络连接异常，发送失败。");
-        } finally { 
-            btn.disabled = false; btn.innerText = "发送"; 
-        }
-    }
-
-    function startHeartbeat() {
-        setInterval(async () => {
-            const userStr = localStorage.getItem('colliers_user');
-            const token = localStorage.getItem('colliers_token');
-            if (!userStr || !token) return;
-            const user = JSON.parse(userStr);
+async function loadNotice() {
+    try {
+        const res = await fetch(`/api/portal?action=get-notice&_t=${Date.now()}`);
+        const data = await res.json();
+        
+        let finalHtml = "欢迎使用系统！";
+        if (data.status === 'success' && data.text) {
             try {
-                const res = await fetch('/api/login?action=check', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: user.name, token: token })
-                });
-                if ((await res.json()).status === 'invalid') { logout(); alert("账号已在别处登录。"); }
-            } catch (e) { }
-        }, 60000);
+                // ★ 核心修复：解析数组，并用美观的间距和星星隔开，防止粘连
+                const notices = JSON.parse(data.text);
+                if (Array.isArray(notices) && notices.length > 0) {
+                    finalHtml = notices.join('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🌟&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;');
+                } else {
+                    finalHtml = data.text;
+                }
+            } catch(e) {
+                finalHtml = data.text; // 兼容老版本的纯文本
+            }
+        }
+        document.getElementById('marquee-content').innerHTML = finalHtml;
+    } catch (e) { document.getElementById('marquee-content').innerText = "系统运行中"; }
+}
+
+async function loadMessages() {
+    const list = document.getElementById('msg-list');
+    try {
+        const res = await fetch(`/api/portal?action=get-messages&_t=${Date.now()}`);
+        const msgs = await res.json();
+        if (!Array.isArray(msgs) || msgs.length === 0) { 
+            list.innerHTML = '<p style="color:#999; font-size:12px; text-align:center; padding:20px;">暂无留言</p>'; return; 
+        }
+        list.innerHTML = msgs.map(m => `
+            <div class="msg-item">
+                <div class="msg-info"><strong>${m.user}</strong> · ${m.time}</div>
+                <div class="msg-content">${m.text}</div>
+            </div>
+        `).join('');
+        list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
+    } catch (e) { list.innerHTML = '<p style="color:red; font-size:12px; text-align:center;">加载异常</p>'; }
+}
+
+async function postMessage() {
+    const input = document.getElementById('new-msg');
+    const text = input.value.trim();
+    if (!text) return;
+
+    if (!currentUser) {
+        alert("登录状态异常，请刷新页面重新登录");
+        return;
     }
 
-    function openPwdModal() { document.getElementById('pwd-modal').style.display = 'flex'; document.getElementById('cp-name').value = JSON.parse(localStorage.getItem('colliers_user')).name; }
-    function closePwdModal() { document.getElementById('pwd-modal').style.display = 'none'; }
-    async function submitChangePwd() {
-        const id = document.getElementById('cp-id').value.trim(), oldPwd = document.getElementById('cp-old').value.trim(), newPwd = document.getElementById('cp-new').value.trim(), msg = document.getElementById('pwd-msg');
-        if(!id || !oldPwd || !newPwd) { msg.innerText = "请填满所有字段"; msg.style.display='block'; return; }
-        try {
-            const res = await fetch('/api/login?action=change-pwd', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: document.getElementById('cp-name').value, id, oldPwd, newPwd }) });
-            const data = await res.json();
-            if(data.status === 'success') { alert("修改成功，请重登"); logout(); } else { msg.innerText = data.message; msg.style.display='block'; }
-        } catch(e) { msg.innerText = "修改失败"; msg.style.display='block'; }
+    const btn = document.getElementById('btn-send-msg');
+    btn.disabled = true; btn.innerText = "...";
+
+    const sendName = currentUser.fullName || currentUser.name;
+
+    try {
+        const res = await fetch('/api/portal?action=post-message', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user: sendName, text: text })
+        });
+
+        const data = await res.json();
+        if (data.status === 'success') { 
+            input.value = ''; 
+            await loadMessages(); 
+        } else {
+            alert("发送失败: " + (data.message || '未知错误'));
+        }
+    } catch (e) { 
+        console.error("发送留言出错: ", e);
+        alert("网络连接异常，发送失败。");
+    } finally { 
+        btn.disabled = false; btn.innerText = "发送"; 
     }
+}
+
+function startHeartbeat() {
+    setInterval(async () => {
+        const userStr = localStorage.getItem('colliers_user');
+        const token = localStorage.getItem('colliers_token');
+        if (!userStr || !token) return;
+        const user = JSON.parse(userStr);
+        try {
+            const res = await fetch('/api/login?action=check', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: user.name, token: token })
+            });
+            if ((await res.json()).status === 'invalid') { logout(); alert("账号已在别处登录。"); }
+        } catch (e) { }
+    }, 60000);
+}
+
+function openPwdModal() { document.getElementById('pwd-modal').style.display = 'flex'; document.getElementById('cp-name').value = JSON.parse(localStorage.getItem('colliers_user')).name; }
+function closePwdModal() { document.getElementById('pwd-modal').style.display = 'none'; }
+async function submitChangePwd() {
+    const id = document.getElementById('cp-id').value.trim(), oldPwd = document.getElementById('cp-old').value.trim(), newPwd = document.getElementById('cp-new').value.trim(), msg = document.getElementById('pwd-msg');
+    if(!id || !oldPwd || !newPwd) { msg.innerText = "请填满所有字段"; msg.style.display='block'; return; }
+    try {
+        const res = await fetch('/api/login?action=change-pwd', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: document.getElementById('cp-name').value, id, oldPwd, newPwd }) });
+        const data = await res.json();
+        if(data.status === 'success') { alert("修改成功，请重登"); logout(); } else { msg.innerText = data.message; msg.style.display='block'; }
+    } catch(e) { msg.innerText = "修改失败"; msg.style.display='block'; }
+}
 </script>
 </body>
 </html>
