@@ -38,7 +38,7 @@
         .card-title { font-size: 14px; font-weight: 600; }
         .nav-card.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; background: #fafafa; }
 
-        /* 留言墙升级 (加入全屏样式) */
+        /* 留言墙 */
         .msg-wall { flex: 1; min-height: 0; width: 100%; max-width: 850px; background: white; border-radius: 4px; border: 1px solid #e0e0e0; display: flex; flex-direction: column; overflow: hidden; transition: all 0.3s ease; }
 
         /* 激活全屏时的样式 */
@@ -59,13 +59,12 @@
         .msg-input-group input:focus { border-color: #003E7E; }
         .msg-input-group button { background: #003E7E; color: white; border: none; padding: 0 25px; border-radius: 0 2px 2px 0; cursor: pointer; font-size: 13px; font-weight: bold; }
 
-        /* 吸底公告栏 */
-        .notice-bar { background: #fffde7; color: #f57f17; padding: 8px 20px; display: flex; align-items: center; border-top: 1px solid #fff59d; flex-shrink: 0; font-size: 12px; }
-        .notice-title { font-weight: bold; margin-right: 10px; white-space: nowrap; }
-        .marquee-wrapper { flex: 1; overflow: hidden; position: relative; }
-        .marquee-text { display: inline-block; white-space: nowrap; animation: marquee 30s linear infinite; }
-        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-        #admin-settings-btn { display: none; margin-left: 15px; background: #003E7E; color: white; border: none; padding: 4px 10px; border-radius: 2px; cursor: pointer; font-size: 11px; }
+        /* ★ 核心修复：吸底公告栏，取消跑马灯，改为多行自适应堆叠 */
+        .notice-bar { background: #fffde7; color: #f57f17; padding: 12px 20px; display: flex; align-items: flex-start; border-top: 1px solid #fff59d; flex-shrink: 0; font-size: 13px; }
+        .notice-title { font-weight: bold; margin-right: 15px; white-space: nowrap; margin-top: 2px;}
+        .notice-content { flex: 1; display: flex; flex-direction: column; gap: 6px; color: #d32f2f; font-weight: 500;}
+        .notice-item-line { word-break: break-word; line-height: 1.4; }
+        #admin-settings-btn { display: none; margin-left: 15px; background: #003E7E; color: white; border: none; padding: 6px 12px; border-radius: 2px; cursor: pointer; font-size: 12px; margin-top: -2px;}
 
         /* 模态框 */
         #pwd-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; }
@@ -150,8 +149,8 @@
 
 <div class="notice-bar">
     <div class="notice-title">📢 公告</div>
-    <div class="marquee-wrapper">
-        <div class="marquee-text" id="marquee-content">加载中...</div>
+    <div class="notice-content" id="notice-content">
+        <div class="notice-item-line">加载中...</div>
     </div>
     <button id="admin-settings-btn" onclick="window.location.href='admin.html'">后台管理</button>
 </div>
@@ -163,14 +162,12 @@
         const cachedUser = localStorage.getItem('colliers_user');
         const cachedToken = localStorage.getItem('colliers_token'); 
         if (cachedUser && cachedToken) {
-            // 如果有缓存，赋值给 currentUser 并直接调用 loginSuccess
             currentUser = JSON.parse(cachedUser);
             loginSuccess(currentUser);
         }
         loadNotice(); 
     };
 
-    // 全屏切换逻辑
     function toggleFullscreen() {
         const wall = document.getElementById('msg-wall');
         const icon = document.getElementById('expand-icon');
@@ -206,12 +203,9 @@
             });
             const data = await res.json();
             if (data.status === 'success') {
-                // 登录成功时，先赋值给全局 currentUser！
                 currentUser = data.data; 
-
                 localStorage.setItem('colliers_user', JSON.stringify(data.data));
                 localStorage.setItem('colliers_token', data.token); 
-
                 loginSuccess(data.data);
             } else { msg.innerText = data.message || "失败"; msg.style.display = 'block'; }
         } catch (e) { msg.innerText = "网络错误"; msg.style.display = 'block'; }
@@ -219,12 +213,9 @@
     }
 
     function loginSuccess(user) {
-        // ★ 修复点：为确保万无一失，在这里也强行赋值一次
         currentUser = user;
-
         document.getElementById('login-overlay').style.display = 'none';
 
-        // 顶部显示英文全名 (如果存在)，否则显示邮箱
         const displayName = user.fullName || user.name;
         document.getElementById('user-display').innerText = `${displayName} (${user.role})`;
 
@@ -237,31 +228,31 @@
 
     function logout() { localStorage.clear(); location.reload(); }
 
-    // ★ 核心修复：解析 JSON 并将每个公告独立为一行（自动增加高度）
+    // ★ 核心修复：解析从后台传来的 JSON 数组，并生成多行 div，强制换行显示！
     async function loadNotice() {
         try {
             const res = await fetch(`/api/portal?action=get-notice&_t=${Date.now()}`);
             const data = await res.json();
             
-            let finalHtml = "欢迎使用系统！";
+            let finalHtml = '<div class="notice-item-line">欢迎使用系统！</div>';
+            
             if (data.status === 'success' && data.text) {
                 try {
-                    // 尝试解析 JSON 数组
+                    // 解析 admin 页面传过来的数组
                     const notices = JSON.parse(data.text);
                     if (Array.isArray(notices) && notices.length > 0) {
-                        // 使用 div 包裹，强行让每个公告占据独立一行，并且居左对齐
-                        finalHtml = `<div style="text-align: left;">` + 
-                                    notices.map(n => `<div style="padding: 3px 0; line-height: 1.4;">🔹 ${n}</div>`).join('') + 
-                                    `</div>`;
+                        // 有几个公告，就生成几个 <div>，保证绝对换行
+                        finalHtml = notices.map(n => `<div class="notice-item-line">🔹 ${n}</div>`).join('');
                     } else {
-                        finalHtml = data.text;
+                        finalHtml = `<div class="notice-item-line">🔹 ${data.text}</div>`;
                     }
                 } catch(e) {
-                    finalHtml = data.text;
+                    // 兼容纯文本老数据
+                    finalHtml = `<div class="notice-item-line">🔹 ${data.text}</div>`;
                 }
             }
-            document.getElementById('marquee-content').innerHTML = finalHtml;
-        } catch (e) { document.getElementById('marquee-content').innerText = "系统运行中"; }
+            document.getElementById('notice-content').innerHTML = finalHtml;
+        } catch (e) { document.getElementById('notice-content').innerHTML = '<div class="notice-item-line">系统运行中</div>'; }
     }
 
     async function loadMessages() {
@@ -285,7 +276,7 @@
     async function postMessage() {
         const input = document.getElementById('new-msg');
         const text = input.value.trim();
-        if (!text) return; // 移除原先 !currentUser 的严苛拦截，改为下方判断
+        if (!text) return; 
 
         if (!currentUser) {
             alert("登录状态异常，请刷新页面重新登录");
@@ -295,7 +286,6 @@
         const btn = document.getElementById('btn-send-msg');
         btn.disabled = true; btn.innerText = "...";
 
-        // 优先使用英文全名发送留言，没有再退化为邮箱
         const sendName = currentUser.fullName || currentUser.name;
 
         try {
