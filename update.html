@@ -43,6 +43,39 @@
         .input-cell.base-edit input { background: #f8f9fa; border-color: #ddd; }
         .input-cell.base-edit input:focus { background: #fff; border-color: #003E7E; }
 
+        /* ★ 备注列的智能自适应伸缩框 */
+        textarea.curr-remark {
+            width: 100%;
+            height: 24px;
+            padding: 4px 2px;
+            border: 1px solid #ccc;
+            border-radius: 2px;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 11px;
+            resize: none;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            text-align: left;
+            position: relative;
+            z-index: 1;
+        }
+        textarea.curr-remark:focus {
+            height: 80px;
+            border-color: #003E7E;
+            background: #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            position: absolute;
+            width: 250px;
+            z-index: 99;
+            transform: translateY(-30px) translateX(-150px);
+        }
+        .remark-cell-container {
+            position: relative;
+            width: 100%;
+            height: 24px;
+        }
+
         .calc-cell { background: #fcfcfc; color: #666; font-weight: bold; }
         .action-bar { flex-shrink: 0; display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
         .btn-save { background: white; color: #333; border: 1px solid #ccc; padding: 8px 20px; font-size: 13px; border-radius: 2px; cursor: pointer; transition: 0.2s; }
@@ -54,9 +87,9 @@
 
         /* 弹窗遮罩 */
         #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; }
-        .modal-box { background: white; padding: 20px 30px; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); max-width: 400px; text-align: center; }
+        .modal-box { background: white; padding: 25px 30px; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); max-width: 450px; text-align: center; }
         .modal-box h3 { margin-top: 0; color: #d32f2f; }
-        .modal-box p { font-size: 13px; color: #444; line-height: 1.5; text-align: left; }
+        .modal-box p { font-size: 13px; color: #444; line-height: 1.6; text-align: left; }
         .modal-btn { background: #003E7E; color: white; border: none; padding: 8px 20px; border-radius: 2px; cursor: pointer; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
@@ -126,7 +159,7 @@
 
 <div id="modal-overlay">
     <div class="modal-box">
-        <h3>⚠️ 存在未填完的楼宇</h3>
+        <h3>⚠️ 填写未完成</h3>
         <p id="modal-text"></p>
         <button class="modal-btn" onclick="closeModal()">去补充填写</button>
     </div>
@@ -271,7 +304,11 @@
                 <td class="calc-cell area-change">-</td>
                 <td class="calc-cell vac-rate" style="color:#003E7E;">-</td>
                 
-                <td class="input-cell"><input type="text" class="curr-remark" value="${d.qRemark || ''}" oninput="calcRow(${originalIndex})"></td>
+                <td class="input-cell" style="overflow:visible;">
+                    <div class="remark-cell-container">
+                        <textarea class="curr-remark" oninput="calcRow(${originalIndex})">${d.qRemark || ''}</textarea>
+                    </div>
+                </td>
             </tr>
             `;
         });
@@ -358,11 +395,12 @@
         saveDraft();
         const rows = document.querySelectorAll('#table-body tr[data-id]');
         const submission = [];
-        let incompleteBuildings = [];
+        let touchedButIncomplete = [];
         
         const matchName = currentUser.fullName || currentUser.name; 
 
-        // 1. 拦截校验阶段：找出一个字都没填的（完全空），和填了一半没填完的（不完整）
+        // 1. 拦截校验阶段：找出【碰过，但是必填项没填满】的楼宇
+        let hasAnyEdit = false;
         rows.forEach((row) => {
             const sn = row.dataset.sn;
             const bName = row.dataset.name;
@@ -372,24 +410,45 @@
             const qFace = row.querySelector('.curr-face').value.trim();
             const qFree = row.querySelector('.curr-free').value.trim();
             const qVacArea = row.querySelector('.curr-vac-area').value.trim();
+            const qRemark = row.querySelector('.curr-remark').value.trim();
             
-            // 判断这行是否被碰过（哪怕只填了一个字）
-            const isTouched = (qQuote || qProp || qFace || qFree || qVacArea);
+            // 判断这行是否被输入过任何新数据
+            const isTouched = (qQuote || qProp || qFace || qFree || qVacArea || qRemark);
+            if(isTouched) hasAnyEdit = true;
             
             // 判断这行必填项是否完整
             const isComplete = (qQuote && qProp && qFace && qFree && qVacArea);
 
             if (isTouched && !isComplete) {
-                incompleteBuildings.push(`序号 ${sn}：${bName}`);
+                touchedButIncomplete.push(`序号 ${sn}：${bName}`);
             }
         });
 
+        if (!hasAnyEdit) {
+            alert("您还没有填写任何新的数据，无需提交。");
+            return;
+        }
+
         // 触发拦截弹窗
-        if (incompleteBuildings.length > 0) {
-            let msg = `系统检测到有 <b>${incompleteBuildings.length}</b> 个楼宇的数据填写不完整：<br><br>`;
-            msg += incompleteBuildings.slice(0, 5).join('<br>');
-            if (incompleteBuildings.length > 5) msg += `<br>... 等等`;
-            msg += `<br><br><span style="color:#d32f2f;">【报价、物业费、表面、免租期、空置面积】均为必填项，请补充完整。</span>`;
+        if (touchedButIncomplete.length > 0) {
+            let totalUnfinishedCount = document.querySelectorAll('#table-body tr[data-id]').length;
+            
+            // 统计完全没碰过或者没填完的
+            let reallyIncompleteCount = 0;
+            rows.forEach(r => {
+                const isC = (r.querySelector('.curr-quote').value.trim() && 
+                             r.querySelector('.curr-prop').value.trim() && 
+                             r.querySelector('.curr-face').value.trim() && 
+                             r.querySelector('.curr-free').value.trim() && 
+                             r.querySelector('.curr-vac-area').value.trim());
+                if(!isC) reallyIncompleteCount++;
+            });
+
+            let msg = `系统检测到该列表您总共还有 <b>${reallyIncompleteCount}</b> 个楼宇尚未完成填写。<br><br>`;
+            msg += `其中您刚编辑过的以下楼宇有漏填项：<br>`;
+            msg += touchedButIncomplete.slice(0, 5).join('<br>');
+            if (touchedButIncomplete.length > 5) msg += `<br>... 等等`;
+            msg += `<br><br><span style="color:#d32f2f;">本季度【报价、物业费、表面、免租期、空置面积】均为必填项，空着无法提交，请补充完整。</span>`;
             
             document.getElementById('modal-text').innerHTML = msg;
             document.getElementById('modal-overlay').style.display = 'flex';
@@ -422,7 +481,7 @@
                 "上季度租金报价": getVal(building, ['上季度租金报价', '报价', '租金报价']), 
                 "上季度物业费": getVal(building, ['上季度物业费', '物业费']),
                 "上季度表面租金": getVal(building, ['上季度表面租金', '表面租金', '表面']), 
-                "上季度免租期": getVal(building, ['上季度免租期', '免租期', '免租期（三年租约）']),
+                "上季度免租期（三年租约）": getVal(building, ['上季度免租期', '免租期', '免租期（三年租约）']),
                 "上季度净有效租金": getVal(building, ['上季度净有效租金', '净有效租金']), 
                 "上季度空置面积": getVal(building, ['上季度空置面积', '空置面积']), 
                 "上季度空置率": getVal(building, ['上季度空置率', '空置率']),
