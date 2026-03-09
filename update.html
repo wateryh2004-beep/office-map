@@ -242,8 +242,13 @@
             const lastFace = safeNum(getVal(item, ['上季度表面租金', '表面租金', '表面']));
             const lastFree = safeNum(getVal(item, ['上季度免租期', '免租期', '免租期（三年租约）']));
             const lastNet = safeNum(getVal(item, ['上季度净有效租金', '净有效租金'])); 
-            const lastVacArea = safeNum(getVal(item, ['上季度空置面积', '空置面积']));
-            const lastVacRate = safeNum(getVal(item, ['上季度空置率', '空置率']));
+            
+            // ★ 核心修复：单独取出原值，准确识别 0 和 空
+            const rawVacArea = getVal(item, ['上季度空置面积', '空置面积']);
+            const lastVacArea = safeNum(rawVacArea);
+            
+            const rawVacRate = getVal(item, ['上季度空置率', '空置率']);
+            const lastVacRate = safeNum(rawVacRate);
 
             const d = draftData[originalIndex] || {};
 
@@ -266,8 +271,9 @@
                 <td style="color:#888;">${lastFace || '-'}</td>
                 <td style="color:#888;">${lastFree || '-'}</td>
                 <td style="color:#888; font-weight:bold;">${lastNet > 0 ? lastNet.toFixed(1) : '-'}</td>
-                <td style="color:#888;">${lastVacArea > 0 ? Math.round(lastVacArea).toLocaleString() : '-'}</td>
-                <td style="color:#888;">${lastVacRate > 0 ? (lastVacRate*100).toFixed(1) + '%' : '-'}</td>
+                
+                <td style="color:#888;">${rawVacArea !== '' ? Math.round(lastVacArea).toLocaleString() : '-'}</td>
+                <td style="color:#888;">${rawVacRate !== '' ? (lastVacRate*100).toFixed(1) + '%' : '-'}</td>
 
                 <td class="input-cell"><input type="number" class="curr-quote req-field" value="${d.qQuote || ''}" step="1" oninput="calcRow(${originalIndex})"></td>
                 <td class="input-cell"><input type="number" class="curr-prop req-field" value="${d.qProp || ''}" step="1" oninput="calcRow(${originalIndex})"></td>
