@@ -32,14 +32,14 @@
         .th-last { background: #f4f6f8; color: #003E7E; width: 60px; } 
         .th-curr { background: #fffde7; color: #d84315; width: 85px; }
         
-        .col-fixed { position: sticky; left: 0; z-index: 20; background: #fff; border-right: 2px solid #ddd !important; }
-        th.col-fixed { z-index: 30; background: #fafafa; }
+        .col-fixed-1 { position: sticky; left: 0; z-index: 20; background: #fafafa; border-right: 1px solid #eee; width: 30px; }
+        .col-fixed-2 { position: sticky; left: 30px; z-index: 20; background: #fff; border-right: 2px solid #ddd !important; width: 120px;}
+        th.col-fixed-1, th.col-fixed-2 { z-index: 30; background: #fafafa; }
         
         /* 输入框紧凑样式 */
         .input-cell input { width: 100%; padding: 4px 2px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-family: inherit; font-size: 11px; text-align: center; }
         .input-cell input:focus { border-color: #003E7E; outline: none; background: #e3f2fd; }
         
-        /* ★ 新增：基础信息区可编辑字段的特定样式 */
         .input-cell.base-edit input { background: #f8f9fa; border-color: #ddd; }
         .input-cell.base-edit input:focus { background: #fff; border-color: #003E7E; }
 
@@ -51,6 +51,13 @@
         .btn-submit:hover { background: #002b5e; }
         .btn-submit:disabled { background: #bdbdbd; cursor: not-allowed; }
         .status-msg { font-size: 12px; color: #888; }
+
+        /* 弹窗遮罩 */
+        #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; }
+        .modal-box { background: white; padding: 20px 30px; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); max-width: 400px; text-align: center; }
+        .modal-box h3 { margin-top: 0; color: #d32f2f; }
+        .modal-box p { font-size: 13px; color: #444; line-height: 1.5; text-align: left; }
+        .modal-btn { background: #003E7E; color: white; border: none; padding: 8px 20px; border-radius: 2px; cursor: pointer; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -72,12 +79,13 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th colspan="5" class="th-group-base">基础信息</th>
+                    <th colspan="6" class="th-group-base">基础信息</th>
                     <th colspan="7" class="th-group-last">上季度参考</th>
                     <th colspan="10" class="th-group-curr">本季度填报</th>
                 </tr>
                 <tr>
-                    <th class="th-base col-fixed" style="width:120px;">项目名称</th>
+                    <th class="th-base col-fixed-1">序号</th>
+                    <th class="th-base col-fixed-2">项目名称</th>
                     <th class="th-base" style="width:70px;">子市场</th>
                     <th class="th-base" style="width:80px;">业主 (可补充)</th>
                     <th class="th-base" style="width:80px;">物业 (可补充)</th>
@@ -86,7 +94,7 @@
                     <th class="th-last">报价</th>
                     <th class="th-last">物业费</th>
                     <th class="th-last">表面</th>
-                    <th class="th-last">免租期</th>
+                    <th class="th-last" style="width:80px;">免租期(三年租约)</th>
                     <th class="th-last">净有效</th>
                     <th class="th-last">空置面积</th>
                     <th class="th-last">空置率</th>
@@ -94,17 +102,17 @@
                     <th class="th-curr">报价</th>
                     <th class="th-curr">物业费</th>
                     <th class="th-curr">表面</th>
-                    <th class="th-curr" style="width:50px;">免租期</th>
+                    <th class="th-curr" style="width:80px;">免租期(三年租约)</th>
                     <th class="th-curr" style="background:#fff3e0;">净有效</th>
                     <th class="th-curr" style="background:#fff3e0;">变化率</th>
                     <th class="th-curr">空置面积</th>
-                    <th class="th-curr" style="background:#fff3e0;">面积变化</th>
+                    <th class="th-curr" style="background:#fff3e0;">空置面积变化</th>
                     <th class="th-curr" style="background:#fff3e0;">空置率</th>
                     <th class="th-curr" style="width:100px;">备注</th> 
                 </tr>
             </thead>
             <tbody id="table-body">
-                <tr><td colspan="22" style="text-align:center; padding: 40px; color:#888; font-size: 13px;">数据载入中...</td></tr>
+                <tr><td colspan="23" style="text-align:center; padding: 40px; color:#888; font-size: 13px;">数据载入中...</td></tr>
             </tbody>
         </table>
     </div>
@@ -113,6 +121,14 @@
         <span class="status-msg" id="status-msg">系统将自动保存草稿</span>
         <button class="btn-save" onclick="manualSave()">暂存草稿</button>
         <button class="btn-submit" onclick="submitData()">提交上传</button>
+    </div>
+</div>
+
+<div id="modal-overlay">
+    <div class="modal-box">
+        <h3>⚠️ 存在未填完的楼宇</h3>
+        <p id="modal-text"></p>
+        <button class="modal-btn" onclick="closeModal()">去补充填写</button>
     </div>
 </div>
 
@@ -150,7 +166,7 @@
             if (data.status === 'success') {
                 if(data.message) {
                     document.getElementById('page-title').innerText = `季度填报 - 无任务`;
-                    document.getElementById('table-body').innerHTML = `<tr><td colspan="22" style="color:#004080; text-align:center; padding:20px; font-weight:bold;">${data.message}</td></tr>`;
+                    document.getElementById('table-body').innerHTML = `<tr><td colspan="23" style="color:#004080; text-align:center; padding:20px; font-weight:bold;">${data.message}</td></tr>`;
                     return;
                 }
 
@@ -167,10 +183,10 @@
                 renderTable();
                 autoSaveTimer = setInterval(saveDraft, 10000);
             } else {
-                document.getElementById('table-body').innerHTML = `<tr><td colspan="22" style="color:red; text-align:center;">读取失败: ${data.message}</td></tr>`;
+                document.getElementById('table-body').innerHTML = `<tr><td colspan="23" style="color:red; text-align:center;">读取失败: ${data.message}</td></tr>`;
             }
         } catch (e) {
-            document.getElementById('table-body').innerHTML = `<tr><td colspan="22" style="color:red; text-align:center;">网络加载异常，或者后端报错了: ${e.message}</td></tr>`;
+            document.getElementById('table-body').innerHTML = `<tr><td colspan="23" style="color:red; text-align:center;">网络加载异常，或者后端报错了: ${e.message}</td></tr>`;
         }
     };
 
@@ -203,33 +219,30 @@
             if (item._category !== currentTab) return;
             count++;
 
-            // 基础信息 (灵活匹配)
             const name = getVal(item, ['写字楼名称', 'Project Name CN', 'name']) || '-';
             const district = getVal(item, ['子市场', 'SUBMARKET']) || '-';
             const totalArea = safeNum(getVal(item, ['总面积', 'Total Area']));
             
-            // 可编辑的基础信息 (提供历史值作为默认)
             const defaultOwner = getVal(item, ['业主', 'Landlord']);
             const defaultProp = getVal(item, ['物业', '物业公司', 'Property Management']);
 
-            // 历史数据
             const lastQuote = safeNum(getVal(item, ['上季度租金报价', '报价', '租金报价']));
             const lastPropFee = safeNum(getVal(item, ['上季度物业费', '物业费']));
             const lastFace = safeNum(getVal(item, ['上季度表面租金', '表面租金', '表面']));
-            const lastFree = safeNum(getVal(item, ['上季度免租期', '免租期']));
+            const lastFree = safeNum(getVal(item, ['上季度免租期', '免租期', '免租期（三年租约）']));
             const lastNet = safeNum(getVal(item, ['上季度净有效租金', '净有效租金'])); 
             const lastVacArea = safeNum(getVal(item, ['上季度空置面积', '空置面积']));
             const lastVacRate = safeNum(getVal(item, ['上季度空置率', '空置率']));
 
             const d = draftData[originalIndex] || {};
 
-            // 如果草稿有保存业主和物业，用草稿，否则用历史数据
             const editOwner = d.qOwner !== undefined ? d.qOwner : defaultOwner;
             const editProp = d.qPropMan !== undefined ? d.qPropMan : defaultProp;
 
             html += `
-            <tr data-id="${originalIndex}" data-total-area="${totalArea}" data-last-net="${lastNet}" data-last-vac-area="${lastVacArea}">
-                <td class="col-fixed" style="text-align:left; font-weight:bold; color:#003E7E;">${name}</td>
+            <tr data-id="${originalIndex}" data-sn="${count}" data-name="${name}" data-total-area="${totalArea}" data-last-net="${lastNet}" data-last-vac-area="${lastVacArea}">
+                <td class="col-fixed-1" style="color:#888;">${count}</td>
+                <td class="col-fixed-2" style="text-align:left; font-weight:bold; color:#003E7E;">${name}</td>
                 <td>${district}</td>
                 
                 <td class="input-cell base-edit"><input type="text" class="curr-owner" value="${editOwner}" placeholder="可补充"></td>
@@ -237,23 +250,23 @@
                 
                 <td>${totalArea.toLocaleString()}</td>
                 
-                <td style="color:#888;">${lastQuote > 0 ? lastQuote.toFixed(2) : '-'}</td>
-                <td style="color:#888;">${lastPropFee || '-'}</td>
+                <td style="color:#888;">${lastQuote > 0 ? Math.round(lastQuote) : '-'}</td>
+                <td style="color:#888;">${lastPropFee > 0 ? Math.round(lastPropFee) : '-'}</td>
                 <td style="color:#888;">${lastFace || '-'}</td>
                 <td style="color:#888;">${lastFree || '-'}</td>
                 <td style="color:#888; font-weight:bold;">${lastNet > 0 ? lastNet.toFixed(1) : '-'}</td>
                 <td style="color:#888;">${lastVacArea > 0 ? Math.round(lastVacArea).toLocaleString() : '-'}</td>
                 <td style="color:#888;">${lastVacRate > 0 ? (lastVacRate*100).toFixed(1) + '%' : '-'}</td>
 
-                <td class="input-cell"><input type="number" class="curr-quote" value="${d.qQuote || ''}" step="0.01" oninput="calcRow(${originalIndex})"></td>
-                <td class="input-cell"><input type="number" class="curr-prop" value="${d.qProp || ''}" oninput="calcRow(${originalIndex})"></td>
-                <td class="input-cell"><input type="number" class="curr-face" value="${d.qFace || ''}" oninput="calcRow(${originalIndex})"></td>
-                <td class="input-cell"><input type="number" class="curr-free" value="${d.qFree || ''}" oninput="calcRow(${originalIndex})"></td>
+                <td class="input-cell"><input type="number" class="curr-quote req-field" value="${d.qQuote || ''}" step="1" oninput="calcRow(${originalIndex})"></td>
+                <td class="input-cell"><input type="number" class="curr-prop req-field" value="${d.qProp || ''}" step="1" oninput="calcRow(${originalIndex})"></td>
+                <td class="input-cell"><input type="number" class="curr-face req-field" value="${d.qFace || ''}" oninput="calcRow(${originalIndex})"></td>
+                <td class="input-cell"><input type="number" class="curr-free req-field" value="${d.qFree || ''}" oninput="calcRow(${originalIndex})"></td>
                 
                 <td class="calc-cell net-rent" style="color:#d84315;">-</td>
                 <td class="calc-cell rent-change">-</td>
                 
-                <td class="input-cell"><input type="number" class="curr-vac-area" value="${d.qVacArea || ''}" step="1" oninput="calcRow(${originalIndex})"></td>
+                <td class="input-cell"><input type="number" class="curr-vac-area req-field" value="${d.qVacArea || ''}" step="1" oninput="calcRow(${originalIndex})"></td>
                 
                 <td class="calc-cell area-change">-</td>
                 <td class="calc-cell vac-rate" style="color:#003E7E;">-</td>
@@ -264,7 +277,7 @@
         });
 
         if (count === 0) {
-            tbody.innerHTML = `<tr><td colspan="22" style="text-align:center; padding:30px; font-size:14px; font-weight:bold; color:#003E7E;">当前分类 (${currentTab}) 下没有需要填报的项目。</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="23" style="text-align:center; padding:30px; font-size:14px; font-weight:bold; color:#003E7E;">当前分类 (${currentTab}) 下没有需要填报的项目。</td></tr>`;
         } else {
             tbody.innerHTML = html;
             setTimeout(() => { document.querySelectorAll('#table-body tr[data-id]').forEach(row => { calcRow(row.dataset.id); }); }, 0);
@@ -285,7 +298,7 @@
         let currentNet = 0;
         if (faceRent > 0) {
             currentNet = faceRent * (36 - freeMonth) / 36;
-            row.querySelector('.net-rent').innerText = currentNet.toFixed(2);
+            row.querySelector('.net-rent').innerText = currentNet.toFixed(1);
         } else { row.querySelector('.net-rent').innerText = '-'; }
 
         if (currentNet > 0 && lastNet > 0) {
@@ -337,16 +350,53 @@
 
     window.manualSave = function() { saveDraft(); alert("草稿已暂存！"); };
 
+    function closeModal() {
+        document.getElementById('modal-overlay').style.display = 'none';
+    }
+
     async function submitData() {
         saveDraft();
-        const btn = document.querySelector('.btn-submit');
-        const msg = document.getElementById('status-msg');
         const rows = document.querySelectorAll('#table-body tr[data-id]');
         const submission = [];
-        let hasEdits = false;
-
+        let incompleteBuildings = [];
+        
         const matchName = currentUser.fullName || currentUser.name; 
 
+        // 1. 拦截校验阶段：找出一个字都没填的（完全空），和填了一半没填完的（不完整）
+        rows.forEach((row) => {
+            const sn = row.dataset.sn;
+            const bName = row.dataset.name;
+            
+            const qQuote = row.querySelector('.curr-quote').value.trim();
+            const qProp = row.querySelector('.curr-prop').value.trim();
+            const qFace = row.querySelector('.curr-face').value.trim();
+            const qFree = row.querySelector('.curr-free').value.trim();
+            const qVacArea = row.querySelector('.curr-vac-area').value.trim();
+            
+            // 判断这行是否被碰过（哪怕只填了一个字）
+            const isTouched = (qQuote || qProp || qFace || qFree || qVacArea);
+            
+            // 判断这行必填项是否完整
+            const isComplete = (qQuote && qProp && qFace && qFree && qVacArea);
+
+            if (isTouched && !isComplete) {
+                incompleteBuildings.push(`序号 ${sn}：${bName}`);
+            }
+        });
+
+        // 触发拦截弹窗
+        if (incompleteBuildings.length > 0) {
+            let msg = `系统检测到有 <b>${incompleteBuildings.length}</b> 个楼宇的数据填写不完整：<br><br>`;
+            msg += incompleteBuildings.slice(0, 5).join('<br>');
+            if (incompleteBuildings.length > 5) msg += `<br>... 等等`;
+            msg += `<br><br><span style="color:#d32f2f;">【报价、物业费、表面、免租期、空置面积】均为必填项，请补充完整。</span>`;
+            
+            document.getElementById('modal-text').innerHTML = msg;
+            document.getElementById('modal-overlay').style.display = 'flex';
+            return; 
+        }
+
+        // 2. 打包提交阶段：全部装载
         rows.forEach((row) => {
             const originalIndex = row.dataset.id;
             const building = myBuildings[originalIndex];
@@ -354,58 +404,64 @@
 
             const qOwner = row.querySelector('.curr-owner').value.trim();
             const qPropMan = row.querySelector('.curr-prop-man').value.trim();
-            
-            const qQuote = row.querySelector('.curr-quote').value;
-            const qProp = row.querySelector('.curr-prop').value;
-            const qFace = row.querySelector('.curr-face').value;
-            const qFree = row.querySelector('.curr-free').value;
-            const qVacArea = row.querySelector('.curr-vac-area').value;
-            const qRemark = row.querySelector('.curr-remark').value;
+            const qQuote = row.querySelector('.curr-quote').value.trim();
+            const qProp = row.querySelector('.curr-prop').value.trim();
+            const qFace = row.querySelector('.curr-face').value.trim();
+            const qFree = row.querySelector('.curr-free').value.trim();
+            const qVacArea = row.querySelector('.curr-vac-area').value.trim();
+            const qRemark = row.querySelector('.curr-remark').value.trim();
 
-            if(qQuote || qProp || qFace || qFree || qVacArea || qRemark || qOwner || qPropMan) {
-                hasEdits = true;
-                submission.push({
-                    "USER": matchName, 
-                    "写字楼名称": getVal(building, ['写字楼名称', 'Project Name CN']),
-                    "子市场": getVal(building, ['子市场', 'SUBMARKET']), 
-                    "业主": qOwner, 
-                    "物业": qPropMan, 
-                    "总面积": getVal(building, ['总面积', 'Total Area']), 
-                    "物业分类": currentTab,
-                    "上季度租金报价": getVal(building, ['上季度租金报价', '报价', '租金报价']), 
-                    "上季度物业费": getVal(building, ['上季度物业费', '物业费']),
-                    "上季度表面租金": getVal(building, ['上季度表面租金', '表面租金', '表面']), 
-                    "上季度免租期": getVal(building, ['上季度免租期', '免租期']),
-                    "上季度净有效租金": getVal(building, ['上季度净有效租金', '净有效租金']), 
-                    "上季度空置面积": getVal(building, ['上季度空置面积', '空置面积']), 
-                    "上季度空置率": getVal(building, ['上季度空置率', '空置率']),
-                    
-                    "本季度租金报价": qQuote ? Number(qQuote).toFixed(2) : '', 
-                    "本季度物业费": qProp, 
-                    "本季度表面租金": qFace, 
-                    "本季度免租期": qFree, 
-                    "本季度空置面积": qVacArea ? Math.round(Number(qVacArea)) : '',
-                    "本季度净有效租金": row.querySelector('.net-rent').innerText !== '-' ? row.querySelector('.net-rent').innerText : '',
-                    "租金环比变化": row.querySelector('.rent-change').innerText !== '-' ? row.querySelector('.rent-change').innerText : '',
-                    "空置面积变化": row.querySelector('.area-change').innerText !== '-' ? row.querySelector('.area-change').innerText : '',
-                    "本季度空置率": row.querySelector('.vac-rate').innerText !== '-' ? row.querySelector('.vac-rate').innerText : '',
-                    "备注": qRemark, 
-                    "填报人": matchName, 
-                    "填报时间": new Date().toLocaleString()
-                });
-            }
+            submission.push({
+                "USER": matchName, 
+                "写字楼名称": getVal(building, ['写字楼名称', 'Project Name CN']),
+                "子市场": getVal(building, ['子市场', 'SUBMARKET']), 
+                "业主": qOwner, 
+                "物业": qPropMan, 
+                "总面积": getVal(building, ['总面积', 'Total Area']), 
+                "物业分类": currentTab,
+                "上季度租金报价": getVal(building, ['上季度租金报价', '报价', '租金报价']), 
+                "上季度物业费": getVal(building, ['上季度物业费', '物业费']),
+                "上季度表面租金": getVal(building, ['上季度表面租金', '表面租金', '表面']), 
+                "上季度免租期": getVal(building, ['上季度免租期', '免租期', '免租期（三年租约）']),
+                "上季度净有效租金": getVal(building, ['上季度净有效租金', '净有效租金']), 
+                "上季度空置面积": getVal(building, ['上季度空置面积', '空置面积']), 
+                "上季度空置率": getVal(building, ['上季度空置率', '空置率']),
+                
+                "本季度租金报价": qQuote ? Math.round(Number(qQuote)) : '', 
+                "本季度物业费": qProp ? Math.round(Number(qProp)) : '', 
+                "本季度表面租金": qFace, 
+                "本季度免租期（三年租约）": qFree, 
+                "本季度空置面积": qVacArea ? Math.round(Number(qVacArea)) : '',
+                "本季度净有效租金": row.querySelector('.net-rent').innerText !== '-' ? row.querySelector('.net-rent').innerText : '',
+                "租金环比变化": row.querySelector('.rent-change').innerText !== '-' ? row.querySelector('.rent-change').innerText : '',
+                "空置面积变化": row.querySelector('.area-change').innerText !== '-' ? row.querySelector('.area-change').innerText : '',
+                "本季度空置率": row.querySelector('.vac-rate').innerText !== '-' ? row.querySelector('.vac-rate').innerText : '',
+                "备注": qRemark, 
+                "填报人": matchName, 
+                "填报时间": new Date().toLocaleString()
+            });
         });
 
-        if (!hasEdits) { alert("请填写或修改数据后再提交"); return; }
-        btn.disabled = true; btn.innerText = "上传中..."; msg.innerText = "正在打包数据...";
+        const btn = document.querySelector('.btn-submit');
+        const msg = document.getElementById('status-msg');
+        btn.disabled = true; btn.innerText = "上传中..."; msg.innerText = "正在打包并上传数据...";
 
         try {
             const pseudoUser = `${matchName}_${currentTab}`;
             const res = await fetch('/api/submit-update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user: pseudoUser, data: submission }) });
             const result = await res.json();
-            if (result.status === 'success') { localStorage.removeItem(getDraftKey()); alert(`✅ 提交成功`); location.reload(); } 
-            else { alert("失败: " + result.message); btn.disabled = false; btn.innerText = "重新提交"; }
-        } catch (e) { alert("网络错误"); btn.disabled = false; btn.innerText = "重新提交"; }
+            if (result.status === 'success') { 
+                localStorage.removeItem(getDraftKey()); 
+                alert(`✅ 提交成功`); 
+                location.reload(); 
+            } else { 
+                alert("失败: " + result.message); 
+                btn.disabled = false; btn.innerText = "重新提交"; 
+            }
+        } catch (e) { 
+            alert("网络错误"); 
+            btn.disabled = false; btn.innerText = "重新提交"; 
+        }
     }
 </script>
 </body>
