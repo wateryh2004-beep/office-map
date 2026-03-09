@@ -134,11 +134,13 @@
             </div>
 
             <div class="card">
-                <div class="card-header">📢 门户滚动公告</div>
+                <div class="card-header">📢 门户公告管理</div>
                 <div class="card-body">
-                    <p style="font-size:12px; color:#666; margin:0;">发布最新的系统通知，将在门户大厅底部滚动显示。</p>
-                    <textarea id="notice-input" class="input-box" rows="3" placeholder="输入新公告内容..."></textarea>
-                    <button class="btn btn-primary" id="btn-update-notice" onclick="updateNotice()">发布公告</button>
+                    <p style="font-size:12px; color:#666; margin:0;">发布最新的系统通知，支持同时发布最多3条公告（可只填一条）。</p>
+                    <input type="text" id="notice-input-1" class="input-box" placeholder="输入公告 1 (必填)..." style="margin-bottom: 5px;">
+                    <input type="text" id="notice-input-2" class="input-box" placeholder="输入公告 2 (选填)..." style="margin-bottom: 5px;">
+                    <input type="text" id="notice-input-3" class="input-box" placeholder="输入公告 3 (选填)...">
+                    <button class="btn btn-primary" id="btn-update-notice" onclick="updateNotice()" style="margin-top: 10px;">发布组合公告</button>
                 </div>
             </div>
         </div>
@@ -267,7 +269,6 @@
         loadFiles(); 
     };
 
-    // --- Tab 切换逻辑 ---
     window.switchTab = function(tabId, el) {
         document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -275,9 +276,6 @@
         document.getElementById(tabId).classList.add('active');
     };
 
-    // ==========================================
-    // 模块 1：基础配置 (文件直传下载 & 发布公告)
-    // ==========================================
     async function directUpload(inputId, targetFileName, btnId) {
         const file = document.getElementById(inputId).files[0];
         if (!file) { alert("请先选择文件！"); return; }
@@ -325,28 +323,41 @@
         } catch(e) { alert("下载失败，可能文件不存在。"); }
     }
 
+    // ★ 核心修改：支持收集并发送多条公告
     async function updateNotice() {
-        const text = document.getElementById('notice-input').value.trim(); 
-        if (!text) return;
-        const btn = document.getElementById('btn-update-notice'); btn.disabled = true; btn.innerText = "发布中...";
+        const n1 = document.getElementById('notice-input-1').value.trim();
+        const n2 = document.getElementById('notice-input-2').value.trim();
+        const n3 = document.getElementById('notice-input-3').value.trim();
+        
+        const notices = [n1, n2, n3].filter(n => n !== '');
+        
+        if (notices.length === 0) {
+            alert("请至少填写一条公告！");
+            return;
+        }
+
+        // 转成 JSON 字符串发给后端，后端无需修改
+        const text = JSON.stringify(notices);
+        
+        const btn = document.getElementById('btn-update-notice'); 
+        btn.disabled = true; btn.innerText = "发布中...";
         try { 
             const res = await fetch('/api/portal?action=update-notice', { 
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, user: currentUser.name }) 
             }); 
             const data = await res.json();
             if (data.status === 'success') { 
-                alert("✅ 公告发布成功"); 
-                document.getElementById('notice-input').value = ''; 
+                alert("✅ 组合公告发布成功"); 
+                document.getElementById('notice-input-1').value = ''; 
+                document.getElementById('notice-input-2').value = ''; 
+                document.getElementById('notice-input-3').value = ''; 
             } else {
                 alert("❌ 发布失败: " + (data.message || '系统错误'));
             }
         } catch (e) { alert("网络异常，发布失败。"); } 
-        finally { btn.disabled = false; btn.innerText = "发布公告"; }
+        finally { btn.disabled = false; btn.innerText = "发布组合公告"; }
     }
 
-    // ==========================================
-    // 模块 2：用户密码管理
-    // ==========================================
     async function managePassword(actionType) {
         const email = document.getElementById('admin-pwd-email').value.trim();
         const phone = document.getElementById('admin-pwd-phone').value.trim();
@@ -368,9 +379,6 @@
         } catch(e) { resDiv.innerText = "网络异常，请重试"; resDiv.style.color = "#d32f2f"; }
     }
 
-    // ==========================================
-    // 模块 3：云盘资源管理器
-    // ==========================================
     async function loadOSSReports(prefix = '') {
         adminCurrentPrefix = prefix;
         const tbody = document.getElementById('oss-body');
@@ -448,11 +456,7 @@
             } else {
                 alert("创建失败: " + data.message);
             }
-        } catch(e) { 
-            alert("请求异常，请检查网络。"); 
-        } finally { 
-            btn.disabled = false; btn.innerText = "📁 新建文件夹"; 
-        }
+        } catch(e) { alert("请求异常，请检查网络。"); } finally { btn.disabled = false; btn.innerText = "📁 新建文件夹"; }
     }
 
     async function executeOSSUpload() {
@@ -466,10 +470,7 @@
         try {
             const signRes = await fetch('/api/oss?action=get-signature');
             const signData = await signRes.json();
-            
-            if (signData.status !== 'success') {
-                throw new Error("获取上传签名失败：" + (signData.message || "未知错误"));
-            }
+            if (signData.status !== 'success') throw new Error("获取上传签名失败");
 
             for (let file of files) {
                 const formData = new FormData();
@@ -481,22 +482,12 @@
                 formData.append('file', file);
                 
                 const uploadRes = await fetch(signData.host, { method: 'POST', body: formData });
-                
-                if (!uploadRes.ok) {
-                    const errText = await uploadRes.text();
-                    console.error("阿里云拒收文件:", errText);
-                    throw new Error("阿里云拒绝接收文件，可能是跨域(CORS)未配置或签名失效。");
-                }
+                if (!uploadRes.ok) throw new Error("阿里云拒绝接收文件");
             }
             alert("✅ 上传成功！"); 
             fileInput.value = ''; 
             loadOSSReports(adminCurrentPrefix); 
-        } catch (e) { 
-            console.error(e);
-            alert(`❌ 上传失败: ${e.message}\n(可按 F12 打开控制台查看具体报错)`); 
-        } finally { 
-            btn.disabled = false; btn.innerText = "➕ 上传文件到此目录"; 
-        }
+        } catch (e) { alert(`❌ 上传失败: ${e.message}`); } finally { btn.disabled = false; btn.innerText = "➕ 上传文件到此目录"; }
     }
 
     async function deleteOSSReport(fileName) {
@@ -525,10 +516,6 @@
         } catch (e) { alert("请求异常"); } finally { btn.disabled = false; btn.innerText = "确认保存"; }
     }
 
-
-    // ==========================================
-    // 模块 4：日志与归档
-    // ==========================================
     async function loadLogs() {
         try {
             const res = await fetch('/api/get-logs'); const result = await res.json();
@@ -552,7 +539,7 @@
                     
                     const timestamp = parseInt(parts[parts.length - 1].split('.')[0]);
                     if (!isNaN(timestamp) && timestamp > 1000000000000) {
-                        rawTimestamp = timestamp; // ★ 保存原始时间戳用于排序
+                        rawTimestamp = timestamp; 
                         const d = new Date(timestamp);
                         month = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}`;
                         dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -561,7 +548,6 @@
                 return { ...f, user, type, month, dateStr, rawTimestamp };
             });
 
-            // ★ 核心修改：强制按照时间戳从大到小（最新在前，最老在后）排序
             allArchiveFiles.sort((a, b) => b.rawTimestamp - a.rawTimestamp);
 
             const users = new Set(allArchiveFiles.map(f => f.user).filter(u => u !== '未知'));
@@ -605,7 +591,6 @@
             document.getElementById('file-body').innerHTML = `<tr><td colspan="2" style="text-align:center; padding:30px; color:#999;">该筛选条件下暂无归档记录</td></tr>`;
         }
     }
-
 </script>
 </body>
 </html>
