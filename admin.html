@@ -113,8 +113,9 @@
                         <input type="file" id="user-file" accept=".xlsx" class="input-box" style="padding: 5px;">
                         <button class="btn btn-primary" id="btn-upload-user" onclick="directUpload('user-file', 'users.xlsx', 'btn-upload-user')">上传更新</button>
                     </div>
-                    <div style="border-top:1px dashed #eee; padding-top:10px;">
-                        <button class="btn btn-outline" onclick="downloadRawFile('users.xlsx')">⬇️ 下载当前线上原件</button>
+                    <div style="border-top:1px dashed #eee; padding-top:10px; display:flex; gap:10px;">
+                        <button class="btn btn-outline" style="flex:1;" onclick="downloadRawFile('users.xlsx')" title="下载原始白名单">⬇️ 原始白名单</button>
+                        <button class="btn btn-primary" style="flex:1;" id="btn-dl-latest" onclick="downloadLatestUsers()" title="包含用户自行修改的最新密码">🚀 下载最新生效名单(含改密)</button>
                     </div>
                 </div>
             </div>
@@ -122,7 +123,7 @@
             <div class="card">
                 <div class="card-header">🔐 用户密码管理</div>
                 <div class="card-body">
-                    <p style="font-size:12px; color:#666; margin:0;">查询用户自行修改的密码，或将其重置为默认内部号码。</p>
+                    <p style="font-size:12px; color:#666; margin:0;">查询单个用户自行修改的密码，或将其重置为默认内部号码。</p>
                     <input type="text" id="admin-pwd-email" class="input-box" placeholder="输入用户的 邮箱(即姓名)">
                     <input type="text" id="admin-pwd-phone" class="input-box" placeholder="输入用户的 手机号">
                     <div class="input-group">
@@ -267,7 +268,7 @@
         loadOSSReports('');   
         loadLogs(); 
         loadFiles(); 
-        loadCurrentNotice(); // 初始化拉取当前公告
+        loadCurrentNotice(); 
     };
 
     window.switchTab = function(tabId, el) {
@@ -277,7 +278,42 @@
         document.getElementById(tabId).classList.add('active');
     };
 
-    // ★ 核心修改点：加载现有的公告数据并填充到输入框中
+    // ★★★ 新增：一键导出最新合并密码的Excel功能 ★★★
+    async function downloadLatestUsers() {
+        const btn = document.getElementById('btn-dl-latest');
+        btn.disabled = true; btn.innerText = "正在拉取合并...";
+        try {
+            const res = await fetch('/api/admin-pwd?action=export-latest', {
+                method: 'POST', // 遵循您的 API 设定
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+            const data = await res.json();
+            if(data.status === 'success') {
+                // 解码 Base64 并触发下载
+                const byteCharacters = atob(data.data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) { byteNumbers[i] = byteCharacters.charCodeAt(i); }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+                
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; 
+                // 给下载的文件加上当天的日期
+                const dateStr = new Date().toISOString().split('T')[0];
+                a.download = `最新账号与密码台账_${dateStr}.xlsx`; 
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            } else {
+                alert("获取失败: " + data.message);
+            }
+        } catch(e) {
+            alert("网络异常，无法导出最新名单。");
+        } finally {
+            btn.disabled = false; btn.innerText = "🚀 下载最新生效名单(含改密)";
+        }
+    }
+
     async function loadCurrentNotice() {
         try {
             const res = await fetch(`/api/portal?action=get-notice&_t=${Date.now()}`);
@@ -296,7 +332,6 @@
                     }
                 }
 
-                // 依次填充到输入框内
                 if (noticesArray.length > 0) document.getElementById('notice-input-1').value = noticesArray[0] || '';
                 if (noticesArray.length > 1) document.getElementById('notice-input-2').value = noticesArray[1] || '';
                 if (noticesArray.length > 2) document.getElementById('notice-input-3').value = noticesArray[2] || '';
@@ -353,7 +388,6 @@
         } catch(e) { alert("下载失败，可能文件不存在。"); }
     }
 
-    // 打包多个公告发送（去除了发送成功后清空输入框的逻辑）
     async function updateNotice() {
         const n1 = document.getElementById('notice-input-1').value.trim();
         const n2 = document.getElementById('notice-input-2').value.trim();
@@ -377,7 +411,6 @@
             const data = await res.json();
             if (data.status === 'success') { 
                 alert("✅ 组合公告更新成功，历史内容已保留在原位"); 
-                // 去掉了清空输入框的代码，保持文字留在原处
             } else {
                 alert("❌ 发布失败: " + (data.message || '系统错误'));
             }
