@@ -59,7 +59,7 @@
         .btn-clear:hover { background: #757575; }
         
         /* 高级筛选样式 */
-        .filter-row { display: flex; gap: 5px; margin-bottom: 6px; }
+        .filter-row { display: flex; gap: 5px; margin-bottom: 6px; align-items: center; }
         .filter-select, .filter-val-input { padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; outline: none; box-sizing: border-box; }
         .filter-btn { width: 100%; padding: 8px; background: #004080; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; margin-top: 4px;}
         .filter-btn:hover { background: #003366; }
@@ -133,7 +133,7 @@
 
         <div class="stat-grid">
             <div class="stat-card"><div class="stat-value" id="stat-count">-</div><div class="stat-label">视野项目</div></div>
-            <div class="stat-card"><div class="stat-value" id="stat-price">-</div><div class="stat-label">净有效租金</div></div>
+            <div class="stat-card"><div class="stat-value" id="stat-price">-</div><div class="stat-label">加权平均租金</div></div>
             <div class="stat-card"><div class="stat-value" id="stat-leed">-</div><div class="stat-label">LEED认证</div></div>
             <div class="stat-card"><div class="stat-value" id="stat-vacancy" style="color:#d32f2f">-</div><div class="stat-label">整体空置率</div></div>
         </div>
@@ -145,45 +145,51 @@
                 <button class="btn-clear" onclick="clearAllFilters()" title="重置">重置</button>
             </div>
 
-            <div class="control-group">
-                <span class="control-title">多重筛选 (Multi-Filter)</span>
-                <div class="filter-row">
-                    <select id="adv-metric-1" class="filter-select" style="flex:1;">
-                        <option value="pCurrent">租金 (Rent)</option>
-                        <option value="vCurrent">空置率 (Vacancy)</option>
-                        <option value="vacArea">空置面积 (Area)</option>
-                        <option value="totalArea">总面积 (Total Area)</option>
-                        <option value="grade" style="color:#004080;font-weight:bold;">🏆 楼宇等级 (PA/A/B)</option>
-                        <option value="leed" style="color:#004080;font-weight:bold;">🌿 LEED (金/银/铂金)</option>
-                    </select>
-                    <select id="adv-op-1" class="filter-select" style="width:45px;">
-                        <option value="=">=</option>
-                        <option value="<"><</option>
-                        <option value=">">></option>
-                        <option value=">=">≥</option>
-                        <option value="<=">≤</option>
-                    </select>
-                    <input type="text" id="adv-val-1" class="filter-val-input" style="width:75px;" placeholder="数值/内容">
+            <div class="control-group" id="filter-group">
+                <span class="control-title">多重筛选叠加 (Multi-Filter)</span>
+                <div id="filter-container">
+                    <div class="filter-row">
+                        <select class="filter-metric filter-select" style="flex:1;">
+                            <option value="pCurrent">租金 (Rent)</option>
+                            <option value="vCurrent">空置率 (Vacancy)</option>
+                            <option value="vacArea">空置面积 (Area)</option>
+                            <option value="totalArea">总面积 (Total Area)</option>
+                            <option value="grade" style="color:#004080;font-weight:bold;">🏆 楼宇等级 (PA/A/B)</option>
+                            <option value="leed" style="color:#004080;font-weight:bold;">🌿 LEED (金/银/铂金)</option>
+                        </select>
+                        <select class="filter-op filter-select" style="width:45px;">
+                            <option value="=">=</option>
+                            <option value="<"><</option>
+                            <option value=">">></option>
+                            <option value=">=">≥</option>
+                            <option value="<=">≤</option>
+                        </select>
+                        <input type="text" class="filter-val filter-val-input" style="width:75px;" placeholder="数值/内容">
+                    </div>
+                    <div class="filter-row">
+                        <select class="filter-metric filter-select" style="flex:1;">
+                            <option value="vCurrent" selected>空置率 (Vacancy)</option>
+                            <option value="pCurrent">租金 (Rent)</option>
+                            <option value="vacArea">空置面积 (Area)</option>
+                            <option value="totalArea">总面积 (Total Area)</option>
+                            <option value="grade" style="color:#004080;font-weight:bold;">🏆 楼宇等级 (PA/A/B)</option>
+                            <option value="leed" style="color:#004080;font-weight:bold;">🌿 LEED (金/银/铂金)</option>
+                        </select>
+                        <select class="filter-op filter-select" style="width:45px;">
+                            <option value="<"><</option>
+                            <option value=">">></option>
+                            <option value="=">=</option>
+                            <option value=">=">≥</option>
+                            <option value="<=">≤</option>
+                        </select>
+                        <input type="text" class="filter-val filter-val-input" style="width:75px;" placeholder="数值/内容">
+                        <button onclick="this.parentElement.remove(); executeFilters();" style="border:none; background:none; cursor:pointer; color:#d32f2f; font-size:14px; padding:0 2px;" title="移除此条件">✖</button>
+                    </div>
                 </div>
-                <div class="filter-row">
-                    <select id="adv-metric-2" class="filter-select" style="flex:1;">
-                        <option value="vCurrent" selected>空置率 (Vacancy)</option>
-                        <option value="pCurrent">租金 (Rent)</option>
-                        <option value="vacArea">空置面积 (Area)</option>
-                        <option value="totalArea">总面积 (Total Area)</option>
-                        <option value="grade" style="color:#004080;font-weight:bold;">🏆 楼宇等级 (PA/A/B)</option>
-                        <option value="leed" style="color:#004080;font-weight:bold;">🌿 LEED (金/银/铂金)</option>
-                    </select>
-                    <select id="adv-op-2" class="filter-select" style="width:45px;">
-                        <option value="<"><</option>
-                        <option value=">">></option>
-                        <option value="=">=</option>
-                        <option value=">=">≥</option>
-                        <option value="<=">≤</option>
-                    </select>
-                    <input type="text" id="adv-val-2" class="filter-val-input" style="width:75px;" placeholder="数值/内容">
+                <div style="display:flex; gap:5px; margin-top:4px;">
+                    <button class="filter-btn" style="background:#f0f4f8; color:#003E7E; border:1px solid #003E7E; width:auto; padding:6px 10px;" onclick="addFilterRow()" title="新增更多筛选条件">➕</button>
+                    <button class="filter-btn" style="flex:1;" onclick="executeFilters()">执行组合筛选</button>
                 </div>
-                <button class="filter-btn" onclick="executeFilters()">执行组合筛选</button>
             </div>
 
             <div class="control-group">
@@ -290,14 +296,77 @@
         } catch (e) {}
     }
 
+    // 新增动态筛选项的 JS 函数
+    function addFilterRow() {
+        const container = document.getElementById('filter-container');
+        const row = document.createElement('div');
+        row.className = 'filter-row';
+        row.innerHTML = `
+            <select class="filter-metric filter-select" style="flex:1;">
+                <option value="pCurrent">租金 (Rent)</option>
+                <option value="vCurrent">空置率 (Vacancy)</option>
+                <option value="vacArea">空置面积 (Area)</option>
+                <option value="totalArea">总面积 (Total Area)</option>
+                <option value="grade" style="color:#004080;font-weight:bold;">🏆 楼宇等级 (PA/A/B)</option>
+                <option value="leed" style="color:#004080;font-weight:bold;">🌿 LEED (金/银/铂金)</option>
+            </select>
+            <select class="filter-op filter-select" style="width:45px;">
+                <option value="=">=</option>
+                <option value="<"><</option>
+                <option value=">">></option>
+                <option value=">=">≥</option>
+                <option value="<=">≤</option>
+            </select>
+            <input type="text" class="filter-val filter-val-input" style="width:75px;" placeholder="数值/内容">
+            <button onclick="this.parentElement.remove(); executeFilters();" style="border:none; background:none; cursor:pointer; color:#d32f2f; font-size:14px; padding:0 2px;" title="移除此条件">✖</button>
+        `;
+        container.appendChild(row);
+    }
+
     function clearAllFilters() {
         document.getElementById('search-input').value = '';
-        document.getElementById('adv-metric-1').value = 'pCurrent';
-        document.getElementById('adv-op-1').value = '=';
-        document.getElementById('adv-val-1').value = '';
-        document.getElementById('adv-metric-2').value = 'vCurrent';
-        document.getElementById('adv-op-2').value = '<';
-        document.getElementById('adv-val-2').value = '';
+        
+        // 重置时恢复为最基础的两个过滤行
+        const container = document.getElementById('filter-container');
+        container.innerHTML = `
+            <div class="filter-row">
+                <select class="filter-metric filter-select" style="flex:1;">
+                    <option value="pCurrent">租金 (Rent)</option>
+                    <option value="vCurrent">空置率 (Vacancy)</option>
+                    <option value="vacArea">空置面积 (Area)</option>
+                    <option value="totalArea">总面积 (Total Area)</option>
+                    <option value="grade" style="color:#004080;font-weight:bold;">🏆 楼宇等级 (PA/A/B)</option>
+                    <option value="leed" style="color:#004080;font-weight:bold;">🌿 LEED (金/银/铂金)</option>
+                </select>
+                <select class="filter-op filter-select" style="width:45px;">
+                    <option value="=">=</option>
+                    <option value="<"><</option>
+                    <option value=">">></option>
+                    <option value=">=">≥</option>
+                    <option value="<=">≤</option>
+                </select>
+                <input type="text" class="filter-val filter-val-input" style="width:75px;" placeholder="数值/内容">
+            </div>
+            <div class="filter-row">
+                <select class="filter-metric filter-select" style="flex:1;">
+                    <option value="vCurrent" selected>空置率 (Vacancy)</option>
+                    <option value="pCurrent">租金 (Rent)</option>
+                    <option value="vacArea">空置面积 (Area)</option>
+                    <option value="totalArea">总面积 (Total Area)</option>
+                    <option value="grade" style="color:#004080;font-weight:bold;">🏆 楼宇等级 (PA/A/B)</option>
+                    <option value="leed" style="color:#004080;font-weight:bold;">🌿 LEED (金/银/铂金)</option>
+                </select>
+                <select class="filter-op filter-select" style="width:45px;">
+                    <option value="<"><</option>
+                    <option value=">">></option>
+                    <option value="=">=</option>
+                    <option value=">=">≥</option>
+                    <option value="<=">≤</option>
+                </select>
+                <input type="text" class="filter-val filter-val-input" style="width:75px;" placeholder="数值/内容">
+                <button onclick="this.parentElement.remove(); executeFilters();" style="border:none; background:none; cursor:pointer; color:#d32f2f; font-size:14px; padding:0 2px;" title="移除此条件">✖</button>
+            </div>
+        `;
         
         const checkAllBox = document.getElementById('check-all');
         if (checkAllBox) {
@@ -441,29 +510,25 @@
         executeFilters(); 
     }
 
-    // ★ 核心扩充：支持非数值判定
+    // 支持非数值及无限组合判定的检查引擎
     function checkCondition(itemVal, metric, op, targetVal) {
-        // 1. 如果输入框为空，直接放行该条件
         if (targetVal === '' || targetVal === null) return true;
 
-        // 2. 如果是文本类型字段 (grade 或 leed)
         if (metric === 'grade' || metric === 'leed') {
             const valStr = String(itemVal).toLowerCase();
             const targetStr = String(targetVal).trim().toLowerCase();
-            // 文本类型只认包含逻辑（忽略下拉框选的 >, < 号）
+            // 文本匹配统一使用包含逻辑
             return valStr.includes(targetStr);
         }
 
-        // 3. 如果是数值类型字段，先将目标值转为数字
         let tNum = targetVal;
         if (typeof targetVal === 'string') {
             tNum = targetVal.replace(/,/g, '');
             if (metric === 'vCurrent' && tNum.includes('%')) tNum = parseFloat(tNum) / 100;
             else tNum = parseFloat(tNum);
         }
-        if (isNaN(tNum)) return true; // 如果填了非数字，忽略该条件
+        if (isNaN(tNum)) return true; 
 
-        // 执行数值判断
         switch (op) {
             case '>': return itemVal > tNum;
             case '<': return itemVal < tNum;
@@ -478,27 +543,33 @@
         if(isCompareMode) resetMapState();
 
         const keyword = document.getElementById('search-input').value.trim().toLowerCase();
+        const rows = document.querySelectorAll('#filter-container .filter-row');
         
-        const metric1 = document.getElementById('adv-metric-1').value;
-        const op1 = document.getElementById('adv-op-1').value;
-        const val1 = document.getElementById('adv-val-1').value.trim();
-        
-        const metric2 = document.getElementById('adv-metric-2').value;
-        const op2 = document.getElementById('adv-op-2').value;
-        const val2 = document.getElementById('adv-val-2').value.trim();
-
+        let filters = [];
         let logDesc = [];
-        if(val1 !== '') logDesc.push(`${metric1}${op1}${val1}`);
-        if(val2 !== '') logDesc.push(`${metric2}${op2}${val2}`);
-        logSearchAction(keyword, logDesc.join(' AND '));
+        
+        // 动态抓取所有添加的筛选条件
+        rows.forEach(row => {
+            const metric = row.querySelector('.filter-metric').value;
+            const op = row.querySelector('.filter-op').value;
+            const valRaw = row.querySelector('.filter-val').value.trim();
+            
+            if (valRaw !== '') {
+                filters.push({metric, op, val: valRaw});
+                logDesc.push(`${metric}${op}${valRaw}`);
+            }
+        });
+
+        logSearchAction(keyword, logDesc.length > 0 ? logDesc.join(' AND ') : '无');
 
         const filtered = rawData.filter(item => {
             if (!activeDistricts.has(item.district)) return false;
             if (keyword && !item.name.toLowerCase().includes(keyword)) return false;
             
-            // 调用升级后的超级检查器
-            if (!checkCondition(item[metric1], metric1, op1, val1)) return false;
-            if (!checkCondition(item[metric2], metric2, op2, val2)) return false;
+            // 必须全部满足所有动态条件
+            for (let f of filters) {
+                if (!checkCondition(item[f.metric], f.metric, f.op, f.val)) return false;
+            }
             
             return true;
         });
@@ -507,7 +578,7 @@
             showStatus("⚠️ 未找到匹配项目");
             renderMap([]); 
         } else {
-            if(keyword || val1 !== '' || val2 !== '') showStatus(`🔍 筛选出 ${filtered.length} 个项目`);
+            if(keyword || filters.length > 0) showStatus(`🔍 筛选出 ${filtered.length} 个项目`);
             renderMap(filtered);
             if (filtered.length === 1 && keyword) {
                 const target = filtered[0];
@@ -565,22 +636,23 @@
 
         let gradeClass = item.grade === 'PA' ? 'badge-pa' : (item.grade === 'A' ? 'badge-a' : 'badge-none');
         
-        let leedClass = 'badge-silver';
-        let lCheck = item.leed.toLowerCase();
-        if (lCheck.includes('铂金') || lCheck.includes('platinum')) leedClass = 'badge-platinum';
-        else if (lCheck.includes('金') || lCheck.includes('gold')) leedClass = 'badge-gold';
-        else if (item.leed === '无') leedClass = 'badge-none';
-        
-        const leedDisplay = item.leed !== '无' ? `LEED ${item.leed}` : '无 LEED 认证';
+        // ★ 核心修复：如果 LEED 是无，彻底隐藏该标签模块，不再显示“无认证”
+        let leedHtml = '';
+        if (item.leed !== '无') {
+            let leedClass = 'badge-silver';
+            let lCheck = item.leed.toLowerCase();
+            if (lCheck.includes('铂金') || lCheck.includes('platinum')) leedClass = 'badge-platinum';
+            else if (lCheck.includes('金') || lCheck.includes('gold')) leedClass = 'badge-gold';
+            
+            leedHtml = `<span class="badge ${leedClass}">LEED ${item.leed}</span>`;
+        }
 
         const content = `
             <div class="info-window-card">
                 <div style="padding:15px; border-bottom:1px solid #eee;">
                     <h3 style="margin:0;font-size:18px;">${item.name}</h3>
                     <div style="color:#666;font-size:12px;margin-top:4px;">${item.district} | ${item.built_year}</div>
-                    <div class="tag-row">
-                        <span class="badge ${leedClass}">${leedDisplay}</span>
-                    </div>
+                    ${leedHtml ? `<div class="tag-row">${leedHtml}</div>` : ''}
                 </div>
                 <div style="padding:15px; border-bottom:1px solid #eee;">
                     <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
@@ -650,7 +722,6 @@
         executeFilters();
     }
 
-    // ★ 核心修改：加权平均计算引擎
     function updateDashboard(data) {
         const count = data.length;
         document.getElementById('stat-count').innerText = count;
@@ -663,12 +734,10 @@
 
         data.forEach(d => {
             const tArea = d.totalArea || 0;
-            // 计算加权平均租金（仅统计有租金和总面积的数据）
             if (d.pCurrent > 0 && tArea > 0) {
                 totalValidRentArea += tArea;
                 rentWeightSum += (d.pCurrent * tArea);
             }
-            // 计算整体空置率（统计所有有总面积的数据）
             if (tArea > 0) {
                 totalOverallArea += tArea;
                 totalValidVacArea += (d.vacArea || 0);
