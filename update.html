@@ -40,10 +40,11 @@
         .input-cell input { width: 100%; padding: 4px 2px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-family: inherit; font-size: 11px; text-align: center; }
         .input-cell input:focus { border-color: #003E7E; outline: none; background: #e3f2fd; }
         
-        .input-cell.base-edit input { background: #f8f9fa; border-color: #ddd; }
-        .input-cell.base-edit input:focus { background: #fff; border-color: #003E7E; }
+        /* 基础信息区可编辑字段的特定样式 (增加了 textarea 支持) */
+        .input-cell.base-edit input, .input-cell.base-edit textarea { background: #f8f9fa; border-color: #ddd; }
+        .input-cell.base-edit input:focus, .input-cell.base-edit textarea:focus { background: #fff; border-color: #003E7E; }
 
-        /* 备注框的自适应样式 */
+        /* 备注/业主/物业框的自适应样式 */
         .input-cell textarea { width: 100%; padding: 4px 2px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-family: inherit; font-size: 11px; text-align: left; resize: none; line-height: 1.5; overflow: hidden; background: #fff; transition: background 0.2s; }
         .input-cell textarea:focus { border-color: #003E7E; outline: none; background: #e3f2fd; overflow-y: auto; }
 
@@ -243,7 +244,6 @@
             const lastFree = safeNum(getVal(item, ['上季度免租期', '免租期', '免租期（三年租约）']));
             const lastNet = safeNum(getVal(item, ['上季度净有效租金', '净有效租金'])); 
             
-            // ★ 核心修复：单独取出原值，准确识别 0 和 空
             const rawVacArea = getVal(item, ['上季度空置面积', '空置面积']);
             const lastVacArea = safeNum(rawVacArea);
             
@@ -261,8 +261,12 @@
                 <td class="col-fixed-2" style="text-align:left; font-weight:bold; color:#003E7E;">${name}</td>
                 <td>${district}</td>
                 
-                <td class="input-cell base-edit"><input type="text" class="curr-owner" value="${editOwner}" placeholder="可补充"></td>
-                <td class="input-cell base-edit"><input type="text" class="curr-prop-man" value="${editProp}" placeholder="可补充"></td>
+                <td class="input-cell base-edit">
+                    <textarea class="curr-owner" rows="1" onfocus="this.rows=3" onblur="this.rows=1; this.scrollTop=0;" placeholder="可补充">${editOwner}</textarea>
+                </td>
+                <td class="input-cell base-edit">
+                    <textarea class="curr-prop-man" rows="1" onfocus="this.rows=3" onblur="this.rows=1; this.scrollTop=0;" placeholder="可补充">${editProp}</textarea>
+                </td>
                 
                 <td>${totalArea.toLocaleString()}</td>
                 
