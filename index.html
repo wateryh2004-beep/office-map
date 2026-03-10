@@ -242,7 +242,7 @@
                     const notices = JSON.parse(data.text);
                     if (Array.isArray(notices) && notices.length > 0) {
                         // 使用连续的 &nbsp; 制造绝对物理空格，并用 🌟 分隔不同的公告，彻底消除逗号
-                        const separator = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🌟&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+                        const separator = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
                         finalHtml = notices.join(separator);
                     } else {
                         finalHtml = data.text;
