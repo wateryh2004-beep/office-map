@@ -127,7 +127,7 @@
     </div>
 
     <div class="action-bar">
-        <span class="status-msg" id="status-msg">系统将自动保存草稿</span>
+        <span class="status-msg" id="status-msg">系统将自动同步草稿至云端</span>
         <button class="btn-save" onclick="manualSave()">暂存草稿</button>
         <button class="btn-submit" onclick="submitData()">提交上传</button>
     </div>
@@ -149,8 +149,11 @@
     let myBuildings = [];
     let currentTab = 'GradeA'; 
     let autoSaveTimer = null;
+    
+    // 【新增】全局云端草稿数据缓存
+    let currentCloudDraftData = {};
 
-    // 万能表头匹配器
+    // 万能表头匹配器 (完全保留)
     function getVal(item, keys) {
         for (let k of keys) {
             if (item[k] !== undefined) return item[k];
@@ -161,6 +164,30 @@
             if (match) return item[match];
         }
         return '';
+    }
+
+    // 【新增】从云端拉取草稿 (调用 submit-update 接口)
+    async function fetchDraftFromServer(tab) {
+        try {
+            const res = await fetch('/api/submit-update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'load-draft', user: currentUser.name, tab: tab })
+            });
+            const result = await res.json();
+            return result.status === 'success' ? result.data : {};
+        } catch(e) { return {}; }
+    }
+
+    // 【新增】将草稿同步至云端 (调用 submit-update 接口)
+    async function syncDraftToServer(draftData, tab, action = 'save') {
+        try {
+            await fetch('/api/submit-update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: action === 'save' ? 'save-draft' : 'clear-draft', user: currentUser.name, tab: tab, data: draftData })
+            });
+        } catch(e) {}
     }
 
     window.onload = async function() {
@@ -192,8 +219,15 @@
                     else b._category = 'GradeA'; 
                 });
 
+                // 【修改】初始化时从云端拉取草稿，而不是本地 localStorage
+                document.getElementById('draft-status').innerText = '正在读取云端草稿...';
+                currentCloudDraftData = await fetchDraftFromServer(currentTab);
+                document.getElementById('draft-status').innerText = '';
+
                 renderTable();
-                autoSaveTimer = setInterval(saveDraft, 10000);
+                
+                // 【修改】云端自动保存的频率适当调宽，避免接口请求过于频繁
+                autoSaveTimer = setInterval(() => saveDraft(false), 15000);
             } else {
                 document.getElementById('table-body').innerHTML = `<tr><td colspan="23" style="color:red; text-align:center;">读取失败: ${data.message}</td></tr>`;
             }
@@ -201,8 +235,6 @@
             document.getElementById('table-body').innerHTML = `<tr><td colspan="23" style="color:red; text-align:center;">网络加载异常，或者后端报错了: ${e.message}</td></tr>`;
         }
     };
-
-    function getDraftKey() { return `colliers_draft_${currentUser.name}_${currentTab}`; }
     
     const safeNum = (val) => {
         if(val === '' || val === undefined || val === null) return 0;
@@ -210,21 +242,31 @@
         return parseFloat(val) || 0;
     };
 
-    window.switchTab = function(tabName) {
+    // 【修改】切换标签页时，需要先保存旧页面的云端草稿，再拉取新页面的云端草稿
+    window.switchTab = async function(tabName) {
         if (currentTab === tabName) return; 
-        saveDraft(); 
+        
+        await saveDraft(false); 
+        
         currentTab = tabName;
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.classList.remove('active');
             if(btn.dataset.tab === tabName) btn.classList.add('active');
         });
+        
+        document.getElementById('draft-status').innerText = '正在拉取云端草稿...';
+        document.getElementById('table-body').innerHTML = `<tr><td colspan="23" style="text-align:center; padding: 40px; color:#888;">正在同步云端进度...</td></tr>`;
+        
+        currentCloudDraftData = await fetchDraftFromServer(currentTab);
         document.getElementById('draft-status').innerText = ''; 
+        
         renderTable(); 
     };
 
     function renderTable() {
         const tbody = document.getElementById('table-body');
-        const draftData = JSON.parse(localStorage.getItem(getDraftKey()) || '{}');
+        // 【修改】不再读取 localStorage，而是读取全局云端草稿缓存
+        const draftData = currentCloudDraftData || {};
         let html = ''; let count = 0;
 
         myBuildings.forEach((item, originalIndex) => {
@@ -307,6 +349,7 @@
         }
     }
 
+    // 原封不动保留
     window.calcRow = function(index) {
         const row = document.querySelector(`tr[data-id="${index}"]`);
         if (!row) return;
@@ -343,9 +386,11 @@
         }
     };
 
-    window.saveDraft = function() {
+    // 【修改】将草稿保存至云端
+    window.saveDraft = async function(isManual = false) {
         const rows = document.querySelectorAll('#table-body tr[data-id]');
         if (rows.length === 0) return;
+        
         const draft = {}; let hasData = false;
         rows.forEach(row => {
             const id = row.dataset.id;
@@ -362,23 +407,33 @@
                 hasData = true; draft[id] = { qOwner, qPropMan, qQuote, qProp, qFace, qFree, qVacArea, qRemark };
             }
         });
+        
+        currentCloudDraftData = draft;
+
+        if (isManual) document.getElementById('draft-status').innerText = '正在同步至云端...';
+
         if (hasData) {
-            localStorage.setItem(getDraftKey(), JSON.stringify(draft));
-            document.getElementById('draft-status').innerText = `已自动存稿 (${new Date().toTimeString().substring(0, 5)})`;
+            await syncDraftToServer(draft, currentTab, 'save');
+            document.getElementById('draft-status').innerText = `已云端保存 (${new Date().toTimeString().substring(0, 5)})`;
         } else {
-            localStorage.removeItem(getDraftKey());
+            await syncDraftToServer({}, currentTab, 'clear');
             document.getElementById('draft-status').innerText = '';
         }
     };
 
-    window.manualSave = function() { saveDraft(); alert("草稿已暂存！"); };
+    window.manualSave = async function() { 
+        await saveDraft(true); 
+        alert("草稿已成功保存至云端！换电脑登录或退出账号也不会丢失。"); 
+    };
 
+    // 原封不动保留
     function closeModal() {
         document.getElementById('modal-overlay').style.display = 'none';
     }
 
+    // 【修改】保证提交前先异步保存一遍云端草稿，校验逻辑原封不动
     async function submitData() {
-        saveDraft();
+        await saveDraft(false);
         const rows = document.querySelectorAll('#table-body tr[data-id]');
         let incompleteBuildings = [];
         
@@ -418,7 +473,7 @@
         executeSubmit();
     }
 
-    // 独立出来的核心提交函数
+    // 【修改】映射逻辑原封不动，只在提交成功后清除云端草稿而不是 localStorage
     window.executeSubmit = async function() {
         closeModal(); // 关闭警告弹窗
         const rows = document.querySelectorAll('#table-body tr[data-id]');
@@ -477,10 +532,12 @@
 
         try {
             const pseudoUser = `${matchName}_${currentTab}`;
+            // 注意：这里正常提交数据时没有 action 参数，后端会自动走原有的 Excel 打包上传逻辑
             const res = await fetch('/api/submit-update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user: pseudoUser, data: submission }) });
             const result = await res.json();
             if (result.status === 'success') { 
-                localStorage.removeItem(getDraftKey()); 
+                // 【修改】成功提交后，通知后端清空当前分类的云端草稿
+                await syncDraftToServer({}, currentTab, 'clear'); 
                 alert(`✅ 提交成功`); 
                 location.reload(); 
             } else { 
