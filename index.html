@@ -30,18 +30,18 @@
         .main-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 20px; overflow: hidden; }
         .welcome-text { font-size: 13px; color: #555; margin-bottom: 20px; flex-shrink: 0; }
 
-        /* 导航卡片 (已按要求去除图标并自然变窄) */
+        /* 导航卡片 (已按要求变窄并去除图标) */
         .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 850px; width: 100%; margin-bottom: 20px; flex-shrink: 0; }
         .nav-card { background: white; padding: 15px 15px; border-radius: 4px; text-align: center; text-decoration: none; color: #333; border: 1px solid #e0e0e0; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center;}
         .nav-card:hover { transform: translateY(-2px); border-color: #003E7E; box-shadow: 0 4px 12px rgba(0,62,126,0.08); }
         .card-title { font-size: 16px; font-weight: 600; color: #003E7E;}
         .nav-card.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; background: #fafafa; color:#999;}
 
-        /* 留言墙 (宽度变窄至700px) */
-        .msg-wall { flex: 1; min-height: 0; width: 100%; max-width: 700px; background: white; border-radius: 4px; border: 1px solid #e0e0e0; display: flex; flex-direction: column; overflow: hidden; transition: all 0.3s ease; }
+        /* 留言墙 */
+        .msg-wall { flex: 1; max-height: 350px; min-height: 0; width: 100%; max-width: 850px; background: white; border-radius: 4px; border: 1px solid #e0e0e0; display: flex; flex-direction: column; overflow: hidden; transition: all 0.3s ease; }
 
         /* 激活全屏时的样式 */
-        .msg-wall.fullscreen { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; max-width: 100% !important; border-radius: 0 !important; z-index: 100000 !important; border: none !important; }
+        .msg-wall.fullscreen { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; max-width: 100% !important; max-height: none !important; border-radius: 0 !important; z-index: 100000 !important; border: none !important; }
 
         .msg-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #fcfcfc; border-bottom: 1px solid #eee; flex-shrink: 0; }
         .msg-header h3 { margin: 0; font-size: 14px; color: #003E7E; }
@@ -58,8 +58,8 @@
         .msg-input-group input:focus { border-color: #003E7E; }
         .msg-input-group button { background: #003E7E; color: white; border: none; padding: 0 25px; border-radius: 0 2px 2px 0; cursor: pointer; font-size: 13px; font-weight: bold; }
 
-        /* 吸底公告栏 (增加高度和字号使其变宽) */
-        .notice-bar { background: #fffde7; color: #f57f17; padding: 12px 20px; display: flex; align-items: center; border-top: 1px solid #fff59d; flex-shrink: 0; font-size: 14px; }
+        /* 吸底公告栏 (已调整padding变宽) */
+        .notice-bar { background: #fffde7; color: #f57f17; padding: 16px 20px; display: flex; align-items: center; border-top: 1px solid #fff59d; flex-shrink: 0; font-size: 12px; }
         .notice-title { font-weight: bold; margin-right: 10px; white-space: nowrap; }
         .marquee-wrapper { flex: 1; overflow: hidden; position: relative; }
         .marquee-text { display: inline-block; white-space: nowrap; animation: marquee 30s linear infinite; }
@@ -83,8 +83,10 @@
         <h2>COLLIERS DATA</h2>
         <p style="color:#666; font-size:12px; margin-bottom:20px;">内部数据系统门户 (SSO)</p>
         <input type="text" id="login-name" class="login-input" placeholder="邮箱 (例如: alex.zhu@colliers.com)">
+        <input type="text" id="login-name" class="login-input" placeholder="邮箱 (例如: cassie.gao@colliers.com)">
         <input type="text" id="login-phone" class="login-input" placeholder="手机号">
         <input type="password" id="login-pwd" class="login-input" placeholder="密码 (内部号码, 如 COS8244)">
+        <input type="password" id="login-pwd" class="login-input" placeholder="密码 (内部号码, 如 COS1234)">
         <button class="login-btn" onclick="handleLogin()">认证进入</button>
         <div id="login-msg" class="login-error"></div>
     </div>
@@ -122,7 +124,7 @@
             <div class="card-title">项目地图</div>
         </a>
         <a href="reports.html" class="nav-card">
-            <div class="card-title">资料库</div>
+            <div class="card-title">云端资料库</div>
         </a>
         <a href="update.html" class="nav-card" id="btn-data-collect">
             <div class="card-title">季度数据填报</div>
