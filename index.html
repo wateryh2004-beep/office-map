@@ -59,12 +59,13 @@
         .msg-input-group input:focus { border-color: #003E7E; }
         .msg-input-group button { background: #003E7E; color: white; border: none; padding: 0 25px; border-radius: 0 2px 2px 0; cursor: pointer; font-size: 13px; font-weight: bold; }
 
-        /* ★ 全新底部公告栏 (彻底抛弃跑马灯，多行自适应列表) */
-        .notice-bar { background: #fffde7; border-top: 1px solid #fff59d; padding: 15px 25px; flex-shrink: 0; display: flex; align-items: flex-start; z-index: 10; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
-        .notice-title { font-weight: bold; color: #d84315; font-size: 15px; margin-right: 20px; white-space: nowrap; margin-top: 2px; }
-        .notice-content { flex: 1; display: flex; flex-direction: column; gap: 8px; color: #d32f2f; font-size: 13px; font-weight: 500; }
-        .notice-line { line-height: 1.5; word-break: break-all; }
-        #admin-settings-btn { display: none; margin-left: 20px; background: #003E7E; color: white; border: none; padding: 6px 15px; border-radius: 2px; cursor: pointer; font-size: 12px; font-weight: bold; align-self: center; }
+        /* 吸底公告栏 */
+        .notice-bar { background: #fffde7; color: #f57f17; padding: 8px 20px; display: flex; align-items: center; border-top: 1px solid #fff59d; flex-shrink: 0; font-size: 12px; }
+        .notice-title { font-weight: bold; margin-right: 10px; white-space: nowrap; }
+        .marquee-wrapper { flex: 1; overflow: hidden; position: relative; }
+        .marquee-text { display: inline-block; white-space: nowrap; animation: marquee 30s linear infinite; }
+        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        #admin-settings-btn { display: none; margin-left: 15px; background: #003E7E; color: white; border: none; padding: 4px 10px; border-radius: 2px; cursor: pointer; font-size: 11px; }
 
         /* 模态框 */
         #pwd-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; }
@@ -134,7 +135,7 @@
 
     <div class="msg-wall" id="msg-wall">
         <div class="msg-header">
-            <h3><i class="fas fa-comment-dots"></i> 市场信息交流</h3>
+            <h3><i class="fas fa-comment-dots"></i> 业务交流板</h3>
             <i class="fas fa-expand expand-btn" id="expand-icon" onclick="toggleFullscreen()" title="全屏放大"></i>
         </div>
         <div id="msg-list" class="msg-list">
@@ -149,8 +150,8 @@
 
 <div class="notice-bar">
     <div class="notice-title">📢 公告</div>
-    <div class="notice-content" id="notice-content">
-        <div class="notice-line">加载中...</div>
+    <div class="marquee-wrapper">
+        <div class="marquee-text" id="marquee-content">加载中...</div>
     </div>
     <button id="admin-settings-btn" onclick="window.location.href='admin.html'">后台管理</button>
 </div>
@@ -230,28 +231,30 @@
 
     function logout() { localStorage.clear(); location.reload(); }
 
-    // ★ 彻底重写的 JSON 解析逻辑，强制输出多行 div
+    // ★ 核心修复：解析 JSON，并在多个公告之间插入很宽的空格和星星，彻底解决逗号粘连
     async function loadNotice() {
         try {
             const res = await fetch(`/api/portal?action=get-notice&_t=${Date.now()}`);
             const data = await res.json();
             
-            let finalHtml = '<div class="notice-line">欢迎使用系统！</div>';
+            let finalHtml = "欢迎使用系统！";
             if (data.status === 'success' && data.text) {
                 try {
+                    // 如果后端存的是数组格式（有多条公告）
                     const notices = JSON.parse(data.text);
                     if (Array.isArray(notices) && notices.length > 0) {
-                        // 将数组里的每一个公告，单独用一个 class 为 notice-line 的 div 包裹起来
-                        finalHtml = notices.map(n => `<div class="notice-line">🔹 ${n}</div>`).join('');
+                        // 用一长串空格和星星图标把它们强行隔开
+                        finalHtml = notices.join('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🌟&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;');
                     } else {
-                        finalHtml = `<div class="notice-line">🔹 ${data.text}</div>`;
+                        finalHtml = data.text;
                     }
                 } catch(e) {
-                    finalHtml = `<div class="notice-line">🔹 ${data.text}</div>`;
+                    // 如果解析 JSON 失败（说明是以前的旧文本），直接显示
+                    finalHtml = data.text;
                 }
             }
-            document.getElementById('notice-content').innerHTML = finalHtml;
-        } catch (e) { document.getElementById('notice-content').innerHTML = '<div class="notice-line">系统运行中</div>'; }
+            document.getElementById('marquee-content').innerHTML = finalHtml;
+        } catch (e) { document.getElementById('marquee-content').innerText = "系统运行中"; }
     }
 
     async function loadMessages() {
