@@ -3,6 +3,15 @@
     "user": "Lily Liu",
     "action": "search",
     "details": {
+      "keyword": "无",
+      "filter": "无"
+    },
+    "time": "2026/3/10 15:25:31"
+  },
+  {
+    "user": "Lily Liu",
+    "action": "search",
+    "details": {
       "keyword": "北辰时代大厦",
       "filter": "无"
     },
