@@ -267,6 +267,7 @@
         loadOSSReports('');   
         loadLogs(); 
         loadFiles(); 
+        loadCurrentNotice(); // 初始化拉取当前公告
     };
 
     window.switchTab = function(tabId, el) {
@@ -275,6 +276,35 @@
         el.classList.add('active');
         document.getElementById(tabId).classList.add('active');
     };
+
+    // ★ 核心修改点：加载现有的公告数据并填充到输入框中
+    async function loadCurrentNotice() {
+        try {
+            const res = await fetch(`/api/portal?action=get-notice&_t=${Date.now()}`);
+            const data = await res.json();
+            if (data.status === 'success' && data.text) {
+                let noticesArray = [];
+                if (Array.isArray(data.text)) {
+                    noticesArray = data.text;
+                } else if (typeof data.text === 'string') {
+                    try {
+                        const parsed = JSON.parse(data.text);
+                        if (Array.isArray(parsed)) noticesArray = parsed;
+                        else noticesArray = [data.text];
+                    } catch(e) {
+                        noticesArray = [data.text];
+                    }
+                }
+
+                // 依次填充到输入框内
+                if (noticesArray.length > 0) document.getElementById('notice-input-1').value = noticesArray[0] || '';
+                if (noticesArray.length > 1) document.getElementById('notice-input-2').value = noticesArray[1] || '';
+                if (noticesArray.length > 2) document.getElementById('notice-input-3').value = noticesArray[2] || '';
+            }
+        } catch (e) {
+            console.log("历史公告拉取失败或暂无内容");
+        }
+    }
 
     async function directUpload(inputId, targetFileName, btnId) {
         const file = document.getElementById(inputId).files[0];
@@ -323,7 +353,7 @@
         } catch(e) { alert("下载失败，可能文件不存在。"); }
     }
 
-    // ★ 核心修改：打包多个公告发送
+    // 打包多个公告发送（去除了发送成功后清空输入框的逻辑）
     async function updateNotice() {
         const n1 = document.getElementById('notice-input-1').value.trim();
         const n2 = document.getElementById('notice-input-2').value.trim();
@@ -332,7 +362,7 @@
         const notices = [n1, n2, n3].filter(n => n !== '');
         
         if (notices.length === 0) {
-            alert("请至少填写一条公告！");
+            alert("请至少保留/填写一条公告！");
             return;
         }
 
@@ -346,10 +376,8 @@
             }); 
             const data = await res.json();
             if (data.status === 'success') { 
-                alert("✅ 组合公告发布成功"); 
-                document.getElementById('notice-input-1').value = ''; 
-                document.getElementById('notice-input-2').value = ''; 
-                document.getElementById('notice-input-3').value = ''; 
+                alert("✅ 组合公告更新成功，历史内容已保留在原位"); 
+                // 去掉了清空输入框的代码，保持文字留在原处
             } else {
                 alert("❌ 发布失败: " + (data.message || '系统错误'));
             }
