@@ -230,31 +230,32 @@
 
     function logout() { localStorage.clear(); location.reload(); }
 
-    // ★ 核心修复：把数组拆开，每条公告包一个带虚线的独立物理 <div>
+    // ★ 核心修复：把数组拆开，使用绝对的物理空格(&nbsp;)和明显的图标作为分隔符，单行跑马灯展示
     async function loadNotice() {
         try {
             const res = await fetch(`/api/portal?action=get-notice&_t=${Date.now()}`);
             const data = await res.json();
             
-            let finalHtml = '<div class="notice-line">欢迎使用系统！</div>';
+            let finalHtml = '欢迎使用系统！';
             if (data.status === 'success' && data.text) {
                 try {
                     const notices = JSON.parse(data.text);
                     if (Array.isArray(notices) && notices.length > 0) {
-                        // 强制分行，加上数字序号和物理边框隔离
-                        finalHtml = notices.map((n, idx) => 
-                            `<div class="notice-line"><span style="margin-right:10px;">${idx + 1}.</span><span>${n}</span></div>`
-                        ).join('');
+                        // 使用连续的 &nbsp; 制造绝对物理空格，并用 🌟 分隔不同的公告，彻底消除逗号
+                        const separator = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🌟&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+                        finalHtml = notices.join(separator);
                     } else {
-                        finalHtml = `<div class="notice-line"><span style="margin-right:10px;">🔹</span><span>${data.text}</span></div>`;
+                        finalHtml = data.text;
                     }
                 } catch(e) {
-                    finalHtml = `<div class="notice-line"><span style="margin-right:10px;">🔹</span><span>${data.text}</span></div>`;
+                    finalHtml = data.text;
                 }
             }
-            // 使用 innerHTML 绝对注入解析好的 HTML 结构
+            // 使用 innerHTML 注入，确保 &nbsp; 物理空格被正确渲染出来
             document.getElementById('marquee-content').innerHTML = finalHtml;
-        } catch (e) { document.getElementById('marquee-content').innerHTML = '<div class="notice-line">系统运行中</div>'; }
+        } catch (e) { 
+            document.getElementById('marquee-content').innerHTML = '系统运行中'; 
+        }
     }
 
     async function loadMessages() {
