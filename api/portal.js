@@ -63,6 +63,15 @@ export default async function handler(req, res) {
         const timeStr = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; // HH:mm
 
         // ==========================================
+        // ★ 新增逻辑：计算本周一的日期字符串
+        // ==========================================
+        const dayOfWeek = d.getDay(); // 获取今天是周几 (0是周日，1-6是周一至周六)
+        const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 计算今天距离周一差了几天
+        const mondayDate = new Date(d.getTime());
+        mondayDate.setDate(d.getDate() - diffToMonday); // 将日期倒推回本周一
+        const mondayStr = `${mondayDate.getFullYear()}-${String(mondayDate.getMonth()+1).padStart(2,'0')}-${String(mondayDate.getDate()).padStart(2,'0')}`; 
+
+        // ==========================================
         // 1. 获取公告 (★ 原功能无损保留)
         // ==========================================
         if (action === 'get-notice') {
@@ -82,18 +91,18 @@ export default async function handler(req, res) {
         }
 
         // ==========================================
-        // 3. 获取留言板 (★ 升级：每日重置过滤)
+        // 3. 获取留言板 (★ 升级：每周重置过滤)
         // ==========================================
         else if (action === 'get-messages') {
             const msgs = await kv.get('portal_messages') || [];
             
-            // 核心逻辑：只挑选出 date 属性等于今天的记录，实现“每天清理”的视觉效果
-            const todayMsgs = msgs.filter(m => m.date === dateStr);
-            return res.status(200).json(todayMsgs);
+            // 核心逻辑：挑选出 date 属性大于或等于本周一的记录，实现“每周清理”的视觉效果
+            const weekMsgs = msgs.filter(m => m.date >= mondayStr);
+            return res.status(200).json(weekMsgs);
         }
 
         // ==========================================
-        // 4. 发送留言 (★ 升级：永久备份到 Github)
+        // 4. 发送留言 (★ 原功能无损保留)
         // ==========================================
         else if (action === 'post-message') {
             const { user, text } = req.body;
@@ -106,13 +115,13 @@ export default async function handler(req, res) {
                 user, 
                 text, 
                 time: timeStr,  // 前端界面展示的时间
-                date: dateStr,  // 用于后端按天过滤的标签
+                date: dateStr,  // 用于后端按天/周过滤的标签
                 fullTime: d.toISOString() // 用于 Github 留底的精确时间戳
             };
             
             msgs.push(newMsg);
             
-            // 防撑爆机制：由于我们前端只展示当天的，为了防止一天之内超高频聊天，把保留上限放宽到 500 条
+            // 防撑爆机制：保留上限放宽到 500 条
             if (msgs.length > 500) msgs = msgs.slice(msgs.length - 500);
             
             // 1. 存入高速 KV 供主页秒级读取
