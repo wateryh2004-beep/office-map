@@ -12,6 +12,15 @@
     "user": "Niko Guo",
     "action": "search",
     "details": {
+      "keyword": "无",
+      "filter": "无"
+    },
+    "time": "2026/3/11 10:40:20"
+  },
+  {
+    "user": "Niko Guo",
+    "action": "search",
+    "details": {
       "keyword": "融科",
       "filter": "无"
     },
