@@ -17,29 +17,29 @@
         .tab-btn:hover { background: #e9ecef; }
         .tab-btn.active { background: #003E7E; color: white; font-weight: bold; }
         .draft-status { margin-left: auto; font-size: 12px; color: #2e7d32; }
-        
+
         .table-wrapper { flex: 1; overflow: auto; min-height: 0; border: 1px solid #e0e0e0; border-radius: 2px; }
         .data-table { border-collapse: separate; border-spacing: 0; font-size: 11px; min-width: 2000px; width: 100%; }
         .data-table th, .data-table td { border-right: 1px solid #eee; border-bottom: 1px solid #eee; padding: 6px 4px; text-align: center; vertical-align: middle; }
-        
+
         .th-group-base { background: #f8f9fa; color: #333; border-bottom: 2px solid #ccc !important; }
         .th-group-last { background: #eef2f5; color: #003E7E; border-bottom: 2px solid #90caf9 !important; }
         .th-group-curr { background: #fff8e1; color: #f57f17; border-bottom: 2px solid #ffe082 !important; }
-        
+
         .th-base, .th-last, .th-curr { position: sticky; top: 27px; z-index: 10; font-weight: 600; box-shadow: 0 1px 0 #eee; }
         .th-group-base, .th-group-last, .th-group-curr { position: sticky; top: 0; z-index: 11; }
         .th-base { background: #fafafa; color: #555; }
         .th-last { background: #f4f6f8; color: #003E7E; width: 60px; } 
         .th-curr { background: #fffde7; color: #d84315; width: 85px; }
-        
+
         .col-fixed-1 { position: sticky; left: 0; z-index: 20; background: #fafafa; border-right: 1px solid #eee; width: 30px; }
         .col-fixed-2 { position: sticky; left: 30px; z-index: 20; background: #fff; border-right: 2px solid #ddd !important; width: 120px;}
         th.col-fixed-1, th.col-fixed-2 { z-index: 30; background: #fafafa; }
-        
+
         /* 输入框紧凑样式 */
         .input-cell input { width: 100%; padding: 4px 2px; border: 1px solid #ccc; border-radius: 2px; box-sizing: border-box; font-family: inherit; font-size: 11px; text-align: center; }
         .input-cell input:focus { border-color: #003E7E; outline: none; background: #e3f2fd; }
-        
+
         /* 基础信息区可编辑字段的特定样式 (增加了 textarea 支持) */
         .input-cell.base-edit input, .input-cell.base-edit textarea { background: #f8f9fa; border-color: #ddd; }
         .input-cell.base-edit input:focus, .input-cell.base-edit textarea:focus { background: #fff; border-color: #003E7E; }
@@ -99,7 +99,7 @@
                     <th class="th-base" style="width:80px;">业主 (可补充)</th>
                     <th class="th-base" style="width:80px;">物业 (可补充)</th>
                     <th class="th-base" style="width:60px;">总面积</th>
-                    
+
                     <th class="th-last">报价</th>
                     <th class="th-last">物业费</th>
                     <th class="th-last">表面租金</th>
@@ -149,7 +149,7 @@
     let myBuildings = [];
     let currentTab = 'GradeA'; 
     let autoSaveTimer = null;
-    
+
     // 【新增】全局云端草稿数据缓存
     let currentCloudDraftData = {};
 
@@ -193,7 +193,7 @@
     window.onload = async function() {
         const userStr = localStorage.getItem('colliers_user');
         if (!userStr) { alert("请先登录"); window.location.href = 'index.html'; return; }
-        
+
         currentUser = JSON.parse(userStr);
         const matchName = currentUser.fullName || currentUser.name; 
         document.getElementById('page-title').innerText = `季度填报 - 载入中...`;
@@ -201,7 +201,7 @@
         try {
             const res = await fetch(`/api/get-my-buildings?user=${encodeURIComponent(matchName)}`);
             const data = await res.json();
-            
+
             if (data.status === 'success') {
                 if(data.message) {
                     document.getElementById('page-title').innerText = `季度填报 - 无任务`;
@@ -225,8 +225,9 @@
                 document.getElementById('draft-status').innerText = '';
 
                 renderTable();
-                
+
                 // 【修改】云端自动保存的频率适当调宽，避免接口请求过于频繁
+                autoSaveTimer = setInterval(() => saveDraft(false), 15000);
                 autoSaveTimer = setInterval(() => saveDraft(false), 120000);
             } else {
                 document.getElementById('table-body').innerHTML = `<tr><td colspan="23" style="color:red; text-align:center;">读取失败: ${data.message}</td></tr>`;
@@ -235,7 +236,7 @@
             document.getElementById('table-body').innerHTML = `<tr><td colspan="23" style="color:red; text-align:center;">网络加载异常，或者后端报错了: ${e.message}</td></tr>`;
         }
     };
-    
+
     const safeNum = (val) => {
         if(val === '' || val === undefined || val === null) return 0;
         if(String(val).includes('%')) return parseFloat(val)/100;
@@ -245,21 +246,21 @@
     // 【修改】切换标签页时，需要先保存旧页面的云端草稿，再拉取新页面的云端草稿
     window.switchTab = async function(tabName) {
         if (currentTab === tabName) return; 
-        
+
         await saveDraft(false); 
-        
+
         currentTab = tabName;
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.classList.remove('active');
             if(btn.dataset.tab === tabName) btn.classList.add('active');
         });
-        
+
         document.getElementById('draft-status').innerText = '正在拉取云端草稿...';
         document.getElementById('table-body').innerHTML = `<tr><td colspan="23" style="text-align:center; padding: 40px; color:#888;">正在同步云端进度...</td></tr>`;
-        
+
         currentCloudDraftData = await fetchDraftFromServer(currentTab);
         document.getElementById('draft-status').innerText = ''; 
-        
+
         renderTable(); 
     };
 
@@ -276,7 +277,7 @@
             const name = getVal(item, ['写字楼名称', 'Project Name CN', 'name']) || '-';
             const district = getVal(item, ['子市场', 'SUBMARKET']) || '-';
             const totalArea = safeNum(getVal(item, ['总面积', 'Total Area']));
-            
+
             const defaultOwner = getVal(item, ['业主', 'Landlord']);
             const defaultProp = getVal(item, ['物业', '物业公司', 'Property Management']);
 
@@ -285,10 +286,10 @@
             const lastFace = safeNum(getVal(item, ['上季度表面租金', '表面租金', '表面']));
             const lastFree = safeNum(getVal(item, ['上季度免租期', '免租期', '免租期（三年租约）']));
             const lastNet = safeNum(getVal(item, ['上季度净有效租金', '净有效租金'])); 
-            
+
             const rawVacArea = getVal(item, ['上季度空置面积', '空置面积']);
             const lastVacArea = safeNum(rawVacArea);
-            
+
             const rawVacRate = getVal(item, ['上季度空置率', '空置率']);
             const lastVacRate = safeNum(rawVacRate);
 
@@ -390,7 +391,7 @@
     window.saveDraft = async function(isManual = false) {
         const rows = document.querySelectorAll('#table-body tr[data-id]');
         if (rows.length === 0) return;
-        
+
         const draft = {}; let hasData = false;
         rows.forEach(row => {
             const id = row.dataset.id;
@@ -402,12 +403,12 @@
             const qFree = row.querySelector('.curr-free').value;
             const qVacArea = row.querySelector('.curr-vac-area').value;
             const qRemark = row.querySelector('.curr-remark').value;
-            
+
             if(qQuote || qProp || qFace || qFree || qVacArea || qRemark || qOwner || qPropMan) {
                 hasData = true; draft[id] = { qOwner, qPropMan, qQuote, qProp, qFace, qFree, qVacArea, qRemark };
             }
         });
-        
+
         currentCloudDraftData = draft;
 
         if (isManual) document.getElementById('draft-status').innerText = '正在同步至云端...';
@@ -436,18 +437,18 @@
         await saveDraft(false);
         const rows = document.querySelectorAll('#table-body tr[data-id]');
         let incompleteBuildings = [];
-        
+
         // 1. 全局校验阶段：检查所有展示的楼宇，哪些没填或者没填满
         rows.forEach((row) => {
             const sn = row.dataset.sn;
             const bName = row.dataset.name;
-            
+
             const qQuote = row.querySelector('.curr-quote').value.trim();
             const qProp = row.querySelector('.curr-prop').value.trim();
             const qFace = row.querySelector('.curr-face').value.trim();
             const qFree = row.querySelector('.curr-free').value.trim();
             const qVacArea = row.querySelector('.curr-vac-area').value.trim();
-            
+
             // 判断这行的必填项是否完整
             const isComplete = (qQuote !== '' && qProp !== '' && qFace !== '' && qFree !== '' && qVacArea !== '');
 
@@ -463,7 +464,7 @@
             msg += incompleteBuildings.slice(0, 4).join('<br>');
             if (incompleteBuildings.length > 4) msg += `<br>... (省略显示)`;
             msg += `<br><br><span style="color:#d32f2f;">提醒：除了业主、物业和备注外，其他均为必填项。</span>`;
-            
+
             document.getElementById('modal-text').innerHTML = msg;
             document.getElementById('modal-overlay').style.display = 'flex';
             return; 
@@ -510,7 +511,7 @@
                 "上季度净有效租金": getVal(building, ['上季度净有效租金', '净有效租金']), 
                 "上季度空置面积": getVal(building, ['上季度空置面积', '空置面积']), 
                 "上季度空置率": getVal(building, ['上季度空置率', '空置率']),
-                
+
                 "本季度租金报价": qQuote ? Math.round(Number(qQuote)) : '', 
                 "本季度物业费": qProp ? Math.round(Number(qProp)) : '', 
                 "本季度表面租金": qFace, 
@@ -536,21 +537,18 @@
             const res = await fetch('/api/submit-update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user: pseudoUser, data: submission }) });
             const result = await res.json();
             if (result.status === 'success') { 
-                // 1. 注释掉或删除清空草稿的代码，保留云端数据
-                // await syncDraftToServer({}, currentTab, 'clear'); 
-                
+                // 【修改】成功提交后，通知后端清空当前分类的云端草稿
+                await syncDraftToServer({}, currentTab, 'clear'); 
                 alert(`✅ 提交成功`); 
-                
-                // 2. 删除 location.reload(); 防止页面刷新导致填好的数据闪烁或丢失
-                // 3. 恢复按钮状态，以便业务人员修改数据后可以继续点击提交
-                btn.disabled = false; 
-                btn.innerText = "提交上传"; 
-                msg.innerText = "系统将自动同步草稿至云端";
-                
+                location.reload(); 
             } else { 
                 alert("失败: " + result.message); 
                 btn.disabled = false; btn.innerText = "重新提交"; 
             }
+        } catch (e) { 
+            alert("网络错误"); 
+            btn.disabled = false; btn.innerText = "重新提交"; 
+        }
     }
 </script>
 </body>
