@@ -227,7 +227,7 @@
                 renderTable();
                 
                 // 【修改】云端自动保存的频率适当调宽，避免接口请求过于频繁
-                autoSaveTimer = setInterval(() => saveDraft(false), 15000);
+                autoSaveTimer = setInterval(() => saveDraft(false), 120000);
             } else {
                 document.getElementById('table-body').innerHTML = `<tr><td colspan="23" style="color:red; text-align:center;">读取失败: ${data.message}</td></tr>`;
             }
