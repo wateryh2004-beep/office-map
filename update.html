@@ -537,10 +537,19 @@
             const res = await fetch('/api/submit-update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user: pseudoUser, data: submission }) });
             const result = await res.json();
             if (result.status === 'success') { 
-                // 【修改】成功提交后，通知后端清空当前分类的云端草稿
-                await syncDraftToServer({}, currentTab, 'clear'); 
+                // 【修改】注释掉了清空草稿代码，保证数据保留
+                // await syncDraftToServer({}, currentTab, 'clear'); 
+                
                 alert(`✅ 提交成功`); 
-                location.reload(); 
+                
+                // 【修改】注释掉了自动刷新，防止页面数据丢失
+                // location.reload(); 
+                
+                // 【新增】恢复按钮和提示文字的状态，让用户可以继续操作
+                btn.disabled = false; 
+                btn.innerText = "提交上传"; 
+                msg.innerText = "系统将自动同步草稿至云端";
+                
             } else { 
                 alert("失败: " + result.message); 
                 btn.disabled = false; btn.innerText = "重新提交"; 
