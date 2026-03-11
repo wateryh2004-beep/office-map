@@ -343,7 +343,7 @@
                 });
                 if ((await res.json()).status === 'invalid') { logout(); alert("账号已在别处登录。"); }
             } catch (e) { }
-        }, 60000);
+        }, 300000);
     }
 
     function openPwdModal() { document.getElementById('pwd-modal').style.display = 'flex'; document.getElementById('cp-name').value = JSON.parse(localStorage.getItem('colliers_user')).name; }
