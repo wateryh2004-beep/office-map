@@ -275,12 +275,23 @@
             if (!Array.isArray(msgs) || msgs.length === 0) { 
                 list.innerHTML = '<p style="color:#999; font-size:12px; text-align:center; padding:20px;">暂无留言</p>'; return; 
             }
-            list.innerHTML = msgs.map(m => `
+
+            // 安全转义函数，防止 < > 等符号破坏页面或丢失文本
+            const escapeHTML = str => str ? str.replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            }[tag])) : '';
+
+            list.innerHTML = msgs.map(m => {
+                // 如果有日期(如 2026-03-09)，截取后五位变成 "03-09"，看起来更清爽
+                const displayDate = m.date ? m.date.substring(5) : ''; 
+                return `
                 <div class="msg-item">
-                    <div class="msg-info"><strong>${m.user}</strong> · ${m.time}</div>
-                    <div class="msg-content">${m.text}</div>
+                    <div class="msg-info"><strong>${escapeHTML(m.user)}</strong> · ${displayDate} ${escapeHTML(m.time)}</div>
+                    <div class="msg-content">${escapeHTML(m.text)}</div>
                 </div>
-            `).join('');
+                `;
+            }).join('');
+            
             list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
         } catch (e) { list.innerHTML = '<p style="color:red; font-size:12px; text-align:center;">加载异常</p>'; }
     }
