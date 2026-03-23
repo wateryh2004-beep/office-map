@@ -4,6 +4,15 @@
     "action": "search",
     "details": {
       "keyword": "无",
+      "filter": "无"
+    },
+    "time": "2026/3/23 10:01:46"
+  },
+  {
+    "user": "Niko Guo",
+    "action": "search",
+    "details": {
+      "keyword": "无",
       "filter": "grade=甲"
     },
     "time": "2026/3/23 10:01:40"
